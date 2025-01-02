@@ -1,0 +1,7 @@
+config.json
+bin
+-bin/.gitkeep
+fyne-cross
+build/bin
+node_modules
+frontend/dist

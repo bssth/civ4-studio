@@ -1,0 +1,24 @@
+{
+  "$schema": "https://wails.io/schemas/config.v2.json",
+  "name": "civ4studio",
+  "outputfilename": "civ4studio",
+  "frontend:install": "npm install",
+  "frontend:build": "npm run build",
+  "frontend:dev:watcher": "npm run dev",
+  "frontend:dev:serverUrl": "auto",
+  "author": {
+    "name": "Borys Stelmakh",
+    "email": "bs@vortalcoil.com"
+  },
+  "info": {
+    "fileAssociations": [
+      {
+        "ext": "CivBeyondSwordWBSave",
+        "name": "Civilization IV Worldbuilder Save",
+        "description": "Civilization IV Worldbuilder Save",
+        "iconName": "appicon",
+        "role": "Editor"
+      }
+    ]
+  }
+}

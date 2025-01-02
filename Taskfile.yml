@@ -1,0 +1,17 @@
+version: '3'
+
+env:
+  CGO_ENABLED: 1
+
+tasks:
+  debug:
+    cmds:
+      - wails dev
+
+  pre-build:
+    cmds:
+      - go install github.com/wailsapp/wails/v2/cmd/wails@latest
+
+  build:
+    cmds:
+      - wails build
