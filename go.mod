@@ -1,12 +1,13 @@
 module github.com/bssth/civ4-studio
 
 go 1.21
+toolchain go1.23.7
 
 require (
 	fyne.io/fyne/v2 v2.4.4
 	github.com/wailsapp/wails/v2 v2.9.1
-	golang.org/x/net v0.25.0
-	golang.org/x/sys v0.20.0
+	golang.org/x/net v0.36.0
+	golang.org/x/sys v0.30.0
 )
 
 require (
@@ -41,9 +42,9 @@ require (
 	github.com/wailsapp/go-webview2 v1.0.10 // indirect
 	github.com/wailsapp/mimetype v1.4.1 // indirect
 	github.com/yuin/goldmark v1.5.5 // indirect
-	golang.org/x/crypto v0.23.0 // indirect
+	golang.org/x/crypto v0.35.0 // indirect
 	golang.org/x/exp v0.0.0-20230522175609-2e198f4a06a1 // indirect
 	golang.org/x/image v0.12.0 // indirect
 	golang.org/x/mobile v0.0.0-20230531173138-3c911d8e3eda // indirect
-	golang.org/x/text v0.15.0 // indirect
+	golang.org/x/text v0.22.0 // indirect
 )
