@@ -16,16 +16,28 @@ Download release from GitHub and run!
 
 ## Building from sources
 
-Clone or download the repository to your local machine.
+Clone or download the repository to your local machine. You need:
 
-You now need to download the Fyne module and helper tool. This will be done using the following commands:
+- Go 1.22+
+- Node.js 18+ and npm
+- The [Wails v2 CLI](https://wails.io/docs/gettingstarted/installation):
+  `go install github.com/wailsapp/wails/v2/cmd/wails@latest`
+
+Run the editor in development mode (hot-reload for both frontend and backend):
 
 ```bash
-$ go get fyne.io/fyne/v2@latest
-$ go install fyne.io/fyne/v2/cmd/fyne@latest
-$ go install github.com/fyne-io/fyne-cross@latest
-$ fyne-cross windows # (or fyne-cross darwin, fyne-cross linux etc.)
+$ wails dev
 ```
+
+Build a production binary for your current platform:
+
+```bash
+$ wails build
+```
+
+The output binary appears under `build/bin/`. To target another OS, see
+[`wails build --help`](https://wails.io/docs/reference/cli) (cross-compilation
+of the Windows webview backend has its own requirements).
 
 ## Contributing
 
@@ -37,11 +49,10 @@ Using Goland is strongly recommended, but if you are not familiar with it, you c
 
 ### Cautions and known problems
 
-1. The first run from source code can take a very long time, as Fyne and its dependencies need to be compiled. Be patient, it may take a few minutes.
-2. The interface code is implemented to be clear and intuitive, but can be intimidating with the amount of boilerplate. Please refrain from making fundamental changes without discussion.
-3. WebAssembly is supported thanks to Fyne, but is not yet adapted and tested. If you need it for any reason, please open an issue.
-4. You may encounter "@todo" markings in the code. You can implement and contribute what is marked, unless otherwise explicitly stated in the comment.
-5. I love French hot dogs 😋
+1. The first `wails dev` / `wails build` may take a while as Go and npm dependencies are downloaded and compiled.
+2. On Windows, launching the game from the editor uses `ShellExecute` with the `runas` verb and will trigger a UAC prompt.
+3. You may encounter "@todo" markings in the code. You can implement and contribute what is marked, unless otherwise explicitly stated in the comment.
+4. I love French hot dogs 😋
 
 ## Support
 

@@ -3,16 +3,15 @@ package editor
 import (
 	"embed"
 	"flag"
-	"fyne.io/fyne/v2"
+	"log"
+
 	"github.com/wailsapp/wails/v2"
 	"github.com/wailsapp/wails/v2/pkg/options"
 	"github.com/wailsapp/wails/v2/pkg/options/assetserver"
-	"log"
 )
 
 var assets embed.FS
 
-var Application fyne.App
 var GlobalConfig *Config
 
 const steamDefaultGameDir = "C:\\Program Files (x86)\\Steam\\steamapps\\common\\Sid Meier's Civilization IV Beyond the Sword\\Beyond the Sword"

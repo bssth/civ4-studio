@@ -19,7 +19,12 @@ func GetConsoleChannel() <-chan string {
 func ConsoleWrite(line string, p ...any) {
 	line = fmt.Sprintf(line+"\n", p...)
 	if consoleChannelUsed {
-		consoleChannel <- line
+		// Non-blocking send: drop the line if no one is reading fast enough
+		// rather than freezing the whole pipeline.
+		select {
+		case consoleChannel <- line:
+		default:
+		}
 	}
 
 	log.Print(line)

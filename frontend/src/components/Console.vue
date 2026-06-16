@@ -10,15 +10,13 @@ const showConfig = ref(false);
 
 onMounted(() => {
   EventsOn('console', (data: any) => {
-    alert(JSON.stringify(data));
-
+    const date = new Date();
+    const stamped = '[' + date.getHours().toString().padStart(2, '0')
+        + ':' + date.getMinutes().toString().padStart(2, '0') + '] ' + data;
+    lines.value.push(stamped);
     if (lines.value.length > maxLines.value) {
       lines.value = lines.value.slice(lines.value.length - maxLines.value);
     }
-
-    const date = new Date();
-    data = '[' + date.getHours() + ':' + date.getMinutes() + '] ' + data;
-    lines.value.push(data);
   });
 });
 

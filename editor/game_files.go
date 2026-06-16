@@ -153,12 +153,11 @@ func LaunchGame(mapFileName string) error {
 	}
 
 	if mapFileName != "" {
-		absPath, err := filepath.Abs(mapFileName)
-		if err == nil {
-			mapFileName = absPath
+		if abs, absErr := filepath.Abs(mapFileName); absErr == nil {
+			mapFileName = abs
 		}
 
-		argv = append(argv, "/FXSLOAD=\\\"\""+absPath+"\"")
+		argv = append(argv, "/FXSLOAD=\""+mapFileName+"\"")
 	}
 
 	if runtime.GOOS != "windows" {
