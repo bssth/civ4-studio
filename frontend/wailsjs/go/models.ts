@@ -72,6 +72,7 @@ export namespace editor {
 	    MPOption: string[] | null;
 	    ForceControl: string[] | null;
 	    MaxTurns: number;
+	    Extra?: string[];
 
 	    static createFrom(source: any = {}) {
 	        return new Game(source);
@@ -95,6 +96,7 @@ export namespace editor {
 	        this.MPOption = source["MPOption"] ?? [];
 	        this.ForceControl = source["ForceControl"] ?? [];
 	        this.MaxTurns = source["MaxTurns"] ?? 0;
+	        this.Extra = source["Extra"];
 	    }
 	}
 
@@ -108,6 +110,7 @@ export namespace editor {
 	    DefensivePactWithTeam: number[] | null;
 	    ProjectType: string[] | null;
 	    RevealMap: boolean;
+	    Extra?: string[];
 
 	    static createFrom(source: any = {}) {
 	        return new Team(source);
@@ -124,6 +127,7 @@ export namespace editor {
 	        this.DefensivePactWithTeam = source["DefensivePactWithTeam"] ?? [];
 	        this.ProjectType = source["ProjectType"] ?? [];
 	        this.RevealMap = source["RevealMap"] ?? false;
+	        this.Extra = source["Extra"];
 	    }
 	}
 
@@ -153,6 +157,7 @@ export namespace editor {
 	    Civic: string[] | null;
 	    AttitudePlayer: number[] | null;
 	    AttitudeExtra: number[] | null;
+	    Extra?: string[];
 
 	    static createFrom(source: any = {}) {
 	        return new Player(source);
@@ -185,6 +190,7 @@ export namespace editor {
 	        this.Civic = source["Civic"] ?? [];
 	        this.AttitudePlayer = source["AttitudePlayer"] ?? [];
 	        this.AttitudeExtra = source["AttitudeExtra"] ?? [];
+	        this.Extra = source["Extra"];
 	    }
 	}
 

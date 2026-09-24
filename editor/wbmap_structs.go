@@ -4,7 +4,9 @@ import (
 	"bytes"
 	"fmt"
 	"regexp"
+	"sort"
 	"strconv"
+	"strings"
 )
 
 var (
@@ -16,6 +18,7 @@ var (
 	_ WbStructPackable   = &MapProps{}
 	_ WbStructSubSection = &City{}
 	_ WbStructSubSection = &Unit{}
+	_ WbStructPackable   = &Sign{}
 )
 
 // WbStructPackable is an interface that should be implemented by all structs that are used to pack/unpack data from a map
@@ -43,6 +46,7 @@ type WbMap struct {
 	Map     *MapProps
 	Players []*Player
 	Plots   []*Plot
+	Signs   []*Sign
 }
 
 // Unpack from WbMap is not used, parser unpacks it manually.
@@ -74,9 +78,14 @@ func (m *WbMap) ToWbFormat() []byte {
 	for _, player := range m.Players {
 		buf.Write(player.ToWbFormat())
 	}
-	buf.Write(m.Map.ToWbFormat())
+	if m.Map != nil {
+		buf.Write(m.Map.ToWbFormat())
+	}
 	for _, plot := range m.Plots {
 		buf.Write(plot.ToWbFormat())
+	}
+	for _, sign := range m.Signs {
+		buf.Write(sign.ToWbFormat())
 	}
 	return buf.Bytes()
 }
@@ -148,6 +157,8 @@ type Game struct {
 	// EG: You have a scenario that you want to run for 300 years, and your calendar is set to CALENDAR_YEARS.
 	// Setting MaxTurns=300 will end the game with score victory after turn 299 (remember that 0 is the first turn).
 	MaxTurns uint
+	// Extra keeps key=value lines unknown to the editor (e.g. added by mods), so they survive a save
+	Extra []string `json:",omitempty"`
 }
 
 func (g *Game) Unpack(packed map[string]string) error {
@@ -210,7 +221,7 @@ func (g *Game) Unpack(packed map[string]string) error {
 			}
 			g.MaxTurns = uint(i)
 		default:
-			return fmt.Errorf("unknown key: %s", k)
+			g.Extra = append(g.Extra, k+"="+v)
 		}
 	}
 
@@ -236,6 +247,7 @@ func (g *Game) ToWbFormat() []byte {
 	generator.AddKeyValueArray("MPOption", g.MPOption)
 	generator.AddKeyValueArray("ForceControl", g.ForceControl)
 	generator.AddKeyValueUint("MaxTurns", uint64(g.MaxTurns))
+	generator.AddLines(g.Extra)
 	generator.EndSection()
 	return generator.Bytes()
 }
@@ -266,6 +278,8 @@ type Team struct {
 	// RevealMap defines the state of the team knowing the whole map at the start of the game.
 	// Valid options are 0 (don't know map) and 1 (knows map). If left out, then the default value is 0.
 	RevealMap bool
+	// Extra keeps key=value lines unknown to the editor (e.g. added by mods), so they survive a save
+	Extra []string `json:",omitempty"`
 }
 
 func (t *Team) Unpack(packed map[string]string) error {
@@ -314,7 +328,7 @@ func (t *Team) Unpack(packed map[string]string) error {
 		case "RevealMap":
 			t.RevealMap = v == "1"
 		default:
-			return fmt.Errorf("unknown key: %s", k)
+			t.Extra = append(t.Extra, k+"="+v)
 		}
 	}
 
@@ -333,6 +347,7 @@ func (t *Team) ToWbFormat() []byte {
 	generator.AddKeyValueUintArray("DefensivePactWithTeam", t.DefensivePactWithTeam)
 	generator.AddKeyValueArray("ProjectType", t.ProjectType)
 	generator.AddKeyValueBool("RevealMap", t.RevealMap)
+	generator.AddLines(t.Extra)
 	generator.EndSection()
 	return generator.Bytes()
 }
@@ -410,6 +425,8 @@ type Player struct {
 	AttitudePlayer []uint
 	// EG: AttitudeExtra=YYY where YYY is the amount to change diplomatic attitude towards the player defined in "AttitudePlayer."
 	AttitudeExtra []int
+	// Extra keeps key=value lines unknown to the editor (e.g. added by mods), so they survive a save
+	Extra []string `json:",omitempty"`
 }
 
 func (p *Player) ToWbFormat() []byte {
@@ -442,6 +459,7 @@ func (p *Player) ToWbFormat() []byte {
 	generator.AddKeyValueArray("Civic", p.Civic)
 	generator.AddKeyValueUintArray("AttitudePlayer", p.AttitudePlayer)
 	generator.AddKeyValueIntArray("AttitudeExtra", p.AttitudeExtra)
+	generator.AddLines(p.Extra)
 	generator.EndSection()
 	return generator.Bytes()
 }
@@ -524,7 +542,7 @@ func (p *Player) Unpack(packed map[string]string) error {
 			}
 			p.AttitudeExtra = append(p.AttitudeExtra, i)
 		default:
-			return fmt.Errorf("unknown key: %s", k)
+			p.Extra = append(p.Extra, k+"="+v)
 		}
 	}
 
@@ -598,6 +616,11 @@ type Plot struct {
 	// The teams in this list will be able to view the plot, but fog of war may still be over the plot.
 	// The list is simply a list of the team numbers seperated by a comma. The list MUST end with a comma. EG: TeamReveal=TeamReveal=0,1,2,3,
 	TeamReveal []uint
+	// teamRevealAsList remembers that TeamReveal was written as one comma-separated line (0,1,2,)
+	// instead of one line per team, so the file is saved back in the same form
+	teamRevealAsList bool
+	// Extra keeps key=value lines unknown to the editor (e.g. added by mods), so they survive a save
+	Extra []string `json:",omitempty"`
 }
 
 func (p *Plot) Unpack(packed map[string]string) error {
@@ -656,13 +679,22 @@ func (p *Plot) Unpack(packed map[string]string) error {
 			}
 			p.PlotType = uint(i)
 		case "TeamReveal":
-			i, err := strconv.Atoi(v)
-			if err != nil {
-				return err
+			if strings.Contains(v, ",") {
+				p.teamRevealAsList = true
 			}
-			p.TeamReveal = append(p.TeamReveal, uint(i))
+			for _, team := range strings.Split(v, ",") {
+				team = strings.TrimSpace(team)
+				if team == "" {
+					continue
+				}
+				i, err := strconv.Atoi(team)
+				if err != nil {
+					return err
+				}
+				p.TeamReveal = append(p.TeamReveal, uint(i))
+			}
 		default:
-			return fmt.Errorf("unknown key: %s", k)
+			p.Extra = append(p.Extra, k+"="+v)
 		}
 	}
 
@@ -696,13 +728,22 @@ func (p *Plot) ToWbFormat() []byte {
 	generator.AddKeyValueString("RouteType", p.RouteType)
 	generator.AddKeyValueString("TerrainType", p.TerrainType)
 	generator.AddKeyValueUint("PlotType", uint64(p.PlotType))
+	generator.AddLines(p.Extra)
 	for _, unit := range p.Units {
 		unit.AddAsSubsection(generator)
 	}
 	for _, city := range p.Cities {
 		city.AddAsSubsection(generator)
 	}
-	generator.AddKeyValueUintArray("TeamReveal", p.TeamReveal)
+	if !p.teamRevealAsList {
+		generator.AddKeyValueUintArray("TeamReveal", p.TeamReveal)
+	} else if len(p.TeamReveal) > 0 {
+		var teams strings.Builder
+		for _, team := range p.TeamReveal {
+			teams.WriteString(strconv.Itoa(int(team)) + ",")
+		}
+		generator.AddKeyValueString("TeamReveal", teams.String())
+	}
 	generator.EndSection()
 	return generator.Bytes()
 }
@@ -743,6 +784,8 @@ type MapProps struct {
 	// RandomizeResources: The setting to randomize resources on the map.
 	// @todo find more information about this
 	RandomizeResources bool
+	// Extra keeps key=value lines unknown to the editor (e.g. added by mods), so they survive a save
+	Extra []string `json:",omitempty"`
 }
 
 func (m *MapProps) Unpack(packed map[string]string) error {
@@ -805,7 +848,7 @@ func (m *MapProps) Unpack(packed map[string]string) error {
 		case "Randomize Resources":
 			m.RandomizeResources = v == "1"
 		default:
-			return fmt.Errorf("unknown key: %s", k)
+			m.Extra = append(m.Extra, k+"="+v)
 		}
 	}
 
@@ -827,6 +870,7 @@ func (m *MapProps) ToWbFormat() []byte {
 	generator.AddKeyValueUint("num plots written", m.NumPlotsWritten)
 	generator.AddKeyValueUint("num signs written", m.NumSignsWritten)
 	generator.AddKeyValueBool("Randomize Resources", m.RandomizeResources)
+	generator.AddLines(m.Extra)
 	generator.EndSection()
 	return generator.Bytes()
 }
@@ -852,22 +896,24 @@ type City struct {
 	ProductionProcess string
 	// BuildingType: the buildings that the city already has at game start.
 	// Any number of BuildingTypes can be defined on separate lines. These values are defined in CIV4BuildingInfos.xml
-	BuildingType string
+	BuildingType []string
 	// The religions that the city has at game start
 	// Any number of religions can be defined on separate lines. These values are defined in CIV4ReligionInfos.xml
-	ReligionType string
+	ReligionType []string
 	// HolyCityReligionType: the Holy City of the defined religions. Any number of these can be defined on separate lines.
 	// These values are defined in CIV4ReligionInfos.xml
-	HolyCityReligionType string
+	HolyCityReligionType []string
 	// ScriptData: any scripts assigned to the city. This analysis does not go into these scripts.
 	ScriptData string
 	// The starting culture that the city has. Key is the player number and value is the amount of culture.
 	// EG: PlayerCulture[3]=100 means this city begins with 100 points of player 3's culture.
 	// You can define a culture level for any number of players.
 	PlayerCulture map[uint]uint64
+	// Extra keeps key=value lines unknown to the editor (e.g. added by mods), so they survive a save
+	Extra []string `json:",omitempty"`
 }
 
-var playerCultureRegex = regexp.MustCompile("`Player([0-9]+)Culture`")
+var playerCultureRegex = regexp.MustCompile(`^Player([0-9]+)Culture$`)
 
 func (c *City) Unpack(packed map[string]string) error {
 	for k, v := range packed {
@@ -887,6 +933,9 @@ func (c *City) Unpack(packed map[string]string) error {
 				return err
 			}
 
+			if c.PlayerCulture == nil {
+				c.PlayerCulture = make(map[uint]uint64)
+			}
 			c.PlayerCulture[uint(i)] = uint64(numValue)
 			continue
 		}
@@ -915,15 +964,15 @@ func (c *City) Unpack(packed map[string]string) error {
 		case "ProductionProcess":
 			c.ProductionProcess = v
 		case "BuildingType":
-			c.BuildingType = v
+			c.BuildingType = append(c.BuildingType, v)
 		case "ReligionType":
-			c.ReligionType = v
+			c.ReligionType = append(c.ReligionType, v)
 		case "HolyCityReligionType":
-			c.HolyCityReligionType = v
+			c.HolyCityReligionType = append(c.HolyCityReligionType, v)
 		case "ScriptData":
 			c.ScriptData = v
 		default:
-			return fmt.Errorf("unknown key: %s", k)
+			c.Extra = append(c.Extra, k+"="+v)
 		}
 	}
 
@@ -939,13 +988,19 @@ func (c *City) AddAsSubsection(generator *SimpleGenerator) {
 	generator.AddKeyValueString("ProductionBuilding", c.ProductionBuilding)
 	generator.AddKeyValueString("ProductionProject", c.ProductionProject)
 	generator.AddKeyValueString("ProductionProcess", c.ProductionProcess)
-	generator.AddKeyValueString("BuildingType", c.BuildingType)
-	generator.AddKeyValueString("ReligionType", c.ReligionType)
-	generator.AddKeyValueString("HolyCityReligionType", c.HolyCityReligionType)
+	generator.AddKeyValueArray("BuildingType", c.BuildingType)
+	generator.AddKeyValueArray("ReligionType", c.ReligionType)
+	generator.AddKeyValueArray("HolyCityReligionType", c.HolyCityReligionType)
 	generator.AddKeyValueString("ScriptData", c.ScriptData)
-	for k, v := range c.PlayerCulture {
-		generator.AddKeyValueUint(fmt.Sprintf("Player%vCulture", k), v)
+	players := make([]uint, 0, len(c.PlayerCulture))
+	for k := range c.PlayerCulture {
+		players = append(players, k)
 	}
+	sort.Slice(players, func(i, j int) bool { return players[i] < players[j] })
+	for _, k := range players {
+		generator.AddKeyValueUint(fmt.Sprintf("Player%dCulture", k), c.PlayerCulture[k])
+	}
+	generator.AddLines(c.Extra)
 	generator.EndSection()
 }
 
@@ -968,7 +1023,7 @@ type Unit struct {
 	Experience int
 	// The promotions this unit has. You assign as many PromotionType lines as Levels given to the unit above.
 	// These values are defined in CIV4PromotionInfos.xml.
-	PromotionType string
+	PromotionType []string
 	// The usage of the unit for the AI. Assigning the correct UnitAIType for a unit
 	// is important as it tells the AI what the unit is used for.
 	// EG: Settler units should get UnitAIType=UNITAI_SETTLE
@@ -978,6 +1033,8 @@ type Unit struct {
 	// FacingDirection: 2 for east, 3 for south-east, 4 for south and so on.
 	// Source: https://forums.civfanatics.com/threads/world-builder-assigning-colonist-professions.321004/
 	FacingDirection int
+	// Extra keeps key=value lines unknown to the editor (e.g. added by mods), so they survive a save
+	Extra []string `json:",omitempty"`
 }
 
 func (u *Unit) Unpack(packed map[string]string) error {
@@ -1004,7 +1061,7 @@ func (u *Unit) Unpack(packed map[string]string) error {
 			}
 			u.Experience = i
 		case "PromotionType":
-			u.PromotionType = v
+			u.PromotionType = append(u.PromotionType, v)
 		case "UnitAIType":
 			u.UnitAIType = v
 		case "Damage":
@@ -1020,7 +1077,7 @@ func (u *Unit) Unpack(packed map[string]string) error {
 			}
 			u.FacingDirection = i
 		default:
-			return fmt.Errorf("unknown key: %s", k)
+			u.Extra = append(u.Extra, k+"="+v)
 		}
 	}
 
@@ -1031,15 +1088,72 @@ func (u *Unit) AddAsSubsection(generator *SimpleGenerator) {
 	generator.StartSection(BeginUnit, EndUnit)
 	generator.AddCommaSeparatedValues(fmt.Sprintf("UnitType=%s", u.UnitType), fmt.Sprintf("UnitOwner=%d", u.UnitOwner))
 	generator.AddCommaSeparatedValues(fmt.Sprintf("Level=%d", u.Level), fmt.Sprintf("Experience=%d", u.Experience))
-	generator.AddKeyValueString("PromotionType", u.PromotionType)
+	generator.AddKeyValueArray("PromotionType", u.PromotionType)
 	generator.AddKeyValueString("UnitAIType", u.UnitAIType)
 	generator.AddKeyValueUint("Damage", uint64(u.Damage))
 	generator.AddKeyValueInt("FacingDirection", u.FacingDirection)
+	generator.AddLines(u.Extra)
 	generator.EndSection()
 }
 
 func (u *Unit) ToWbFormat() []byte {
 	generator := &SimpleGenerator{}
 	u.AddAsSubsection(generator)
+	return generator.Bytes()
+}
+
+// Sign is a player-visible map sign (BeginSign ... EndSign section)
+type Sign struct {
+	// PlotX and PlotY are the coordinates of the plot the sign is attached to
+	PlotX int
+	PlotY int
+	// PlayerType is the player who sees the sign, -1 means everyone
+	PlayerType int
+	// Caption is the text of the sign
+	Caption string
+	// Extra keeps key=value lines unknown to the editor (e.g. added by mods), so they survive a save
+	Extra []string `json:",omitempty"`
+}
+
+func (s *Sign) Unpack(packed map[string]string) error {
+	for k, v := range packed {
+		switch k {
+		case "plotX":
+			i, err := strconv.Atoi(v)
+			if err != nil {
+				return err
+			}
+			s.PlotX = i
+		case "plotY":
+			i, err := strconv.Atoi(v)
+			if err != nil {
+				return err
+			}
+			s.PlotY = i
+		case "playerType":
+			i, err := strconv.Atoi(v)
+			if err != nil {
+				return err
+			}
+			s.PlayerType = i
+		case "caption":
+			s.Caption = v
+		default:
+			s.Extra = append(s.Extra, k+"="+v)
+		}
+	}
+
+	return nil
+}
+
+func (s *Sign) ToWbFormat() []byte {
+	generator := &SimpleGenerator{}
+	generator.StartSection(BeginSign, EndSign)
+	generator.AddKeyValueInt("plotX", s.PlotX)
+	generator.AddKeyValueInt("plotY", s.PlotY)
+	generator.AddKeyValueInt("playerType", s.PlayerType)
+	generator.AddKeyValueString("caption", s.Caption)
+	generator.AddLines(s.Extra)
+	generator.EndSection()
 	return generator.Bytes()
 }

@@ -149,7 +149,7 @@ func LaunchGame(mapFileName string) error {
 	var argv []string
 	var err error
 	if GlobalConfig.Mod != "" {
-		argv = append(argv, "mod=\" "+GlobalConfig.Mod+"\"")
+		argv = append(argv, "mod= \""+GlobalConfig.Mod+"\"")
 	}
 
 	if mapFileName != "" {
@@ -162,7 +162,8 @@ func LaunchGame(mapFileName string) error {
 
 	if runtime.GOOS != "windows" {
 		var game *os.Process
-		game, err = os.StartProcess(GetExe(), argv, &os.ProcAttr{
+		// argv[0] must be the program itself, otherwise the first real argument is swallowed
+		game, err = os.StartProcess(GetExe(), append([]string{GetExe()}, argv...), &os.ProcAttr{
 			Dir:   GlobalConfig.GameDir,
 			Files: []*os.File{os.Stdin, os.Stdout, os.Stderr},
 			Sys:   nil,

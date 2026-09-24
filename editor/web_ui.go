@@ -186,7 +186,11 @@ func (a *App) OpenMap(path string) error {
 // NewMap discards the current map and creates an empty one.
 func (a *App) NewMap() {
 	a.mu.Lock()
-	a.wbMap = &WbMap{Version: 1, Game: &Game{}}
+	a.wbMap = &WbMap{
+		Version: defaultVersion,
+		Game:    &Game{StartYear: -4000},
+		Map:     &MapProps{TopLatitude: 90, BottomLatitude: -90, WrapX: 1},
+	}
 	a.filePath = ""
 	a.mu.Unlock()
 	runtime.EventsEmit(a.ctx, EventMapLoaded, "")

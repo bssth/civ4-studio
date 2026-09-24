@@ -30,6 +30,8 @@ const (
 	EndUnit     = "EndUnit"
 	BeginCity   = "BeginCity"
 	EndCity     = "EndCity"
+	BeginSign   = "BeginSign"
+	EndSign     = "EndSign"
 )
 
 const (
@@ -41,7 +43,14 @@ const (
 	stateInsidePlot
 	stateInsideCity
 	stateInsideUnit
+	stateInsideSign
 )
+
+// textKeys hold free text that may contain commas, so the value spans up to the end of the line
+var textKeys = []string{
+	"Description", "CivDesc", "CivShortDesc", "CivAdjective", "LeaderName",
+	"CityName", "CityList", "Landmark", "ScriptData", "caption", "TeamReveal",
+}
 
 func ParseWbMap(reader io.Reader) (*WbMap, error) {
 	fileScanner := bufio.NewScanner(reader)
@@ -56,6 +65,7 @@ func ParseWbMap(reader io.Reader) (*WbMap, error) {
 	var lastPlot *Plot
 	var lastCity *City
 	var lastUnit *Unit
+	var lastSign *Sign
 	wbMap := &WbMap{Version: defaultVersion}
 
 	line := 0
@@ -102,6 +112,10 @@ func ParseWbMap(reader io.Reader) (*WbMap, error) {
 				parserState = stateInsidePlot
 				lastPlot = &Plot{}
 
+			case content == BeginSign:
+				parserState = stateInsideSign
+				lastSign = &Sign{}
+
 			default:
 				return nil, createParserError("cannot parse line in global context: '%s'", line, content)
 			}
@@ -121,7 +135,7 @@ func ParseWbMap(reader io.Reader) (*WbMap, error) {
 
 			err = mapProps.Unpack(parsed)
 			if err != nil {
-				return nil, createParserError(err.Error(), line, content)
+				return nil, createParserError("%s: '%s'", line, err.Error(), content)
 			}
 
 		case stateInsidePlot:
@@ -146,7 +160,25 @@ func ParseWbMap(reader io.Reader) (*WbMap, error) {
 
 			err = lastPlot.Unpack(parsed)
 			if err != nil {
-				return nil, createParserError(err.Error(), line, content)
+				return nil, createParserError("%s: '%s'", line, err.Error(), content)
+			}
+
+		// Parser between BeginSign and EndSign
+		case stateInsideSign:
+			if content == EndSign {
+				wbMap.Signs = append(wbMap.Signs, lastSign)
+				parserState = stateGlobal
+				continue
+			}
+
+			parsed, err = parseLine(content, line)
+			if err != nil {
+				return nil, err
+			}
+
+			err = lastSign.Unpack(parsed)
+			if err != nil {
+				return nil, createParserError("%s: '%s'", line, err.Error(), content)
 			}
 
 		// Parser between BeginCity and EndCity
@@ -166,7 +198,7 @@ func ParseWbMap(reader io.Reader) (*WbMap, error) {
 
 			err = lastCity.Unpack(parsed)
 			if err != nil {
-				return nil, createParserError(err.Error(), line, content)
+				return nil, createParserError("%s: '%s'", line, err.Error(), content)
 			}
 
 		// Parser between BeginUnit and EndUnit
@@ -186,7 +218,7 @@ func ParseWbMap(reader io.Reader) (*WbMap, error) {
 
 			err = lastUnit.Unpack(parsed)
 			if err != nil {
-				return nil, createParserError(err.Error(), line, content)
+				return nil, createParserError("%s: '%s'", line, err.Error(), content)
 			}
 
 		// Parser between BeginPlayer and EndPlayer
@@ -204,7 +236,7 @@ func ParseWbMap(reader io.Reader) (*WbMap, error) {
 
 			err = lastPlayer.Unpack(parsed)
 			if err != nil {
-				return nil, createParserError(err.Error(), line, content)
+				return nil, createParserError("%s: '%s'", line, err.Error(), content)
 			}
 
 		// Parser between BeginTeam and EndTeam
@@ -222,7 +254,7 @@ func ParseWbMap(reader io.Reader) (*WbMap, error) {
 
 			err = lastTeam.Unpack(parsed)
 			if err != nil {
-				return nil, createParserError(err.Error(), line, content)
+				return nil, createParserError("%s: '%s'", line, err.Error(), content)
 			}
 
 		// Parser between BeginGame end EndGame
@@ -240,7 +272,7 @@ func ParseWbMap(reader io.Reader) (*WbMap, error) {
 
 			err = game.Unpack(parsed)
 			if err != nil {
-				return nil, createParserError(err.Error(), line, content)
+				return nil, createParserError("%s: '%s'", line, err.Error(), content)
 			}
 
 		// Parser in unknown state (this should never happen)
@@ -261,6 +293,11 @@ func ParseWbMap(reader io.Reader) (*WbMap, error) {
 	ConsoleWrite("Loaded %d teams", len(wbMap.Teams))
 	ConsoleWrite("Loaded %d players (+ %d player placeholders)", realPlayers, emptyPlayers)
 	ConsoleWrite("Loaded %d plots", len(wbMap.Plots))
+	ConsoleWrite("Loaded %d signs", len(wbMap.Signs))
+
+	if parserState != stateGlobal {
+		return nil, createParserError("unexpected end of file, section is not closed", line)
+	}
 
 	if wbMap.Game == nil {
 		return nil, errors.New("no game info specified")
@@ -280,6 +317,13 @@ func createParserError(err string, line int, p ...any) error {
 func parseLine(line string, lineNum int) (map[string]string, error) {
 	kv := make(map[string]string)
 
+	for _, key := range textKeys {
+		if strings.HasPrefix(line, key+"=") {
+			kv[key] = line[len(key)+1:]
+			return kv, nil
+		}
+	}
+
 	for _, contentPart := range strings.Split(line, ",") {
 		contentPart = strings.Trim(contentPart, " ")
 		if contentPart == "" {
@@ -288,7 +332,7 @@ func parseLine(line string, lineNum int) (map[string]string, error) {
 
 		key, value, err := parseKeyValue(contentPart)
 		if err != nil {
-			return nil, createParserError(err.Error(), lineNum, contentPart)
+			return nil, createParserError("%s: '%s'", lineNum, err.Error(), contentPart)
 		}
 
 		kv[key] = value

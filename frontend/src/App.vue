@@ -1,10 +1,10 @@
 <template>
   <v-app id="inspire">
-    <v-system-bar window>
-      <v-icon class="me-4" icon="mdi-folder-open" @click="openMap" />
-      <v-icon class="me-4" icon="mdi-content-save" @click="saveMap" />
-      <v-icon class="me-4" icon="mdi-rocket-launch" @click="launch" />
-      <v-icon class="me-4" icon="mdi-cog" @click="tab = 'settings'" />
+    <v-system-bar window style="--wails-draggable:drag">
+      <v-icon class="me-4 no-drag" icon="mdi-folder-open" @click="openMap" />
+      <v-icon class="me-4 no-drag" icon="mdi-content-save" @click="saveMap" />
+      <v-icon class="me-4 no-drag" icon="mdi-rocket-launch" @click="launch" />
+      <v-icon class="me-4 no-drag" icon="mdi-cog" @click="tab = 'settings'" />
 
       <span class="text-caption text-medium-emphasis ms-4 text-truncate" style="max-width: 50%;">
         {{ mapInfo?.path || 'No map loaded' }}
@@ -12,9 +12,9 @@
 
       <v-spacer></v-spacer>
 
-      <v-btn icon="mdi-minus" variant="text" @click="minimize" />
-      <v-btn class="ms-2" icon="mdi-checkbox-blank-outline" variant="text" @click="maximize" />
-      <v-btn class="ms-2" icon="mdi-close" variant="text" @click="quit" />
+      <v-btn class="no-drag" icon="mdi-minus" variant="text" @click="minimize" />
+      <v-btn class="ms-2 no-drag" icon="mdi-checkbox-blank-outline" variant="text" @click="maximize" />
+      <v-btn class="ms-2 no-drag" icon="mdi-close" variant="text" @click="quit" />
     </v-system-bar>
 
     <v-app-bar
@@ -196,6 +196,10 @@ onUnmounted(() => {
 </script>
 
 <style>
+.no-drag {
+  --wails-draggable: no-drag;
+}
+
 body {
   overflow: hidden;
 }
