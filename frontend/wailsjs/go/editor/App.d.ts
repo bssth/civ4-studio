@@ -4,33 +4,25 @@ import {editor} from '../models';
 
 export function CheckGameDir():Promise<string>;
 
+export function ChooseGameDir():Promise<string>;
+
 export function CurrentMapPath():Promise<string>;
 
-export function GetCalendarOptions():Promise<Array<editor.EnumOption>>;
+export function GetCivilizations():Promise<Array<editor.CivilizationOption>>;
 
 export function GetConfig():Promise<editor.Config>;
 
-export function GetEraOptions():Promise<Array<editor.EnumOption>>;
-
-export function GetForceControlOptions():Promise<Array<editor.EnumOption>>;
-
 export function GetGame():Promise<editor.Game|null>;
-
-export function GetGameOptionOptions():Promise<Array<editor.EnumOption>>;
-
-export function GetMPOptionOptions():Promise<Array<editor.EnumOption>>;
 
 export function GetMapInfo():Promise<editor.MapInfo|null>;
 
 export function GetModsList():Promise<Array<string>>;
 
+export function GetOptions():Promise<Record<string, Array<editor.EnumOption>>>;
+
 export function GetPlayers():Promise<Array<editor.Player>|null>;
 
-export function GetSpeedOptions():Promise<Array<editor.EnumOption>>;
-
 export function GetTeams():Promise<Array<editor.Team>|null>;
-
-export function GetVictoryOptions():Promise<Array<editor.EnumOption>>;
 
 export function HasMap():Promise<boolean>;
 
@@ -38,13 +30,17 @@ export function LaunchGame():Promise<void>;
 
 export function LoadGameXML():Promise<void>;
 
-export function NewMap():Promise<void>;
+export function NewMap():Promise<boolean>;
 
 export function OpenMap(arg1:string):Promise<void>;
 
 export function OpenMapDialog():Promise<string>;
 
+export function ResetGameXML():Promise<void>;
+
 export function SaveMap(arg1:string):Promise<string>;
+
+export function SaveMapAs():Promise<string>;
 
 export function SetConfig(arg1:editor.Config):Promise<void>;
 

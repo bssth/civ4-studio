@@ -6,9 +6,14 @@ While the WordBuilder-like interface is not implemented for now, this editor pro
 
 ## Features
 
-1. Edit Civilization and Leader Lists: Customize the civilizations and leaders available in your game.
-2. Fine-tune Map Settings: Refine map settings including size, shape, and starting positions.
-3. Advanced Options: Explore additional parameters not accessible in the standard editor.
+1. Players: pick civilizations and leaders from the game (or mod) data. Names, color and art style are filled in automatically; handicap, state religion, starting era, starting civics and city names are editable too.
+2. Teams: starting techs and projects, and a diplomacy matrix for contact, war, open borders, defensive pacts and permanent war/peace.
+3. Game settings: era, speed, calendar, victory conditions, game and multiplayer options, locked options.
+4. Safe saving: the original file is copied to `<map>.bak` before it is overwritten for the first time, unknown keys (e.g. added by mods) are kept as they are, optional autosave every 5 minutes.
+
+Game data is read from the base game, Warlords, Beyond the Sword and the selected mod, the same way the game does it: a mod file replaces the base file with the same path.
+
+Shortcuts: `Ctrl+N` new map, `Ctrl+O` open, `Ctrl+S` save, `Ctrl+Shift+S` save as.
 
 ## Getting Started
 
@@ -52,7 +57,8 @@ Using Goland is strongly recommended, but if you are not familiar with it, you c
 1. The first `wails dev` / `wails build` may take a while as Go and npm dependencies are downloaded and compiled.
 2. On Windows, launching the game from the editor uses `ShellExecute` with the `runas` verb and will trigger a UAC prompt.
 3. You may encounter "@todo" markings in the code. You can implement and contribute what is marked, unless otherwise explicitly stated in the comment.
-4. I love French hot dogs 😋
+4. Settings are stored in the user config directory (`%AppData%\civ4-studio\config.json` on Windows, `~/.config/civ4-studio/config.json` on Linux).
+5. I love French hot dogs 😋
 
 ## Support
 

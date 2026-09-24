@@ -455,10 +455,16 @@ func (p *Player) ToWbFormat() []byte {
 	generator.AddKeyValueString("StateReligion", p.StateReligion)
 	generator.AddKeyValueString("StartingEra", p.StartingEra)
 	generator.AddKeyValueArray("CityList", p.CityList)
-	generator.AddKeyValueArray("CivicOption", p.CivicOption)
-	generator.AddKeyValueArray("Civic", p.Civic)
-	generator.AddKeyValueUintArray("AttitudePlayer", p.AttitudePlayer)
-	generator.AddKeyValueIntArray("AttitudeExtra", p.AttitudeExtra)
+	// The game reads these pairs from a single line: CivicOption=X, Civic=Y
+	for i := 0; i < len(p.CivicOption) && i < len(p.Civic); i++ {
+		generator.AddCommaSeparatedValues("CivicOption="+p.CivicOption[i], "Civic="+p.Civic[i])
+	}
+	for i := 0; i < len(p.AttitudePlayer) && i < len(p.AttitudeExtra); i++ {
+		generator.AddCommaSeparatedValues(
+			fmt.Sprintf("AttitudePlayer=%d", p.AttitudePlayer[i]),
+			fmt.Sprintf("AttitudeExtra=%d", p.AttitudeExtra[i]),
+		)
+	}
 	generator.AddLines(p.Extra)
 	generator.EndSection()
 	return generator.Bytes()

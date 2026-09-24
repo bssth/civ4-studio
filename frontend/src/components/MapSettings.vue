@@ -1,25 +1,15 @@
 <script setup lang="ts">
 import {computed, watch} from "vue";
 import {SetGame} from "../../wailsjs/go/editor/App";
-import {enums, game} from "../store";
+import {batched, enums, game, withCurrent} from "../store";
 import {editor} from "../../wailsjs/go/models";
 
-// Persist Game changes back to the Go side. We debounce via a microtask so a
-// flurry of synchronous edits collapses into a single round-trip.
-let pending: any = null;
-function persist() {
-  if (!game.value || pending) return;
-  pending = Promise.resolve().then(() => {
-    pending = null;
-    if (game.value) {
-      SetGame(editor.Game.createFrom(game.value));
-    }
-  });
-}
-
-watch(() => game.value && JSON.stringify(game.value), () => {
-  persist();
-});
+// Persist Game changes back to the Go side, a flurry of synchronous edits collapses into a single call
+watch(() => game.value && JSON.stringify(game.value), batched(() => {
+  if (game.value) {
+    SetGame(editor.Game.createFrom(game.value));
+  }
+}));
 
 function toggleInArray(arr: string[] | null | undefined, value: string, on: boolean): string[] {
   const list = (arr ?? []).filter(v => v !== value);
@@ -57,17 +47,17 @@ const forceControlSet = computed({
       <v-col cols="12" md="4">
         <v-select label="Era" density="compact" hide-details
                   v-model="game.Era"
-                  :items="enums.eras" item-value="type" item-title="description" />
+                  :items="withCurrent(enums.eras, game.Era)" item-value="type" item-title="description" />
       </v-col>
       <v-col cols="12" md="4">
         <v-select label="Speed" density="compact" hide-details
                   v-model="game.Speed"
-                  :items="enums.speeds" item-value="type" item-title="description" />
+                  :items="withCurrent(enums.speeds, game.Speed)" item-value="type" item-title="description" />
       </v-col>
       <v-col cols="12" md="4">
         <v-select label="Calendar" density="compact" hide-details
                   v-model="game.Calendar"
-                  :items="enums.calendars" item-value="type" item-title="description" />
+                  :items="withCurrent(enums.calendars, game.Calendar)" item-value="type" item-title="description" />
       </v-col>
     </v-row>
 
@@ -112,7 +102,7 @@ const forceControlSet = computed({
     <v-divider class="my-3" />
     <h4>Victory conditions</h4>
     <div class="d-flex flex-wrap">
-      <v-checkbox v-for="opt in enums.victories" :key="opt.type"
+      <v-checkbox v-for="opt in withCurrent(enums.victories, ...victorySet)" :key="opt.type"
                   :label="opt.description"
                   :model-value="victorySet.includes(opt.type)"
                   @update:model-value="(v) => victorySet = toggleInArray(victorySet, opt.type, !!v)"
@@ -122,7 +112,7 @@ const forceControlSet = computed({
     <v-divider class="my-3" />
     <h4>Game options</h4>
     <div class="d-flex flex-wrap">
-      <v-checkbox v-for="opt in enums.gameOptions" :key="opt.type"
+      <v-checkbox v-for="opt in withCurrent(enums.gameOptions, ...optionSet)" :key="opt.type"
                   :label="opt.description"
                   :model-value="optionSet.includes(opt.type)"
                   @update:model-value="(v) => optionSet = toggleInArray(optionSet, opt.type, !!v)"
@@ -132,7 +122,7 @@ const forceControlSet = computed({
     <v-divider class="my-3" />
     <h4>Multiplayer options</h4>
     <div class="d-flex flex-wrap">
-      <v-checkbox v-for="opt in enums.mpOptions" :key="opt.type"
+      <v-checkbox v-for="opt in withCurrent(enums.mpOptions, ...mpOptionSet)" :key="opt.type"
                   :label="opt.description"
                   :model-value="mpOptionSet.includes(opt.type)"
                   @update:model-value="(v) => mpOptionSet = toggleInArray(mpOptionSet, opt.type, !!v)"
@@ -142,7 +132,7 @@ const forceControlSet = computed({
     <v-divider class="my-3" />
     <h4>Locked (force control)</h4>
     <div class="d-flex flex-wrap">
-      <v-checkbox v-for="opt in enums.forceControls" :key="opt.type"
+      <v-checkbox v-for="opt in withCurrent(enums.forceControls, ...forceControlSet)" :key="opt.type"
                   :label="opt.description"
                   :model-value="forceControlSet.includes(opt.type)"
                   @update:model-value="(v) => forceControlSet = toggleInArray(forceControlSet, opt.type, !!v)"

@@ -6,36 +6,24 @@ export function CheckGameDir() {
   return window['go']['editor']['App']['CheckGameDir']();
 }
 
+export function ChooseGameDir() {
+  return window['go']['editor']['App']['ChooseGameDir']();
+}
+
 export function CurrentMapPath() {
   return window['go']['editor']['App']['CurrentMapPath']();
 }
 
-export function GetCalendarOptions() {
-  return window['go']['editor']['App']['GetCalendarOptions']();
+export function GetCivilizations() {
+  return window['go']['editor']['App']['GetCivilizations']();
 }
 
 export function GetConfig() {
   return window['go']['editor']['App']['GetConfig']();
 }
 
-export function GetEraOptions() {
-  return window['go']['editor']['App']['GetEraOptions']();
-}
-
-export function GetForceControlOptions() {
-  return window['go']['editor']['App']['GetForceControlOptions']();
-}
-
 export function GetGame() {
   return window['go']['editor']['App']['GetGame']();
-}
-
-export function GetGameOptionOptions() {
-  return window['go']['editor']['App']['GetGameOptionOptions']();
-}
-
-export function GetMPOptionOptions() {
-  return window['go']['editor']['App']['GetMPOptionOptions']();
 }
 
 export function GetMapInfo() {
@@ -46,20 +34,16 @@ export function GetModsList() {
   return window['go']['editor']['App']['GetModsList']();
 }
 
+export function GetOptions() {
+  return window['go']['editor']['App']['GetOptions']();
+}
+
 export function GetPlayers() {
   return window['go']['editor']['App']['GetPlayers']();
 }
 
-export function GetSpeedOptions() {
-  return window['go']['editor']['App']['GetSpeedOptions']();
-}
-
 export function GetTeams() {
   return window['go']['editor']['App']['GetTeams']();
-}
-
-export function GetVictoryOptions() {
-  return window['go']['editor']['App']['GetVictoryOptions']();
 }
 
 export function HasMap() {
@@ -86,8 +70,16 @@ export function OpenMapDialog() {
   return window['go']['editor']['App']['OpenMapDialog']();
 }
 
+export function ResetGameXML() {
+  return window['go']['editor']['App']['ResetGameXML']();
+}
+
 export function SaveMap(arg1) {
   return window['go']['editor']['App']['SaveMap'](arg1);
+}
+
+export function SaveMapAs() {
+  return window['go']['editor']['App']['SaveMapAs']();
 }
 
 export function SetConfig(arg1) {

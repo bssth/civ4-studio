@@ -20,6 +20,7 @@ export namespace editor {
 	export class EnumOption {
 	    type: string;
 	    description: string;
+	    group?: string;
 
 	    static createFrom(source: any = {}) {
 	        return new EnumOption(source);
@@ -29,6 +30,34 @@ export namespace editor {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.type = source["type"];
 	        this.description = source["description"];
+	        this.group = source["group"];
+	    }
+	}
+
+	export class CivilizationOption {
+	    type: string;
+	    description: string;
+	    short_description: string;
+	    adjective: string;
+	    color: string;
+	    art_style: string;
+	    leaders: string[];
+	    playable: boolean;
+
+	    static createFrom(source: any = {}) {
+	        return new CivilizationOption(source);
+	    }
+
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.type = source["type"];
+	        this.description = source["description"];
+	        this.short_description = source["short_description"];
+	        this.adjective = source["adjective"];
+	        this.color = source["color"];
+	        this.art_style = source["art_style"];
+	        this.leaders = source["leaders"] ?? [];
+	        this.playable = source["playable"];
 	    }
 	}
 
@@ -38,6 +67,7 @@ export namespace editor {
 	    teams_count: number;
 	    player_count: number;
 	    plot_count: number;
+	    dirty: boolean;
 
 	    static createFrom(source: any = {}) {
 	        return new MapInfo(source);
@@ -50,6 +80,7 @@ export namespace editor {
 	        this.teams_count = source["teams_count"];
 	        this.player_count = source["player_count"];
 	        this.plot_count = source["plot_count"];
+	        this.dirty = source["dirty"];
 	    }
 	}
 

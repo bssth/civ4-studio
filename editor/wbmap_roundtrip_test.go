@@ -62,6 +62,29 @@ BeginGame
 	Tutorial=0
 	MaxTurns=0
 EndGame
+BeginPlayer
+	CivDesc=Greek Tribe
+	CivShortDesc=Greece
+	LeaderName=Alexander
+	CivAdjective=Greek
+	FlagDecal=Art/Interface/TeamColor/FlagDECAL_Helmet.dds
+	WhiteFlag=0
+	LeaderType=LEADER_ALEXANDER
+	CivType=CIVILIZATION_GREECE
+	Team=0
+	Handicap=HANDICAP_NOBLE
+	Color=PLAYERCOLOR_LIGHT_BLUE
+	ArtStyle=ARTSTYLE_GRECO_ROMAN
+	PlayableCiv=1
+	MinorNationStatus=0
+	StartingGold=0
+	RandomStartLocation=0
+	StartingX=180,StartingY=68
+	StartingEra=ERA_ANCIENT
+	CivicOption=CIVICOPTION_GOVERNMENT,Civic=CIVIC_DESPOTISM
+	CivicOption=CIVICOPTION_LEGAL,Civic=CIVIC_BARBARISM
+	AttitudePlayer=1,AttitudeExtra=-2
+EndPlayer
 BeginPlot
 	x=1,y=2
 	StartingPlot=0
@@ -118,6 +141,10 @@ func TestRoundTripCitiesUnitsSigns(t *testing.T) {
 		t.Errorf("unit promotions parsed incorrectly: %v", plot.Units[0].PromotionType)
 	}
 
+	if player := wb.Players[0]; len(player.Civic) != 2 || player.Civic[1] != "CIVIC_BARBARISM" {
+		t.Errorf("civics parsed incorrectly: %+v", player)
+	}
+
 	if len(wb.Signs) != 1 || wb.Signs[0].Caption != "Hello, world" {
 		t.Errorf("sign parsed incorrectly: %+v", wb.Signs)
 	}
@@ -134,5 +161,17 @@ func TestNewMapCanBeSaved(t *testing.T) {
 	wb := &WbMap{Version: defaultVersion, Game: &Game{}}
 	if len(wb.ToWbFormat()) == 0 {
 		t.Fatal("empty output for a map without map properties")
+	}
+}
+
+func TestSameWbFormatIgnoresNilLists(t *testing.T) {
+	a := []*Team{{TeamID: 1}}
+	b := []*Team{{TeamID: 1, Tech: []string{}, AtWar: []uint{}}}
+	if !sameWbFormat(a, b) {
+		t.Error("nil and empty lists must be treated as equal")
+	}
+	b[0].Tech = append(b[0].Tech, "TECH_MINING")
+	if sameWbFormat(a, b) {
+		t.Error("different techs must be detected")
 	}
 }
