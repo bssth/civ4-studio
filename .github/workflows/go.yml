@@ -43,11 +43,12 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      # go.mod sets only the minimum version; binaries built by old Go releases (no LC_UUID)
-      # are refused by current macOS, so the app and the Wails CLI are built with stable Go
+      # go.mod sets only the minimum version. Go 1.22 binaries have no LC_UUID and are refused by
+      # current macOS; Go 1.25+ breaks binding generation of Wails CLI v2.12 ("package embed without
+      # types"). Go 1.24 works for both and is the version the app is verified with locally.
       - uses: actions/setup-go@v5
         with:
-          go-version: stable
+          go-version: '1.24'
 
       - uses: actions/setup-node@v4
         with:
