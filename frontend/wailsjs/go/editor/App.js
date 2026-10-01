@@ -70,6 +70,10 @@ export function GetTeams() {
   return window['go']['editor']['App']['GetTeams']();
 }
 
+export function GetVersion() {
+  return window['go']['editor']['App']['GetVersion']();
+}
+
 export function GetWorldSizes() {
   return window['go']['editor']['App']['GetWorldSizes']();
 }

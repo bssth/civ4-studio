@@ -36,6 +36,8 @@ export function GetPlot(arg1:number,arg2:number):Promise<editor.Plot>;
 
 export function GetTeams():Promise<Array<editor.Team>>;
 
+export function GetVersion():Promise<string>;
+
 export function GetWorldSizes():Promise<Array<editor.WorldSizeOption>>;
 
 export function HasMap():Promise<boolean>;

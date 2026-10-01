@@ -8,9 +8,10 @@
       <v-icon class="me-4 no-drag" icon="mdi-rocket-launch" title="Launch the game" @click="launch" />
       <v-icon class="me-4 no-drag" icon="mdi-cog" title="Settings" @click="tab = 'settings'" />
 
-      <span class="text-caption text-medium-emphasis ms-4 text-truncate" style="max-width: 50%;">
+      <span class="text-caption text-medium-emphasis ms-4 text-truncate" style="max-width: 50%;"
+            :title="mapInfo?.path ?? ''">
         <template v-if="mapInfo">
-          {{ mapInfo.dirty ? '● ' : '' }}{{ mapInfo.path || 'New map (not saved)' }}
+          {{ mapInfo.dirty ? '● ' : '' }}{{ mapInfo.path ? fileName(mapInfo.path) : 'New map (not saved)' }}
         </template>
         <template v-else>No map loaded</template>
       </span>
@@ -150,6 +151,11 @@ const maximize = WindowToggleMaximise;
 const quit = Quit;
 
 const tab = ref<string>('game');
+
+// The title bar shows only the file name, the full path is in the tooltip
+function fileName(path: string): string {
+  return path.split(/[\\/]/).pop() ?? path;
+}
 // The world map needs the whole width, the console is hidden there
 const wide = computed(() => tab.value === 'world');
 

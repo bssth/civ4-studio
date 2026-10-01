@@ -4,17 +4,21 @@ import {
   ChooseGameDir,
   GetConfig,
   GetModsList,
+  GetVersion,
   ResetGameXML,
   SetConfig,
   WriteConsole
 } from "../../wailsjs/go/editor/App";
 import {editor} from "../../wailsjs/go/models";
 import {onMounted, ref} from "vue";
+import {BrowserOpenURL} from "../../wailsjs/runtime";
 import {xmlReady} from "../store";
 
 const config = ref<editor.Config | null>(null);
 const mods = ref<string[]>([]);
 const dirError = ref('');
+const version = ref('');
+const releasesUrl = 'https://github.com/bssth/civ4-studio/releases';
 
 async function refreshDirState() {
   dirError.value = await CheckGameDir();
@@ -23,6 +27,7 @@ async function refreshDirState() {
 
 onMounted(async () => {
   config.value = await GetConfig();
+  version.value = await GetVersion();
   await refreshDirState();
 });
 
@@ -81,6 +86,12 @@ async function browse() {
       <v-btn variant="tonal" prepend-icon="mdi-refresh" :disabled="!!dirError" @click="ResetGameXML">
         Reload game data
       </v-btn>
+    </div>
+
+    <v-divider class="my-6"/>
+    <div class="text-caption text-medium-emphasis">
+      Civ4 Studio {{ version === 'dev' ? '(development build)' : version }} ·
+      <a href="#" @click.prevent="BrowserOpenURL(releasesUrl)">releases and updates</a>
     </div>
   </div>
 </template>
