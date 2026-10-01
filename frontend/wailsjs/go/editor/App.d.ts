@@ -6,6 +6,8 @@ export function CheckGameDir():Promise<string>;
 
 export function ChooseGameDir():Promise<string>;
 
+export function ClearPlayer(arg1:number,arg2:boolean):Promise<void>;
+
 export function CreatePlots(arg1:number,arg2:number):Promise<void>;
 
 export function CurrentMapPath():Promise<string>;
@@ -68,7 +70,11 @@ export function SetPlot(arg1:editor.Plot):Promise<void>;
 
 export function SetTeams(arg1:Array<editor.Team>):Promise<void>;
 
+export function SwapPlayers(arg1:number,arg2:number):Promise<void>;
+
 export function TranslateKey(arg1:string):Promise<string>;
+
+export function ValidateMap():Promise<Array<editor.Problem>>;
 
 export function WriteConsole(arg1:string):Promise<void>;
 

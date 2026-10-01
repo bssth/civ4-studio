@@ -53,6 +53,10 @@
           <v-icon icon="mdi-human-edit" class="me-1"></v-icon>
           Players
         </v-tab>
+        <v-tab value="check">
+          <v-icon icon="mdi-clipboard-check-outline" class="me-1"></v-icon>
+          Check
+        </v-tab>
         <v-tab value="settings">
           <v-icon icon="mdi-cog" class="me-1"></v-icon>
           Settings
@@ -75,6 +79,7 @@
               <MapSettings v-else-if="tab === 'game'" />
               <MapProperties v-else-if="tab === 'map'" />
               <WorldView v-else-if="tab === 'world'" />
+              <CheckView v-else-if="tab === 'check'" />
               <Teams v-else-if="tab === 'teams'" />
               <Players v-else-if="tab === 'players'" />
               <div v-else class="pa-5 text-grey">
@@ -93,6 +98,22 @@
       </v-container>
     </v-main>
 
+    <v-dialog v-model="saveCheck.open" max-width="640">
+      <v-card>
+        <v-card-title>The scenario has {{ saveCheck.errors }} error(s)</v-card-title>
+        <v-card-text>
+          The game may fail to load the map or behave unexpectedly. Save anyway?
+          <ProblemList :problems="saveCheck.problems" :limit="6" @navigate="closeSaveCheck(false)" />
+        </v-card-text>
+        <v-card-actions>
+          <v-btn variant="text" @click="closeSaveCheck(false); tab = 'check'">Show all problems</v-btn>
+          <v-spacer />
+          <v-btn variant="text" @click="closeSaveCheck(false)">Cancel</v-btn>
+          <v-btn color="error" variant="tonal" @click="closeSaveCheck(true)">Save anyway</v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
+
     <v-snackbar v-model="errorOpen" color="error" timeout="6000">
       {{ errorMessage }}
     </v-snackbar>
@@ -100,12 +121,14 @@
 </template>
 
 <script setup lang="ts">
-import {computed, onMounted, onUnmounted, ref} from "vue";
+import {computed, onMounted, onUnmounted, reactive, ref, watch} from "vue";
 import Console from "./components/Console.vue";
 import Settings from "./components/Settings.vue";
 import MapSettings from "./components/MapSettings.vue";
 import MapProperties from "./components/MapProperties.vue";
 import WorldView from "./components/WorldView.vue";
+import CheckView from "./components/CheckView.vue";
+import ProblemList from "./components/ProblemList.vue";
 import Teams from "./components/Teams.vue";
 import Players from "./components/Players.vue";
 import {EventsOff, EventsOn, Quit, WindowMaximise, WindowMinimise, WindowToggleMaximise} from "../wailsjs/runtime";
@@ -117,8 +140,10 @@ import {
   OpenMapDialog,
   SaveMap,
   SaveMapAs,
+  ValidateMap,
 } from "../wailsjs/go/editor/App";
-import {clearEnums, mapInfo, refreshEnums, refreshMap, refreshMapInfo} from "./store";
+import {editor} from "../wailsjs/go/models";
+import {clearEnums, mapInfo, refreshEnums, refreshMap, refreshMapInfo, requestedTab} from "./store";
 
 const minimize = WindowMinimise;
 const maximize = WindowToggleMaximise;
@@ -127,6 +152,40 @@ const quit = Quit;
 const tab = ref<string>('game');
 // The world map needs the whole width, the console is hidden there
 const wide = computed(() => tab.value === 'world');
+
+// Other components ask to show a tab, e.g. the problem list
+watch(requestedTab, t => {
+  if (t) {
+    tab.value = t;
+    requestedTab.value = null;
+  }
+});
+
+// Check before saving: the dialog resolves to true when the user wants to save despite errors
+const saveCheck = reactive<{ open: boolean, errors: number, problems: editor.Problem[], resolve: ((save: boolean) => void) | null }>({
+  open: false, errors: 0, problems: [], resolve: null,
+});
+
+function closeSaveCheck(save: boolean) {
+  saveCheck.open = false;
+  saveCheck.resolve?.(save);
+  saveCheck.resolve = null;
+}
+
+async function confirmSave(): Promise<boolean> {
+  const problems = (await ValidateMap()) ?? [];
+  const errors = problems.filter(p => p.severity === 'error');
+  if (errors.length === 0) return true;
+  saveCheck.errors = errors.length;
+  saveCheck.problems = errors;
+  saveCheck.open = true;
+  return new Promise(resolve => saveCheck.resolve = resolve);
+}
+
+// The dialog closed by clicking outside or Escape means cancel
+watch(() => saveCheck.open, open => {
+  if (!open && saveCheck.resolve) closeSaveCheck(false);
+});
 const loadingMessage = ref<string>('');
 const errorOpen = ref(false);
 const errorMessage = ref('');
@@ -193,22 +252,24 @@ function openMap() {
   });
 }
 
-function saveMap() {
+async function saveMap() {
   if (!mapInfo.value) {
     showError('No map loaded');
     return;
   }
+  if (!await confirmSave().catch(err => (showError(String(err)), false))) return;
   return run('Saving...', async () => {
     await SaveMap('');
     await refreshMapInfo();
   });
 }
 
-function saveMapAs() {
+async function saveMapAs() {
   if (!mapInfo.value) {
     showError('No map loaded');
     return;
   }
+  if (!await confirmSave().catch(err => (showError(String(err)), false))) return;
   return run('Saving...', async () => {
     await SaveMapAs();
     await refreshMapInfo();

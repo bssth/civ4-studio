@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import {computed, onMounted, ref, watch} from "vue";
+import {computed, onMounted, reactive, ref, watch} from "vue";
 import {GetPlayers, GetTeams, SetTeams} from "../../wailsjs/go/editor/App";
 import {editor} from "../../wailsjs/go/models";
 import {batched, describeType, enums, mapVersion, NONE, withCurrent} from "../store";
@@ -98,6 +98,39 @@ function projectItems(team: editor.Team) {
   return withCurrent(enums.projects, ...(team.ProjectType ?? []));
 }
 
+// Bulk tech changes for several teams at once
+const bulk = reactive<{ era: string, target: 'all' | number }>({era: '', target: 'all'});
+
+const bulkTargets = computed(() => [
+  {value: 'all' as const, title: 'All teams with players'},
+  ...teams.value.filter(t => teamMembers(t).length > 0).map(t => ({value: t.TeamID, title: `Team ${t.TeamID} — ${teamName(t)}`})),
+]);
+
+function bulkTeams(): editor.Team[] {
+  return bulk.target === 'all'
+      ? teams.value.filter(t => teamMembers(t).length > 0)
+      : teams.value.filter(t => t.TeamID === bulk.target);
+}
+
+/** Techs of the chosen era and all earlier ones, in the order of the game files */
+const techsUpToEra = computed(() => {
+  const idx = enums.eras.findIndex(e => e.type === bulk.era);
+  if (idx < 0) return [];
+  const eras = new Set(enums.eras.slice(0, idx + 1).map(e => e.type));
+  return enums.techs.filter(t => t.group && eras.has(t.group)).map(t => t.type);
+});
+
+function giveTechs() {
+  for (const team of bulkTeams()) {
+    const current = team.Tech ?? [];
+    team.Tech = [...current, ...techsUpToEra.value.filter(t => !current.includes(t))];
+  }
+}
+
+function removeTechs() {
+  for (const team of bulkTeams()) team.Tech = [];
+}
+
 function relationSummary(team: editor.Team): string {
   const wars = (team.AtWar ?? []).map(id => byId(id)).filter(Boolean).map(t => teamName(t!));
   return wars.length ? 'at war with ' + wars.join(', ') : '';
@@ -111,6 +144,30 @@ function relationSummary(team: editor.Team): string {
 
   <div v-else class="pa-2">
     <v-checkbox v-model="showEmpty" label="Show teams without players" hide-details density="compact" class="px-3" />
+
+    <v-card variant="outlined" class="ma-2">
+      <v-card-title>Starting techs</v-card-title>
+      <v-card-text>
+        <v-row dense align="center">
+          <v-col cols="12" md="4">
+            <v-select label="Teams" density="compact" hide-details :items="bulkTargets" v-model="bulk.target"/>
+          </v-col>
+          <v-col cols="12" md="3">
+            <v-select label="Up to era" density="compact" hide-details :items="enums.eras"
+                      item-value="type" item-title="description" v-model="bulk.era"/>
+          </v-col>
+          <v-col cols="12" md="5" class="d-flex flex-wrap" style="gap: 8px">
+            <v-btn variant="tonal" color="primary" :disabled="techsUpToEra.length === 0" @click="giveTechs">
+              Give {{ techsUpToEra.length }} techs
+            </v-btn>
+            <v-btn variant="text" color="error" @click="removeTechs">Remove all techs</v-btn>
+          </v-col>
+        </v-row>
+        <div class="text-caption text-medium-emphasis mt-1">
+          Gives every tech of the chosen era and earlier eras; techs the teams already have are kept.
+        </div>
+      </v-card-text>
+    </v-card>
 
     <v-card variant="outlined" class="ma-2">
       <v-card-title class="d-flex align-center flex-wrap">

@@ -130,3 +130,12 @@ export function playerName(players: editor.Player[], index: number): string {
 function humanizeCiv(type: string): string {
     return type.replace(/^CIVILIZATION_/, '').toLowerCase().replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
 }
+
+// Navigation requests between tabs, e.g. from the problem list to a plot on the world map
+export const requestedTab = ref<string | null>(null);
+export const focusPlot = ref<{ x: number, y: number } | null>(null);
+
+export function showPlot(x: number, y: number) {
+    focusPlot.value = {x, y};
+    requestedTab.value = 'world';
+}

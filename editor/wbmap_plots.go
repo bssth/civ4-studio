@@ -37,10 +37,7 @@ func NewWbMap() *WbMap {
 	for i := uint(0); i < DefaultPlayerSlots; i++ {
 		// Empty slots look the same as the game writes them
 		wb.Teams = append(wb.Teams, &Team{TeamID: i, ContactWithTeam: []uint{i}})
-		wb.Players = append(wb.Players, &Player{
-			LeaderType: NonePlayer, CivType: NonePlayer, Team: i,
-			Handicap: "HANDICAP_NOBLE", Color: NonePlayer, ArtStyle: NonePlayer,
-		})
+		wb.Players = append(wb.Players, EmptyPlayer(i))
 	}
 	return wb
 }

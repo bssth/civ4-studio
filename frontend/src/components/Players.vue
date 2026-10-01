@@ -1,8 +1,20 @@
 <script setup lang="ts">
-import {computed, onMounted, ref, watch} from "vue";
-import {GetPlayers, SetPlayers} from "../../wailsjs/go/editor/App";
+import {computed, onMounted, reactive, ref, watch} from "vue";
+import {ClearPlayer, GetPlayers, SetPlayers, SwapPlayers} from "../../wailsjs/go/editor/App";
 import {editor} from "../../wailsjs/go/models";
-import {batched, civilizations, describeType, enums, mapInfo, mapVersion, NONE, withCurrent, withNone} from "../store";
+import {
+  batched,
+  civilizations,
+  describeType,
+  enums,
+  mapInfo,
+  mapVersion,
+  NONE,
+  playerName,
+  refreshMap,
+  withCurrent,
+  withNone
+} from "../store";
 
 const players = ref<editor.Player[]>([]);
 const showEmpty = ref(false);
@@ -134,6 +146,44 @@ function isTextKey(value: string | null | undefined): boolean {
   return !value || value.startsWith('TXT_KEY_');
 }
 
+// Slot operations change references in the whole map (units, cities, culture), so the backend does them
+const swap = reactive({open: false, from: 0, to: 0});
+const clear = reactive({open: false, index: 0, removeAssets: true});
+const actionError = ref('');
+
+const slotItems = computed(() => players.value.map((p, i) => ({
+  value: i, title: `#${i} ${isEmpty(p) ? '(empty slot)' : playerName(players.value, i)}`,
+})));
+
+function openSwap(index: number) {
+  Object.assign(swap, {open: true, from: index, to: index === 0 ? 1 : 0});
+}
+
+function openClear(index: number) {
+  Object.assign(clear, {open: true, index, removeAssets: true});
+}
+
+async function runSlotAction(action: () => Promise<void>) {
+  try {
+    await action();
+    actionError.value = '';
+    // Reloads every editor, including this one
+    await refreshMap();
+  } catch (err: any) {
+    actionError.value = String(err);
+  }
+}
+
+function doSwap() {
+  swap.open = false;
+  return runSlotAction(() => SwapPlayers(swap.from, swap.to));
+}
+
+function doClear() {
+  clear.open = false;
+  return runSlotAction(() => ClearPlayer(clear.index, clear.removeAssets));
+}
+
 function playerTitle(p: editor.Player): string {
   if (isEmpty(p)) return '(empty slot)';
   return isTextKey(p.LeaderName) ? describeType(enums.leaders, p.LeaderType) : p.LeaderName;
@@ -155,6 +205,41 @@ function civTitle(p: editor.Player): string {
       <v-checkbox v-model="anyLeader" label="Allow any leader for a civilization" hide-details density="compact" />
     </div>
 
+    <v-alert v-if="actionError" type="error" variant="tonal" density="compact" class="mx-3 mb-2" closable
+             @click:close="actionError = ''">{{ actionError }}
+    </v-alert>
+
+    <v-dialog v-model="swap.open" max-width="520">
+      <v-card title="Swap player slots">
+        <v-card-text>
+          Player #{{ swap.from }} and the chosen slot exchange their places. Units, cities, culture, attitudes
+          and signs move with their players.
+          <v-select class="mt-3" label="Swap with" :items="slotItems.filter(s => s.value !== swap.from)"
+                    v-model="swap.to" density="compact" hide-details/>
+        </v-card-text>
+        <v-card-actions>
+          <v-spacer/>
+          <v-btn variant="text" @click="swap.open = false">Cancel</v-btn>
+          <v-btn color="primary" variant="tonal" @click="doSwap">Swap</v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
+
+    <v-dialog v-model="clear.open" max-width="520">
+      <v-card :title="`Clear slot #${clear.index}`">
+        <v-card-text>
+          {{ playerName(players, clear.index) }} becomes an empty slot, its team stays.
+          <v-checkbox v-model="clear.removeAssets" density="compact" hide-details class="mt-2"
+                      label="Also remove its units and cities from the map"/>
+        </v-card-text>
+        <v-card-actions>
+          <v-spacer/>
+          <v-btn variant="text" @click="clear.open = false">Cancel</v-btn>
+          <v-btn color="error" variant="tonal" @click="doClear">Clear</v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
+
     <v-expansion-panels variant="accordion">
       <template v-for="(player, idx) in players" :key="idx">
         <v-expansion-panel v-if="showEmpty || !isEmpty(player)">
@@ -168,6 +253,14 @@ function civTitle(p: editor.Player): string {
             </span>
           </v-expansion-panel-title>
           <v-expansion-panel-text>
+            <div class="d-flex justify-end mb-1">
+              <v-btn size="small" variant="text" prepend-icon="mdi-swap-horizontal" @click="openSwap(idx)">
+                Swap slot
+              </v-btn>
+              <v-btn v-if="!isEmpty(player)" size="small" variant="text" color="error" prepend-icon="mdi-account-remove"
+                     @click="openClear(idx)">Clear slot
+              </v-btn>
+            </div>
             <v-row dense>
               <v-col cols="12" md="6">
                 <v-autocomplete label="Civilization" density="compact" hide-details

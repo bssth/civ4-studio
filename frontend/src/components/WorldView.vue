@@ -2,7 +2,7 @@
 import {computed, nextTick, onMounted, onUnmounted, reactive, ref, watch} from "vue";
 import {GetMapView, GetPlayers, GetPlot, SetPlayerStart} from "../../wailsjs/go/editor/App";
 import {editor} from "../../wailsjs/go/models";
-import {batched, describeType, enums, mapVersion, NONE, playerColor, playerName} from "../store";
+import {batched, describeType, enums, focusPlot, mapVersion, NONE, playerColor, playerName} from "../store";
 import {drawMap, Layers, StartMarker} from "../mapRender";
 import PlotEditor from "./PlotEditor.vue";
 
@@ -48,7 +48,27 @@ const refreshView = batched(async () => {
   view.value = v && v.width > 0 && v.height > 0 ? v : null;
 });
 
-onMounted(() => load(true));
+onMounted(async () => {
+  await load(true);
+  await consumeFocus();
+});
+
+// A plot requested from another tab (e.g. the problem list): zoom in, center it and open its editor
+async function consumeFocus() {
+  const target = focusPlot.value;
+  if (!target || !view.value) return;
+  focusPlot.value = null;
+  cell.value = Math.max(cell.value, Math.min(12, maxCell.value));
+  await select(target.x, target.y);
+  await nextTick();
+  const el = scroller.value;
+  if (el) {
+    el.scrollLeft = (target.x + 0.5) * cell.value - el.clientWidth / 2;
+    el.scrollTop = (view.value.height - target.y - 0.5) * cell.value - el.clientHeight / 2;
+  }
+}
+
+watch(focusPlot, consumeFocus);
 watch(mapVersion, () => {
   selected.value = null;
   selectedPlot.value = null;

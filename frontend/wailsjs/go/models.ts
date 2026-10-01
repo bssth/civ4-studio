@@ -480,6 +480,30 @@ export namespace editor {
 		    return a;
 		}
 	}
+	export class Problem {
+	    severity: string;
+	    section: string;
+	    message: string;
+	    x: number;
+	    y: number;
+	    player: number;
+	    team: number;
+	
+	    static createFrom(source: any = {}) {
+	        return new Problem(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.severity = source["severity"];
+	        this.section = source["section"];
+	        this.message = source["message"];
+	        this.x = source["x"];
+	        this.y = source["y"];
+	        this.player = source["player"];
+	        this.team = source["team"];
+	    }
+	}
 	export class Team {
 	    TeamID: number;
 	    Tech: string[];

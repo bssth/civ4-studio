@@ -10,6 +10,10 @@ export function ChooseGameDir() {
   return window['go']['editor']['App']['ChooseGameDir']();
 }
 
+export function ClearPlayer(arg1, arg2) {
+  return window['go']['editor']['App']['ClearPlayer'](arg1, arg2);
+}
+
 export function CreatePlots(arg1, arg2) {
   return window['go']['editor']['App']['CreatePlots'](arg1, arg2);
 }
@@ -134,8 +138,16 @@ export function SetTeams(arg1) {
   return window['go']['editor']['App']['SetTeams'](arg1);
 }
 
+export function SwapPlayers(arg1, arg2) {
+  return window['go']['editor']['App']['SwapPlayers'](arg1, arg2);
+}
+
 export function TranslateKey(arg1) {
   return window['go']['editor']['App']['TranslateKey'](arg1);
+}
+
+export function ValidateMap() {
+  return window['go']['editor']['App']['ValidateMap']();
 }
 
 export function WriteConsole(arg1) {
