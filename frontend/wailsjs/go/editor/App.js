@@ -34,6 +34,10 @@ export function GetMapInfo() {
   return window['go']['editor']['App']['GetMapInfo']();
 }
 
+export function GetMapView() {
+  return window['go']['editor']['App']['GetMapView']();
+}
+
 export function GetMapProps() {
   return window['go']['editor']['App']['GetMapProps']();
 }
@@ -48,6 +52,10 @@ export function GetModsList() {
 
 export function GetOptions() {
   return window['go']['editor']['App']['GetOptions']();
+}
+
+export function GetPlot(arg1, arg2) {
+  return window['go']['editor']['App']['GetPlot'](arg1, arg2);
 }
 
 export function GetPlayers() {
@@ -110,8 +118,16 @@ export function SetMapProps(arg1) {
   return window['go']['editor']['App']['SetMapProps'](arg1);
 }
 
+export function SetPlayerStart(arg1, arg2, arg3) {
+  return window['go']['editor']['App']['SetPlayerStart'](arg1, arg2, arg3);
+}
+
 export function SetPlayers(arg1) {
   return window['go']['editor']['App']['SetPlayers'](arg1);
+}
+
+export function SetPlot(arg1) {
+  return window['go']['editor']['App']['SetPlot'](arg1);
 }
 
 export function SetTeams(arg1) {

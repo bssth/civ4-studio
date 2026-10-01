@@ -21,6 +21,7 @@ export namespace editor {
 	    type: string;
 	    description: string;
 	    group?: string;
+	    color?: string;
 
 	    static createFrom(source: any = {}) {
 	        return new EnumOption(source);
@@ -31,6 +32,7 @@ export namespace editor {
 	        this.type = source["type"];
 	        this.description = source["description"];
 	        this.group = source["group"];
+	        this.color = source["color"];
 	    }
 	}
 
@@ -289,6 +291,74 @@ export namespace editor {
 	    description: string;
 	    width: number;
 	    height: number;
+	}
+
+	export interface MapView {
+	    width: number;
+	    height: number;
+	    terrains: string[];
+	    features: string[];
+	    bonuses: string[];
+	    terrain: number[];
+	    plot_type: number[];
+	    feature: number[];
+	    bonus: number[];
+	    flags: number[];
+	    city_owner: number[];
+	    unit_owner: number[];
+	    unit_count: number[];
+	}
+
+	// Plot, City and Unit map the Go structs with default JSON field names
+	export interface Unit {
+	    UnitType: string;
+	    UnitOwner: number;
+	    Level: number;
+	    Experience: number;
+	    PromotionType: string[] | null;
+	    UnitAIType: string;
+	    Damage: number;
+	    FacingDirection: number;
+	    Extra?: string[] | null;
+	}
+
+	export interface City {
+	    CityOwner: number;
+	    CityName: string;
+	    CityPopulation: number;
+	    ProductionUnit: string;
+	    ProductionBuilding: string;
+	    ProductionProject: string;
+	    ProductionProcess: string;
+	    BuildingType: string[] | null;
+	    ReligionType: string[] | null;
+	    HolyCityReligionType: string[] | null;
+	    ScriptData: string;
+	    PlayerCulture: Record<string, number> | null;
+	    Extra?: string[] | null;
+	}
+
+	export interface Plot {
+	    X: number;
+	    Y: number;
+	    Landmark: string;
+	    ScriptData: string;
+	    IsNOfRiver: boolean;
+	    IsWOfRiver: boolean;
+	    RiverNSDirection: number;
+	    RiverWEDirection: number;
+	    StartingPlot: boolean;
+	    BonusType: string;
+	    ImprovementType: string;
+	    FeatureType: string[] | null;
+	    FeatureVariety: string[] | null;
+	    RouteType: string;
+	    TerrainType: string;
+	    PlotType: number;
+	    Units: Unit[] | null;
+	    Cities: City[] | null;
+	    TeamReveal: number[] | null;
+	    Extra?: string[] | null;
 	}
 
 }

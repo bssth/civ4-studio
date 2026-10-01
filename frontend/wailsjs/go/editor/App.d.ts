@@ -18,6 +18,8 @@ export function GetGame():Promise<editor.Game|null>;
 
 export function GetMapInfo():Promise<editor.MapInfo|null>;
 
+export function GetMapView():Promise<editor.MapView|null>;
+
 export function GetMapProps():Promise<editor.MapProps|null>;
 
 export function GetMapStats():Promise<editor.MapStats|null>;
@@ -25,6 +27,8 @@ export function GetMapStats():Promise<editor.MapStats|null>;
 export function GetModsList():Promise<Array<string>>;
 
 export function GetOptions():Promise<Record<string, Array<editor.EnumOption>>>;
+
+export function GetPlot(arg1:number,arg2:number):Promise<editor.Plot|null>;
 
 export function GetPlayers():Promise<Array<editor.Player>|null>;
 
@@ -56,7 +60,11 @@ export function SetGame(arg1:editor.Game):Promise<void>;
 
 export function SetMapProps(arg1:editor.MapProps):Promise<void>;
 
+export function SetPlayerStart(arg1:number,arg2:number,arg3:number):Promise<void>;
+
 export function SetPlayers(arg1:Array<editor.Player>):Promise<void>;
+
+export function SetPlot(arg1:editor.Plot):Promise<void>;
 
 export function SetTeams(arg1:Array<editor.Team>):Promise<void>;
 

@@ -717,6 +717,8 @@ type EnumOption struct {
 	Description string `json:"description"`
 	// Group is a parent type (era of a tech, civic option of a civic), may be empty
 	Group string `json:"group,omitempty"`
+	// Color is "#rrggbb" of a player color, empty for other options
+	Color string `json:"color,omitempty"`
 }
 
 // CivilizationOption describes a civilization with the values used to fill in a player
@@ -753,6 +755,14 @@ var optionKeys = map[string]string{
 	"climates":      InfoClimates,
 	"seaLevels":     InfoSeaLevels,
 	"terrains":      InfoTerrains,
+	"features":      InfoFeatures,
+	"bonuses":       InfoBonuses,
+	"improvements":  InfoImprovements,
+	"routes":        InfoRoutes,
+	"units":         InfoUnits,
+	"unitAIs":       InfoUnitAIs,
+	"buildings":     InfoBuildings,
+	"promotions":    InfoPromotions,
 }
 
 func describe(data *GameData, info *TypeInfo) string {
@@ -775,6 +785,7 @@ func (a *App) GetOptions() map[string][]EnumOption {
 				Type:        info.Type,
 				Description: describe(data, info),
 				Group:       info.Group,
+				Color:       data.PlayerColorRGB(info.Type),
 			})
 		}
 		result[key] = options

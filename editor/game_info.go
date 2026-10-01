@@ -29,6 +29,15 @@ const (
 	InfoClimates      = "ClimateInfos"
 	InfoSeaLevels     = "SeaLevelInfos"
 	InfoTerrains      = "TerrainInfos"
+	InfoFeatures      = "FeatureInfos"
+	InfoBonuses       = "BonusInfos"
+	InfoImprovements  = "ImprovementInfos"
+	InfoRoutes        = "RouteInfos"
+	InfoUnits         = "UnitInfos"
+	InfoUnitAIs       = "UnitAIInfos"
+	InfoBuildings     = "BuildingInfos"
+	InfoPromotions    = "PromotionInfos"
+	InfoColorVals     = "ColorVals"
 )
 
 // KnownInfoCategories lists all info categories loaded from game XML files
@@ -36,6 +45,8 @@ var KnownInfoCategories = []string{
 	InfoEras, InfoSpeeds, InfoCalendars, InfoVictories, InfoGameOptions, InfoMPOptions, InfoForceControls,
 	InfoCivilizations, InfoLeaders, InfoHandicaps, InfoPlayerColors, InfoArtStyles, InfoTechs, InfoReligions,
 	InfoCivics, InfoCivicOptions, InfoProjects, InfoWorldSizes, InfoClimates, InfoSeaLevels, InfoTerrains,
+	InfoFeatures, InfoBonuses, InfoImprovements, InfoRoutes, InfoUnits, InfoUnitAIs, InfoBuildings,
+	InfoPromotions, InfoColorVals,
 }
 
 // TypeInfo is a single entry of a game info XML file (a civilization, a tech, a leader etc.)
@@ -55,6 +66,10 @@ type TypeInfo struct {
 	// World size-only fields: map size in grid units of 4x4 plots
 	GridWidth  int
 	GridHeight int
+	// Player color-only field: the color (ColorVals entry) used for borders and markers
+	ColorTypePrimary string
+	// Color value-only field: "#rrggbb", empty if the entry has no color
+	RGB string
 }
 
 // InfoTable keeps entries of one category in the order they are defined in XML files
@@ -121,6 +136,18 @@ func (d *GameData) Table(category string) *InfoTable {
 		return t
 	}
 	return NewInfoTable()
+}
+
+// PlayerColorRGB returns "#rrggbb" of a player color (PLAYERCOLOR_...), empty if unknown
+func (d *GameData) PlayerColorRGB(playerColor string) string {
+	color := d.Table(InfoPlayerColors).Get(playerColor)
+	if color == nil || color.ColorTypePrimary == "" {
+		return ""
+	}
+	if val := d.Table(InfoColorVals).Get(color.ColorTypePrimary); val != nil {
+		return val.RGB
+	}
+	return ""
 }
 
 // Text returns language string by key. If it's not found, returns key itself

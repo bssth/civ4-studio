@@ -41,6 +41,10 @@
           <v-icon icon="mdi-earth" class="me-1"></v-icon>
           Map
         </v-tab>
+        <v-tab value="world">
+          <v-icon icon="mdi-map" class="me-1"></v-icon>
+          World
+        </v-tab>
         <v-tab value="teams">
           <v-icon icon="mdi-account-group" class="me-1"></v-icon>
           Teams
@@ -65,11 +69,12 @@
     <v-main class="bg-grey-lighten-3" style="--wails-draggable:no-drag">
       <v-container fluid>
         <v-row no-gutters>
-          <v-col cols="12" md="9" class="pe-2">
+          <v-col cols="12" :md="wide ? 12 : 9" :class="wide ? '' : 'pe-2'">
             <v-sheet height="80vh" rounded="lg" class="overflow-y-auto">
               <Settings v-if="tab === 'settings'" />
               <MapSettings v-else-if="tab === 'game'" />
               <MapProperties v-else-if="tab === 'map'" />
+              <WorldView v-else-if="tab === 'world'" />
               <Teams v-else-if="tab === 'teams'" />
               <Players v-else-if="tab === 'players'" />
               <div v-else class="pa-5 text-grey">
@@ -78,7 +83,8 @@
             </v-sheet>
           </v-col>
 
-          <v-col cols="12" md="3">
+          <!-- v-show keeps the console mounted, so it does not miss lines while hidden -->
+          <v-col v-show="!wide" cols="12" md="3">
             <v-sheet height="80vh" rounded="lg" class="pa-3">
               <Console />
             </v-sheet>
@@ -94,11 +100,12 @@
 </template>
 
 <script setup lang="ts">
-import {onMounted, onUnmounted, ref} from "vue";
+import {computed, onMounted, onUnmounted, ref} from "vue";
 import Console from "./components/Console.vue";
 import Settings from "./components/Settings.vue";
 import MapSettings from "./components/MapSettings.vue";
 import MapProperties from "./components/MapProperties.vue";
+import WorldView from "./components/WorldView.vue";
 import Teams from "./components/Teams.vue";
 import Players from "./components/Players.vue";
 import {EventsOff, EventsOn, Quit, WindowMaximise, WindowMinimise, WindowToggleMaximise} from "../wailsjs/runtime";
@@ -118,6 +125,8 @@ const maximize = WindowToggleMaximise;
 const quit = Quit;
 
 const tab = ref<string>('game');
+// The world map needs the whole width, the console is hidden there
+const wide = computed(() => tab.value === 'world');
 const loadingMessage = ref<string>('');
 const errorOpen = ref(false);
 const errorMessage = ref('');

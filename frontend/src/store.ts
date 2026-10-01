@@ -10,12 +10,14 @@ export const mapVersion = ref(0);
 export type OptionKey =
     'eras' | 'speeds' | 'calendars' | 'victories' | 'gameOptions' | 'mpOptions' | 'forceControls' |
     'leaders' | 'handicaps' | 'colors' | 'artStyles' | 'techs' | 'religions' | 'civics' | 'civicOptions' |
-    'projects' | 'worldSizes' | 'climates' | 'seaLevels' | 'terrains';
+    'projects' | 'worldSizes' | 'climates' | 'seaLevels' | 'terrains' |
+    'features' | 'bonuses' | 'improvements' | 'routes' | 'units' | 'unitAIs' | 'buildings' | 'promotions';
 
 const optionKeys: OptionKey[] = [
     'eras', 'speeds', 'calendars', 'victories', 'gameOptions', 'mpOptions', 'forceControls',
     'leaders', 'handicaps', 'colors', 'artStyles', 'techs', 'religions', 'civics', 'civicOptions',
     'projects', 'worldSizes', 'climates', 'seaLevels', 'terrains',
+    'features', 'bonuses', 'improvements', 'routes', 'units', 'unitAIs', 'buildings', 'promotions',
 ];
 
 function emptyEnums(): Record<OptionKey, editor.EnumOption[]> {
@@ -93,4 +95,37 @@ export function batched(fn: () => void): () => void {
             fn();
         });
     };
+}
+
+/** Value of an optional type field for selects built with withNone: empty values become NONE */
+export function noneIfEmpty(value: string | null | undefined): string {
+    return value ? value : NONE;
+}
+
+/** Inverse of noneIfEmpty */
+export function emptyIfNone(value: string | null | undefined): string {
+    return !value || value === NONE ? '' : value;
+}
+
+// Colors for owners without a known player color
+const fallbackColors = ['#e6194b', '#3cb44b', '#ffe119', '#4363d8', '#f58231', '#911eb4', '#46f0f0', '#f032e6',
+    '#bcf60c', '#fabebe', '#008080', '#e6beff', '#9a6324', '#fffac8', '#800000', '#aaffc3', '#808000', '#000075'];
+
+/** Color of a player for markers on the map */
+export function playerColor(players: editor.Player[], index: number): string {
+    const p = players[index];
+    const known = p && enums.colors.find(c => c.type === p.Color)?.color;
+    return known || fallbackColors[((index % fallbackColors.length) + fallbackColors.length) % fallbackColors.length];
+}
+
+/** Short readable name of a player */
+export function playerName(players: editor.Player[], index: number): string {
+    const p = players[index];
+    if (!p || !p.CivType || p.CivType === NONE) return `Player ${index}`;
+    const name = p.CivShortDesc && !p.CivShortDesc.startsWith('TXT_KEY_') ? p.CivShortDesc : humanizeCiv(p.CivType);
+    return `${name}`;
+}
+
+function humanizeCiv(type: string): string {
+    return type.replace(/^CIVILIZATION_/, '').toLowerCase().replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
 }

@@ -2,15 +2,16 @@
 
 Welcome to the **Civilization 4 Map Studio**! This tool is designed to help you in editing and creating custom maps for [Civilization 4](https://en.wikipedia.org/wiki/Civilization_IV), turn-based strategy game. 
 
-While the WordBuilder-like interface is not implemented for now, this editor provides functionality beyond the capabilities of the standard WorldBuilder, allowing you to tweak various aspects of your maps.
+The editor shows the map and lets you edit single plots, cities, units and start positions, while terrain painting is still done in the game's WorldBuilder. It provides functionality beyond the capabilities of the standard WorldBuilder, allowing you to tweak various aspects of your maps.
 
 ## Features
 
 1. Players: pick civilizations and leaders from the game (or mod) data. Names, color and art style are filled in automatically; handicap, state religion, starting era, starting civics and city names are editable too.
 2. Teams: starting techs and projects, and a diplomacy matrix for contact, war, open borders, defensive pacts and permanent war/peace.
 3. Map: world size, climate, sea level, wrapping and latitudes, map statistics (land/water, terrain, resources, units, cities) and consistency checks. A new map gets empty player slots and can be filled with ocean plots of the chosen size, ready for the game's WorldBuilder.
-4. Game settings: era, speed, calendar, victory conditions, game and multiplayer options, locked options.
-5. Safe saving: the original file is copied to `<map>.bak` before it is overwritten for the first time, unknown keys (e.g. added by mods) are kept as they are, optional autosave every 5 minutes.
+4. World: the map drawn from the plots (terrain, hills and peaks, forests and other features, rivers, resources, cities, units and start positions in player colors) with zoom and layers. Click a plot to edit its terrain, feature, resource, improvement and route, or to add and edit cities and units; drag a start flag to move a player's starting position.
+5. Game settings: era, speed, calendar, victory conditions, game and multiplayer options, locked options.
+6. Safe saving: the original file is copied to `<map>.bak` before it is overwritten for the first time, unknown keys (e.g. added by mods) are kept as they are, optional autosave every 5 minutes.
 
 Game data is read from the base game, Warlords, Beyond the Sword and the selected mod, the same way the game does it: a mod file replaces the base file with the same path.
 

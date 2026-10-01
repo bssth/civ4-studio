@@ -64,6 +64,17 @@ func fakeGameInstall(t *testing.T) (btsDir string) {
 		<WorldInfo><Type>WORLDSIZE_STANDARD</Type><Description>TXT_KEY_WORLDSIZE_STANDARD</Description><iGridWidth>21</iGridWidth><iGridHeight>13</iGridHeight></WorldInfo>
 	</WorldInfos>
 </Civ4WorldInfo>`)
+	writeTestFile(t, filepath.Join(btsDir, XmlDir, "Interface", "CIV4ColorVals.xml"), `<Civ4ColorVals>
+	<ColorVals>
+		<ColorVal><Type>COLOR_PLAYER_WHITE</Type><fRed>1.00</fRed><fGreen>1.00</fGreen><fBlue>1.00</fBlue><fAlpha>1.00</fAlpha></ColorVal>
+		<ColorVal><Type>COLOR_PLAYER_ORANGE</Type><fRed>1.00</fRed><fGreen>0.5</fGreen><fBlue>0</fBlue><fAlpha>1.00</fAlpha></ColorVal>
+	</ColorVals>
+</Civ4ColorVals>`)
+	writeTestFile(t, filepath.Join(btsDir, XmlDir, "Interface", "CIV4PlayerColorInfos.xml"), `<Civ4PlayerColorInfos>
+	<PlayerColorInfos>
+		<PlayerColorInfo><Type>PLAYERCOLOR_ORANGE</Type><ColorTypePrimary>COLOR_PLAYER_ORANGE</ColorTypePrimary><ColorTypeSecondary>COLOR_PLAYER_WHITE</ColorTypeSecondary></PlayerColorInfo>
+	</PlayerColorInfos>
+</Civ4PlayerColorInfos>`)
 	writeTestFile(t, filepath.Join(btsDir, BtsExe), "")
 	writeTestFile(t, filepath.Join(btsDir, PublicMapsDir, ".keep"), "")
 
@@ -143,6 +154,9 @@ func TestGetCivilizationsAndOptions(t *testing.T) {
 	options := app.GetOptions()
 	if len(options["techs"]) != 2 {
 		t.Errorf("without the mod base techs are expected: %+v", options["techs"])
+	}
+	if colors := options["colors"]; len(colors) != 1 || colors[0].Color != "#ff8000" {
+		t.Errorf("player colors must have RGB values: %+v", colors)
 	}
 	if sizes := app.GetWorldSizes(); len(sizes) != 1 || sizes[0].Width != 84 || sizes[0].Height != 52 {
 		t.Errorf("world sizes must be converted to plots: %+v", sizes)

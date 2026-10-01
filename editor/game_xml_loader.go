@@ -193,6 +193,8 @@ func addInfoEntries(table *InfoTable, entries []civ4InfoEntry) {
 			Playable:           e.Playable == "1",
 			GridWidth:          e.GridWidth,
 			GridHeight:         e.GridHeight,
+			ColorTypePrimary:   e.ColorTypePrimary,
+			RGB:                e.rgb(),
 		})
 	}
 }
