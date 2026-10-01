@@ -88,7 +88,7 @@ function addCity() {
   plot.value.Cities = [...(plot.value.Cities ?? []), {
     CityOwner: defaultOwner(), CityName: 'New city', CityPopulation: 1,
     ProductionUnit: '', ProductionBuilding: '', ProductionProject: '', ProductionProcess: '',
-    BuildingType: [], ReligionType: [], HolyCityReligionType: [], ScriptData: '', PlayerCulture: null,
+    BuildingType: [], ReligionType: [], HolyCityReligionType: [], ScriptData: '', PlayerCulture: {},
   }];
 }
 

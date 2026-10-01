@@ -14,25 +14,25 @@ export function GetCivilizations():Promise<Array<editor.CivilizationOption>>;
 
 export function GetConfig():Promise<editor.Config>;
 
-export function GetGame():Promise<editor.Game|null>;
+export function GetGame():Promise<editor.Game>;
 
-export function GetMapInfo():Promise<editor.MapInfo|null>;
+export function GetMapInfo():Promise<editor.MapInfo>;
 
-export function GetMapView():Promise<editor.MapView|null>;
+export function GetMapProps():Promise<editor.MapProps>;
 
-export function GetMapProps():Promise<editor.MapProps|null>;
+export function GetMapStats():Promise<editor.MapStats>;
 
-export function GetMapStats():Promise<editor.MapStats|null>;
+export function GetMapView():Promise<editor.MapView>;
 
 export function GetModsList():Promise<Array<string>>;
 
-export function GetOptions():Promise<Record<string, Array<editor.EnumOption>>>;
+export function GetOptions():Promise<Array<editor.OptionList>>;
 
-export function GetPlot(arg1:number,arg2:number):Promise<editor.Plot|null>;
+export function GetPlayers():Promise<Array<editor.Player>>;
 
-export function GetPlayers():Promise<Array<editor.Player>|null>;
+export function GetPlot(arg1:number,arg2:number):Promise<editor.Plot>;
 
-export function GetTeams():Promise<Array<editor.Team>|null>;
+export function GetTeams():Promise<Array<editor.Team>>;
 
 export function GetWorldSizes():Promise<Array<editor.WorldSizeOption>>;
 

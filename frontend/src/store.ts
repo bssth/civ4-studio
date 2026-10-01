@@ -31,8 +31,9 @@ export const xmlReady = ref(false);
 
 export async function refreshEnums() {
     const [options, civs, sizes] = await Promise.all([GetOptions(), GetCivilizations(), GetWorldSizes()]);
+    const byKey = new Map((options ?? []).map(list => [list.key, list.options ?? []]));
     for (const key of optionKeys) {
-        enums[key] = options?.[key] ?? [];
+        enums[key] = byKey.get(key) ?? [];
     }
     civilizations.value = civs ?? [];
     worldSizes.value = sizes ?? [];

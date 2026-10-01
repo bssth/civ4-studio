@@ -42,6 +42,12 @@ Build a production binary for your current platform:
 $ wails build
 ```
 
+On Linux the WebKitGTK development packages are needed (`libgtk-3-dev libwebkit2gtk-4.1-dev` on Ubuntu 24.04),
+and the build needs `-tags webkit2_41` there: `wails build -tags webkit2_41`.
+
+`wails build` regenerates the TypeScript bindings in `frontend/wailsjs` from the Go code; commit them together with
+changes of the bound Go API.
+
 The output binary appears under `build/bin/`. To target another OS, see
 [`wails build --help`](https://wails.io/docs/reference/cli) (cross-compilation
 of the Windows webview backend has its own requirements).

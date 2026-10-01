@@ -151,7 +151,10 @@ func TestGetCivilizationsAndOptions(t *testing.T) {
 		t.Errorf("unexpected civilizations: %+v", civs)
 	}
 
-	options := app.GetOptions()
+	options := make(map[string][]EnumOption)
+	for _, list := range app.GetOptions() {
+		options[list.Key] = list.Options
+	}
 	if len(options["techs"]) != 2 {
 		t.Errorf("without the mod base techs are expected: %+v", options["techs"])
 	}

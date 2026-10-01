@@ -34,16 +34,16 @@ export function GetMapInfo() {
   return window['go']['editor']['App']['GetMapInfo']();
 }
 
-export function GetMapView() {
-  return window['go']['editor']['App']['GetMapView']();
-}
-
 export function GetMapProps() {
   return window['go']['editor']['App']['GetMapProps']();
 }
 
 export function GetMapStats() {
   return window['go']['editor']['App']['GetMapStats']();
+}
+
+export function GetMapView() {
+  return window['go']['editor']['App']['GetMapView']();
 }
 
 export function GetModsList() {
@@ -54,12 +54,12 @@ export function GetOptions() {
   return window['go']['editor']['App']['GetOptions']();
 }
 
-export function GetPlot(arg1, arg2) {
-  return window['go']['editor']['App']['GetPlot'](arg1, arg2);
-}
-
 export function GetPlayers() {
   return window['go']['editor']['App']['GetPlayers']();
+}
+
+export function GetPlot(arg1, arg2) {
+  return window['go']['editor']['App']['GetPlot'](arg1, arg2);
 }
 
 export function GetTeams() {

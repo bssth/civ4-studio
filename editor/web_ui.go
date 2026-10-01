@@ -772,12 +772,20 @@ func describe(data *GameData, info *TypeInfo) string {
 	return data.Text(info.Description)
 }
 
-// GetOptions returns all option lists loaded from game XML, keyed by list name (eras, techs, leaders...).
+// OptionList is a named list of options. A slice of these is returned instead of a map,
+// because the Wails binding generator does not emit TypeScript models for map values.
+type OptionList struct {
+	Key     string       `json:"key"`
+	Options []EnumOption `json:"options"`
+}
+
+// GetOptions returns all option lists loaded from game XML (eras, techs, leaders...), sorted by key.
 // Entries are in the order they are defined in the game files.
-func (a *App) GetOptions() map[string][]EnumOption {
+func (a *App) GetOptions() []OptionList {
 	data := CurrentGameData()
-	result := make(map[string][]EnumOption, len(optionKeys))
-	for key, category := range optionKeys {
+	result := make([]OptionList, 0, len(optionKeys))
+	for _, key := range SortKeys(optionKeys) {
+		category := optionKeys[key]
 		infos := data.Table(category).All()
 		options := make([]EnumOption, 0, len(infos))
 		for _, info := range infos {
@@ -788,7 +796,7 @@ func (a *App) GetOptions() map[string][]EnumOption {
 				Color:       data.PlayerColorRGB(info.Type),
 			})
 		}
-		result[key] = options
+		result = append(result, OptionList{Key: key, Options: options})
 	}
 	return result
 }

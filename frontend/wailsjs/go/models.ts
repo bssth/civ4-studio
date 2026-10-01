@@ -1,41 +1,39 @@
 export namespace editor {
-
-	export class Config {
-	    game_dir: string;
-	    mod: string;
-	    auto_save: boolean;
-
+	
+	export class City {
+	    CityOwner: number;
+	    CityName: string;
+	    CityPopulation: number;
+	    ProductionUnit: string;
+	    ProductionBuilding: string;
+	    ProductionProject: string;
+	    ProductionProcess: string;
+	    BuildingType: string[];
+	    ReligionType: string[];
+	    HolyCityReligionType: string[];
+	    ScriptData: string;
+	    PlayerCulture: Record<number, number>;
+	
 	    static createFrom(source: any = {}) {
-	        return new Config(source);
+	        return new City(source);
 	    }
-
+	
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
-	        this.game_dir = source["game_dir"];
-	        this.mod = source["mod"];
-	        this.auto_save = source["auto_save"];
+	        this.CityOwner = source["CityOwner"];
+	        this.CityName = source["CityName"];
+	        this.CityPopulation = source["CityPopulation"];
+	        this.ProductionUnit = source["ProductionUnit"];
+	        this.ProductionBuilding = source["ProductionBuilding"];
+	        this.ProductionProject = source["ProductionProject"];
+	        this.ProductionProcess = source["ProductionProcess"];
+	        this.BuildingType = source["BuildingType"];
+	        this.ReligionType = source["ReligionType"];
+	        this.HolyCityReligionType = source["HolyCityReligionType"];
+	        this.ScriptData = source["ScriptData"];
+	        this.PlayerCulture = source["PlayerCulture"];
 	    }
 	}
-
-	export class EnumOption {
-	    type: string;
-	    description: string;
-	    group?: string;
-	    color?: string;
-
-	    static createFrom(source: any = {}) {
-	        return new EnumOption(source);
-	    }
-
-	    constructor(source: any = {}) {
-	        if ('string' === typeof source) source = JSON.parse(source);
-	        this.type = source["type"];
-	        this.description = source["description"];
-	        this.group = source["group"];
-	        this.color = source["color"];
-	    }
-	}
-
 	export class CivilizationOption {
 	    type: string;
 	    description: string;
@@ -45,11 +43,11 @@ export namespace editor {
 	    art_style: string;
 	    leaders: string[];
 	    playable: boolean;
-
+	
 	    static createFrom(source: any = {}) {
 	        return new CivilizationOption(source);
 	    }
-
+	
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.type = source["type"];
@@ -58,11 +56,100 @@ export namespace editor {
 	        this.adjective = source["adjective"];
 	        this.color = source["color"];
 	        this.art_style = source["art_style"];
-	        this.leaders = source["leaders"] ?? [];
+	        this.leaders = source["leaders"];
 	        this.playable = source["playable"];
 	    }
 	}
-
+	export class Config {
+	    game_dir: string;
+	    mod: string;
+	    auto_save: boolean;
+	
+	    static createFrom(source: any = {}) {
+	        return new Config(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.game_dir = source["game_dir"];
+	        this.mod = source["mod"];
+	        this.auto_save = source["auto_save"];
+	    }
+	}
+	export class CountStat {
+	    type: string;
+	    count: number;
+	
+	    static createFrom(source: any = {}) {
+	        return new CountStat(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.type = source["type"];
+	        this.count = source["count"];
+	    }
+	}
+	export class EnumOption {
+	    type: string;
+	    description: string;
+	    group?: string;
+	    color?: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new EnumOption(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.type = source["type"];
+	        this.description = source["description"];
+	        this.group = source["group"];
+	        this.color = source["color"];
+	    }
+	}
+	export class Game {
+	    Era: string;
+	    Speed: string;
+	    Calendar: string;
+	    Victory: string[];
+	    GameTurn: number;
+	    MaxCityElimination: number;
+	    NumAdvancedStartPoints: number;
+	    TargetScore: number;
+	    StartYear: number;
+	    Description: string;
+	    ModPath: string;
+	    Tutorial: boolean;
+	    Option: string[];
+	    MPOption: string[];
+	    ForceControl: string[];
+	    MaxTurns: number;
+	
+	    static createFrom(source: any = {}) {
+	        return new Game(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.Era = source["Era"];
+	        this.Speed = source["Speed"];
+	        this.Calendar = source["Calendar"];
+	        this.Victory = source["Victory"];
+	        this.GameTurn = source["GameTurn"];
+	        this.MaxCityElimination = source["MaxCityElimination"];
+	        this.NumAdvancedStartPoints = source["NumAdvancedStartPoints"];
+	        this.TargetScore = source["TargetScore"];
+	        this.StartYear = source["StartYear"];
+	        this.Description = source["Description"];
+	        this.ModPath = source["ModPath"];
+	        this.Tutorial = source["Tutorial"];
+	        this.Option = source["Option"];
+	        this.MPOption = source["MPOption"];
+	        this.ForceControl = source["ForceControl"];
+	        this.MaxTurns = source["MaxTurns"];
+	    }
+	}
 	export class MapInfo {
 	    path: string;
 	    version: number;
@@ -70,11 +157,11 @@ export namespace editor {
 	    player_count: number;
 	    plot_count: number;
 	    dirty: boolean;
-
+	
 	    static createFrom(source: any = {}) {
 	        return new MapInfo(source);
 	    }
-
+	
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.path = source["path"];
@@ -85,85 +172,162 @@ export namespace editor {
 	        this.dirty = source["dirty"];
 	    }
 	}
-
-	// Game maps the editor.Game struct. Field names match the Go struct
-	// because Game uses default Go JSON marshalling (no json tags).
-	export class Game {
-	    Era: string;
-	    Speed: string;
-	    Calendar: string;
-	    Victory: string[] | null;
-	    GameTurn: number;
-	    MaxCityElimination: number;
-	    NumAdvancedStartPoints: number;
-	    TargetScore: number;
-	    StartYear: number;
-	    Description: string;
-	    ModPath: string;
-	    Tutorial: boolean;
-	    Option: string[] | null;
-	    MPOption: string[] | null;
-	    ForceControl: string[] | null;
-	    MaxTurns: number;
-	    Extra?: string[];
-
+	export class MapProps {
+	    GridWidth: number;
+	    GridHeight: number;
+	    TopLatitude: number;
+	    BottomLatitude: number;
+	    WrapX: number;
+	    WrapY: number;
+	    WorldSize: string;
+	    Climate: string;
+	    SeaLevel: string;
+	    NumPlotsWritten: number;
+	    NumSignsWritten: number;
+	    RandomizeResources: boolean;
+	
 	    static createFrom(source: any = {}) {
-	        return new Game(source);
+	        return new MapProps(source);
 	    }
-
+	
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
-	        this.Era = source["Era"] ?? "";
-	        this.Speed = source["Speed"] ?? "";
-	        this.Calendar = source["Calendar"] ?? "";
-	        this.Victory = source["Victory"] ?? [];
-	        this.GameTurn = source["GameTurn"] ?? 0;
-	        this.MaxCityElimination = source["MaxCityElimination"] ?? 0;
-	        this.NumAdvancedStartPoints = source["NumAdvancedStartPoints"] ?? 0;
-	        this.TargetScore = source["TargetScore"] ?? 0;
-	        this.StartYear = source["StartYear"] ?? 0;
-	        this.Description = source["Description"] ?? "";
-	        this.ModPath = source["ModPath"] ?? "";
-	        this.Tutorial = source["Tutorial"] ?? false;
-	        this.Option = source["Option"] ?? [];
-	        this.MPOption = source["MPOption"] ?? [];
-	        this.ForceControl = source["ForceControl"] ?? [];
-	        this.MaxTurns = source["MaxTurns"] ?? 0;
-	        this.Extra = source["Extra"];
+	        this.GridWidth = source["GridWidth"];
+	        this.GridHeight = source["GridHeight"];
+	        this.TopLatitude = source["TopLatitude"];
+	        this.BottomLatitude = source["BottomLatitude"];
+	        this.WrapX = source["WrapX"];
+	        this.WrapY = source["WrapY"];
+	        this.WorldSize = source["WorldSize"];
+	        this.Climate = source["Climate"];
+	        this.SeaLevel = source["SeaLevel"];
+	        this.NumPlotsWritten = source["NumPlotsWritten"];
+	        this.NumSignsWritten = source["NumSignsWritten"];
+	        this.RandomizeResources = source["RandomizeResources"];
 	    }
 	}
-
-	export class Team {
-	    TeamID: number;
-	    Tech: string[] | null;
-	    ContactWithTeam: number[] | null;
-	    AtWar: number[] | null;
-	    PermanentWarPeace: number[] | null;
-	    OpenBordersWithTeam: number[] | null;
-	    DefensivePactWithTeam: number[] | null;
-	    ProjectType: string[] | null;
-	    RevealMap: boolean;
-	    Extra?: string[];
-
+	export class MapStats {
+	    plots: number;
+	    expected_plots: number;
+	    peaks: number;
+	    hills: number;
+	    flat: number;
+	    water: number;
+	    cities: number;
+	    units: number;
+	    signs: number;
+	    starting_plots: number;
+	    bonuses: number;
+	    terrains: CountStat[];
+	    problems: string[];
+	
 	    static createFrom(source: any = {}) {
-	        return new Team(source);
+	        return new MapStats(source);
 	    }
-
+	
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
-	        this.TeamID = source["TeamID"] ?? 0;
-	        this.Tech = source["Tech"] ?? [];
-	        this.ContactWithTeam = source["ContactWithTeam"] ?? [];
-	        this.AtWar = source["AtWar"] ?? [];
-	        this.PermanentWarPeace = source["PermanentWarPeace"] ?? [];
-	        this.OpenBordersWithTeam = source["OpenBordersWithTeam"] ?? [];
-	        this.DefensivePactWithTeam = source["DefensivePactWithTeam"] ?? [];
-	        this.ProjectType = source["ProjectType"] ?? [];
-	        this.RevealMap = source["RevealMap"] ?? false;
-	        this.Extra = source["Extra"];
+	        this.plots = source["plots"];
+	        this.expected_plots = source["expected_plots"];
+	        this.peaks = source["peaks"];
+	        this.hills = source["hills"];
+	        this.flat = source["flat"];
+	        this.water = source["water"];
+	        this.cities = source["cities"];
+	        this.units = source["units"];
+	        this.signs = source["signs"];
+	        this.starting_plots = source["starting_plots"];
+	        this.bonuses = source["bonuses"];
+	        this.terrains = this.convertValues(source["terrains"], CountStat);
+	        this.problems = source["problems"];
+	    }
+	
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
+	}
+	export class MapView {
+	    width: number;
+	    height: number;
+	    terrains: string[];
+	    features: string[];
+	    bonuses: string[];
+	    terrain: number[];
+	    plot_type: number[];
+	    feature: number[];
+	    bonus: number[];
+	    flags: number[];
+	    city_owner: number[];
+	    unit_owner: number[];
+	    unit_count: number[];
+	
+	    static createFrom(source: any = {}) {
+	        return new MapView(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.width = source["width"];
+	        this.height = source["height"];
+	        this.terrains = source["terrains"];
+	        this.features = source["features"];
+	        this.bonuses = source["bonuses"];
+	        this.terrain = source["terrain"];
+	        this.plot_type = source["plot_type"];
+	        this.feature = source["feature"];
+	        this.bonus = source["bonus"];
+	        this.flags = source["flags"];
+	        this.city_owner = source["city_owner"];
+	        this.unit_owner = source["unit_owner"];
+	        this.unit_count = source["unit_count"];
 	    }
 	}
-
+	export class OptionList {
+	    key: string;
+	    options: EnumOption[];
+	
+	    static createFrom(source: any = {}) {
+	        return new OptionList(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.key = source["key"];
+	        this.options = this.convertValues(source["options"], EnumOption);
+	    }
+	
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
+	}
 	export class Player {
 	    CivDesc: string;
 	    CivShortDesc: string;
@@ -185,160 +349,72 @@ export namespace editor {
 	    StartingY: number;
 	    StateReligion: string;
 	    StartingEra: string;
-	    CityList: string[] | null;
-	    CivicOption: string[] | null;
-	    Civic: string[] | null;
-	    AttitudePlayer: number[] | null;
-	    AttitudeExtra: number[] | null;
-	    Extra?: string[];
-
+	    CityList: string[];
+	    CivicOption: string[];
+	    Civic: string[];
+	    AttitudePlayer: number[];
+	    AttitudeExtra: number[];
+	
 	    static createFrom(source: any = {}) {
 	        return new Player(source);
 	    }
-
+	
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
-	        this.CivDesc = source["CivDesc"] ?? "";
-	        this.CivShortDesc = source["CivShortDesc"] ?? "";
-	        this.LeaderName = source["LeaderName"] ?? "";
-	        this.CivAdjective = source["CivAdjective"] ?? "";
-	        this.FlagDecal = source["FlagDecal"] ?? "";
-	        this.WhiteFlag = source["WhiteFlag"] ?? false;
-	        this.LeaderType = source["LeaderType"] ?? "";
-	        this.CivType = source["CivType"] ?? "";
-	        this.Team = source["Team"] ?? 0;
-	        this.Handicap = source["Handicap"] ?? "";
-	        this.Color = source["Color"] ?? "";
-	        this.ArtStyle = source["ArtStyle"] ?? "";
-	        this.PlayableCiv = source["PlayableCiv"] ?? false;
-	        this.MinorNationStatus = source["MinorNationStatus"] ?? false;
-	        this.StartingGold = source["StartingGold"] ?? 0;
-	        this.RandomStartLocation = source["RandomStartLocation"] ?? false;
-	        this.StartingX = source["StartingX"] ?? 0;
-	        this.StartingY = source["StartingY"] ?? 0;
-	        this.StateReligion = source["StateReligion"] ?? "";
-	        this.StartingEra = source["StartingEra"] ?? "";
-	        this.CityList = source["CityList"] ?? [];
-	        this.CivicOption = source["CivicOption"] ?? [];
-	        this.Civic = source["Civic"] ?? [];
-	        this.AttitudePlayer = source["AttitudePlayer"] ?? [];
-	        this.AttitudeExtra = source["AttitudeExtra"] ?? [];
-	        this.Extra = source["Extra"];
+	        this.CivDesc = source["CivDesc"];
+	        this.CivShortDesc = source["CivShortDesc"];
+	        this.LeaderName = source["LeaderName"];
+	        this.CivAdjective = source["CivAdjective"];
+	        this.FlagDecal = source["FlagDecal"];
+	        this.WhiteFlag = source["WhiteFlag"];
+	        this.LeaderType = source["LeaderType"];
+	        this.CivType = source["CivType"];
+	        this.Team = source["Team"];
+	        this.Handicap = source["Handicap"];
+	        this.Color = source["Color"];
+	        this.ArtStyle = source["ArtStyle"];
+	        this.PlayableCiv = source["PlayableCiv"];
+	        this.MinorNationStatus = source["MinorNationStatus"];
+	        this.StartingGold = source["StartingGold"];
+	        this.RandomStartLocation = source["RandomStartLocation"];
+	        this.StartingX = source["StartingX"];
+	        this.StartingY = source["StartingY"];
+	        this.StateReligion = source["StateReligion"];
+	        this.StartingEra = source["StartingEra"];
+	        this.CityList = source["CityList"];
+	        this.CivicOption = source["CivicOption"];
+	        this.Civic = source["Civic"];
+	        this.AttitudePlayer = source["AttitudePlayer"];
+	        this.AttitudeExtra = source["AttitudeExtra"];
 	    }
 	}
-
-	// MapProps maps the editor.MapProps struct (BeginMap section), default Go JSON field names
-	export class MapProps {
-	    GridWidth: number;
-	    GridHeight: number;
-	    TopLatitude: number;
-	    BottomLatitude: number;
-	    WrapX: number;
-	    WrapY: number;
-	    WorldSize: string;
-	    Climate: string;
-	    SeaLevel: string;
-	    NumPlotsWritten: number;
-	    NumSignsWritten: number;
-	    RandomizeResources: boolean;
-	    Extra?: string[];
-
-	    static createFrom(source: any = {}) {
-	        return new MapProps(source);
-	    }
-
-	    constructor(source: any = {}) {
-	        if ('string' === typeof source) source = JSON.parse(source);
-	        this.GridWidth = source["GridWidth"] ?? 0;
-	        this.GridHeight = source["GridHeight"] ?? 0;
-	        this.TopLatitude = source["TopLatitude"] ?? 90;
-	        this.BottomLatitude = source["BottomLatitude"] ?? -90;
-	        this.WrapX = source["WrapX"] ?? 0;
-	        this.WrapY = source["WrapY"] ?? 0;
-	        this.WorldSize = source["WorldSize"] ?? "";
-	        this.Climate = source["Climate"] ?? "";
-	        this.SeaLevel = source["SeaLevel"] ?? "";
-	        this.NumPlotsWritten = source["NumPlotsWritten"] ?? 0;
-	        this.NumSignsWritten = source["NumSignsWritten"] ?? 0;
-	        this.RandomizeResources = source["RandomizeResources"] ?? false;
-	        this.Extra = source["Extra"];
-	    }
-	}
-
-	export interface CountStat {
-	    type: string;
-	    count: number;
-	}
-
-	export interface MapStats {
-	    plots: number;
-	    expected_plots: number;
-	    peaks: number;
-	    hills: number;
-	    flat: number;
-	    water: number;
-	    cities: number;
-	    units: number;
-	    signs: number;
-	    starting_plots: number;
-	    bonuses: number;
-	    terrains: CountStat[] | null;
-	    problems: string[];
-	}
-
-	export interface WorldSizeOption {
-	    type: string;
-	    description: string;
-	    width: number;
-	    height: number;
-	}
-
-	export interface MapView {
-	    width: number;
-	    height: number;
-	    terrains: string[];
-	    features: string[];
-	    bonuses: string[];
-	    terrain: number[];
-	    plot_type: number[];
-	    feature: number[];
-	    bonus: number[];
-	    flags: number[];
-	    city_owner: number[];
-	    unit_owner: number[];
-	    unit_count: number[];
-	}
-
-	// Plot, City and Unit map the Go structs with default JSON field names
-	export interface Unit {
+	export class Unit {
 	    UnitType: string;
 	    UnitOwner: number;
 	    Level: number;
 	    Experience: number;
-	    PromotionType: string[] | null;
+	    PromotionType: string[];
 	    UnitAIType: string;
 	    Damage: number;
 	    FacingDirection: number;
-	    Extra?: string[] | null;
+	
+	    static createFrom(source: any = {}) {
+	        return new Unit(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.UnitType = source["UnitType"];
+	        this.UnitOwner = source["UnitOwner"];
+	        this.Level = source["Level"];
+	        this.Experience = source["Experience"];
+	        this.PromotionType = source["PromotionType"];
+	        this.UnitAIType = source["UnitAIType"];
+	        this.Damage = source["Damage"];
+	        this.FacingDirection = source["FacingDirection"];
+	    }
 	}
-
-	export interface City {
-	    CityOwner: number;
-	    CityName: string;
-	    CityPopulation: number;
-	    ProductionUnit: string;
-	    ProductionBuilding: string;
-	    ProductionProject: string;
-	    ProductionProcess: string;
-	    BuildingType: string[] | null;
-	    ReligionType: string[] | null;
-	    HolyCityReligionType: string[] | null;
-	    ScriptData: string;
-	    PlayerCulture: Record<string, number> | null;
-	    Extra?: string[] | null;
-	}
-
-	export interface Plot {
+	export class Plot {
 	    X: number;
 	    Y: number;
 	    Landmark: string;
@@ -350,15 +426,107 @@ export namespace editor {
 	    StartingPlot: boolean;
 	    BonusType: string;
 	    ImprovementType: string;
-	    FeatureType: string[] | null;
-	    FeatureVariety: string[] | null;
+	    FeatureType: string[];
+	    FeatureVariety: string[];
 	    RouteType: string;
 	    TerrainType: string;
 	    PlotType: number;
-	    Units: Unit[] | null;
-	    Cities: City[] | null;
-	    TeamReveal: number[] | null;
-	    Extra?: string[] | null;
+	    Units: Unit[];
+	    Cities: City[];
+	    TeamReveal: number[];
+	
+	    static createFrom(source: any = {}) {
+	        return new Plot(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.X = source["X"];
+	        this.Y = source["Y"];
+	        this.Landmark = source["Landmark"];
+	        this.ScriptData = source["ScriptData"];
+	        this.IsNOfRiver = source["IsNOfRiver"];
+	        this.IsWOfRiver = source["IsWOfRiver"];
+	        this.RiverNSDirection = source["RiverNSDirection"];
+	        this.RiverWEDirection = source["RiverWEDirection"];
+	        this.StartingPlot = source["StartingPlot"];
+	        this.BonusType = source["BonusType"];
+	        this.ImprovementType = source["ImprovementType"];
+	        this.FeatureType = source["FeatureType"];
+	        this.FeatureVariety = source["FeatureVariety"];
+	        this.RouteType = source["RouteType"];
+	        this.TerrainType = source["TerrainType"];
+	        this.PlotType = source["PlotType"];
+	        this.Units = this.convertValues(source["Units"], Unit);
+	        this.Cities = this.convertValues(source["Cities"], City);
+	        this.TeamReveal = source["TeamReveal"];
+	    }
+	
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
+	}
+	export class Team {
+	    TeamID: number;
+	    Tech: string[];
+	    ContactWithTeam: number[];
+	    AtWar: number[];
+	    PermanentWarPeace: number[];
+	    OpenBordersWithTeam: number[];
+	    DefensivePactWithTeam: number[];
+	    ProjectType: string[];
+	    RevealMap: boolean;
+	
+	    static createFrom(source: any = {}) {
+	        return new Team(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.TeamID = source["TeamID"];
+	        this.Tech = source["Tech"];
+	        this.ContactWithTeam = source["ContactWithTeam"];
+	        this.AtWar = source["AtWar"];
+	        this.PermanentWarPeace = source["PermanentWarPeace"];
+	        this.OpenBordersWithTeam = source["OpenBordersWithTeam"];
+	        this.DefensivePactWithTeam = source["DefensivePactWithTeam"];
+	        this.ProjectType = source["ProjectType"];
+	        this.RevealMap = source["RevealMap"];
+	    }
+	}
+	
+	export class WorldSizeOption {
+	    type: string;
+	    description: string;
+	    width: number;
+	    height: number;
+	
+	    static createFrom(source: any = {}) {
+	        return new WorldSizeOption(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.type = source["type"];
+	        this.description = source["description"];
+	        this.width = source["width"];
+	        this.height = source["height"];
+	    }
 	}
 
 }
+
