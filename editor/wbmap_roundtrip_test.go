@@ -175,3 +175,85 @@ func TestSameWbFormatIgnoresNilLists(t *testing.T) {
 		t.Error("different techs must be detected")
 	}
 }
+
+func TestGenerateOceanPlots(t *testing.T) {
+	plots, err := GenerateOceanPlots(3, 2)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(plots) != 6 || plots[1].X != 0 || plots[1].Y != 1 || plots[2].X != 1 {
+		t.Fatalf("plots must be generated column by column: %+v", plots)
+	}
+
+	wb := &WbMap{Version: defaultVersion, Game: &Game{}, Map: &MapProps{GridWidth: 3, GridHeight: 2, TopLatitude: 90, BottomLatitude: -90}, Plots: plots}
+	stats := wb.Stats()
+	if stats.Water != 6 || len(stats.Problems) != 0 {
+		t.Errorf("unexpected stats: %+v", stats)
+	}
+	if !strings.Contains(string(wb.ToWbFormat()), "num plots written=6") {
+		t.Error("number of plots must be written from actual plots")
+	}
+
+	if _, err := GenerateOceanPlots(0, 10); err == nil {
+		t.Error("empty map size must be rejected")
+	}
+}
+
+func TestStatsReportsProblems(t *testing.T) {
+	wb := &WbMap{Game: &Game{}, Map: &MapProps{GridWidth: 2, GridHeight: 2, TopLatitude: 10, BottomLatitude: 20},
+		Plots: []*Plot{{X: 5, Y: 0}}}
+	if problems := wb.Stats().Problems; len(problems) != 3 {
+		t.Errorf("expected plot count, outside plot and latitude problems, got %v", problems)
+	}
+}
+
+func TestAppMapProps(t *testing.T) {
+	app := NewApp()
+	app.wbMap = &WbMap{Game: &Game{}}
+	props := app.GetMapProps()
+	if props == nil || props.TopLatitude != 90 {
+		t.Fatalf("default map properties expected: %+v", props)
+	}
+
+	if err := app.CreatePlots(4, 3); err != nil {
+		t.Fatal(err)
+	}
+	if !app.dirty || len(app.wbMap.Plots) != 12 || app.wbMap.Map.GridWidth != 4 {
+		t.Error("plots must be created and the map marked dirty")
+	}
+	if err := app.CreatePlots(4, 3); err == nil {
+		t.Error("plots must not be created twice")
+	}
+
+	changed := *app.wbMap.Map
+	changed.GridWidth = 10
+	if err := app.SetMapProps(&changed); err == nil {
+		t.Error("grid size of a map with plots must not change")
+	}
+	changed = *app.wbMap.Map
+	changed.Climate = "CLIMATE_ARID"
+	if err := app.SetMapProps(&changed); err != nil || app.wbMap.Map.Climate != "CLIMATE_ARID" {
+		t.Errorf("climate must be changed: %v", err)
+	}
+	changed.TopLatitude = -95
+	if err := app.SetMapProps(&changed); err == nil {
+		t.Error("invalid latitudes must be rejected")
+	}
+}
+
+func TestNewWbMapRoundTrip(t *testing.T) {
+	wb := NewWbMap()
+	plots, err := GenerateOceanPlots(8, 4)
+	if err != nil {
+		t.Fatal(err)
+	}
+	wb.Map.GridWidth, wb.Map.GridHeight, wb.Plots = 8, 4, plots
+
+	parsed := assertRoundTrip(t, string(wb.ToWbFormat()))
+	if len(parsed.Players) != DefaultPlayerSlots || len(parsed.Teams) != DefaultPlayerSlots || len(parsed.Plots) != 32 {
+		t.Errorf("unexpected new map contents: %d players, %d teams, %d plots", len(parsed.Players), len(parsed.Teams), len(parsed.Plots))
+	}
+	if problems := parsed.Stats().Problems; len(problems) != 0 {
+		t.Errorf("a new map must have no problems: %v", problems)
+	}
+}

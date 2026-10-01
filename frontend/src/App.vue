@@ -33,9 +33,13 @@
           color="grey-darken-2"
           centered v-model="tab"
       >
-        <v-tab value="map">
+        <v-tab value="game">
           <v-icon icon="mdi-tune-vertical-variant" class="me-1"></v-icon>
-          Map Settings
+          Game
+        </v-tab>
+        <v-tab value="map">
+          <v-icon icon="mdi-earth" class="me-1"></v-icon>
+          Map
         </v-tab>
         <v-tab value="teams">
           <v-icon icon="mdi-account-group" class="me-1"></v-icon>
@@ -64,7 +68,8 @@
           <v-col cols="12" md="9" class="pe-2">
             <v-sheet height="80vh" rounded="lg" class="overflow-y-auto">
               <Settings v-if="tab === 'settings'" />
-              <MapSettings v-else-if="tab === 'map'" />
+              <MapSettings v-else-if="tab === 'game'" />
+              <MapProperties v-else-if="tab === 'map'" />
               <Teams v-else-if="tab === 'teams'" />
               <Players v-else-if="tab === 'players'" />
               <div v-else class="pa-5 text-grey">
@@ -93,6 +98,7 @@ import {onMounted, onUnmounted, ref} from "vue";
 import Console from "./components/Console.vue";
 import Settings from "./components/Settings.vue";
 import MapSettings from "./components/MapSettings.vue";
+import MapProperties from "./components/MapProperties.vue";
 import Teams from "./components/Teams.vue";
 import Players from "./components/Players.vue";
 import {EventsOff, EventsOn, Quit, WindowMaximise, WindowMinimise, WindowToggleMaximise} from "../wailsjs/runtime";
@@ -111,7 +117,7 @@ const minimize = WindowMinimise;
 const maximize = WindowToggleMaximise;
 const quit = Quit;
 
-const tab = ref<string>('map');
+const tab = ref<string>('game');
 const loadingMessage = ref<string>('');
 const errorOpen = ref(false);
 const errorMessage = ref('');
@@ -162,6 +168,8 @@ async function run(message: string, action: () => Promise<unknown>) {
 function newMap() {
   return run('Creating map...', async () => {
     if (await NewMap()) {
+      // Do not rely on the map-loaded event only: editors must drop the old map before any edit
+      await refreshMap();
       tab.value = 'map';
     }
   });
@@ -170,7 +178,8 @@ function newMap() {
 function openMap() {
   return run('Loading and parsing map...', async () => {
     if (await OpenMapDialog()) {
-      tab.value = 'map';
+      await refreshMap();
+      tab.value = 'game';
     }
   });
 }

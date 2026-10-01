@@ -12,6 +12,10 @@ const anyLeader = ref(false);
 async function load() {
   const p = await GetPlayers();
   players.value = (p ?? []).map(x => editor.Player.createFrom(x));
+  // A new map has only empty slots, show them so there is something to fill in
+  if (players.value.length > 0 && players.value.every(isEmpty)) {
+    showEmpty.value = true;
+  }
 }
 
 onMounted(load);

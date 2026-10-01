@@ -343,11 +343,7 @@ func (a *App) NewMap() bool {
 	}
 
 	a.mu.Lock()
-	a.wbMap = &WbMap{
-		Version: defaultVersion,
-		Game:    &Game{StartYear: -4000},
-		Map:     &MapProps{TopLatitude: 90, BottomLatitude: -90, WrapX: 1},
-	}
+	a.wbMap = NewWbMap()
 	a.filePath = ""
 	a.mu.Unlock()
 	// A new map is not saved anywhere yet
@@ -542,6 +538,112 @@ func (a *App) SetGame(g *Game) error {
 	return nil
 }
 
+// GetMapProps returns the map section (size, latitudes, wrapping, climate etc.), nil if no map loaded.
+func (a *App) GetMapProps() *MapProps {
+	a.mu.Lock()
+	defer a.mu.Unlock()
+	if a.wbMap == nil {
+		return nil
+	}
+	if a.wbMap.Map == nil {
+		a.wbMap.Map = &MapProps{TopLatitude: 90, BottomLatitude: -90, WrapX: 1}
+	}
+	return a.wbMap.Map
+}
+
+// SetMapProps replaces the map section. The grid size can not be changed while the map has plots,
+// otherwise the plots would not match the grid.
+func (a *App) SetMapProps(props *MapProps) error {
+	if props == nil {
+		return errors.New("map properties are nil")
+	}
+	if props.TopLatitude > 90 || props.BottomLatitude < -90 || props.TopLatitude <= props.BottomLatitude {
+		return errors.New("latitudes must be within -90..90 and top latitude must be greater than bottom latitude")
+	}
+
+	a.mu.Lock()
+	if a.wbMap == nil {
+		a.mu.Unlock()
+		return errors.New("no map loaded")
+	}
+	old := a.wbMap.Map
+	if old != nil && len(a.wbMap.Plots) > 0 && (old.GridWidth != props.GridWidth || old.GridHeight != props.GridHeight) {
+		a.mu.Unlock()
+		return errors.New("the grid size of a map with plots can not be changed")
+	}
+	changed := old == nil || !bytes.Equal(old.ToWbFormat(), props.ToWbFormat())
+	a.wbMap.Map = props
+	a.mu.Unlock()
+
+	if changed {
+		a.setDirty(true)
+	}
+	return nil
+}
+
+// CreatePlots fills a map without plots with width x height ocean plots.
+func (a *App) CreatePlots(width, height uint) error {
+	plots, err := GenerateOceanPlots(width, height)
+	if err != nil {
+		return err
+	}
+
+	a.mu.Lock()
+	if a.wbMap == nil {
+		a.mu.Unlock()
+		return errors.New("no map loaded")
+	}
+	if len(a.wbMap.Plots) > 0 {
+		a.mu.Unlock()
+		return errors.New("the map already has plots")
+	}
+	if a.wbMap.Map == nil {
+		a.wbMap.Map = &MapProps{TopLatitude: 90, BottomLatitude: -90, WrapX: 1}
+	}
+	a.wbMap.Map.GridWidth = uint64(width)
+	a.wbMap.Map.GridHeight = uint64(height)
+	a.wbMap.Plots = plots
+	a.mu.Unlock()
+
+	a.setDirty(true)
+	ConsoleWrite("Created %dx%d ocean plots", width, height)
+	return nil
+}
+
+// GetMapStats returns a summary of the map contents and found problems (nil if no map loaded).
+func (a *App) GetMapStats() *MapStats {
+	a.mu.Lock()
+	defer a.mu.Unlock()
+	if a.wbMap == nil {
+		return nil
+	}
+	return a.wbMap.Stats()
+}
+
+// WorldSizeOption is a world size with its default map size in plots
+type WorldSizeOption struct {
+	Type        string `json:"type"`
+	Description string `json:"description"`
+	Width       int    `json:"width"`
+	Height      int    `json:"height"`
+}
+
+// GetWorldSizes returns world sizes defined in game data with their default map sizes.
+func (a *App) GetWorldSizes() []WorldSizeOption {
+	data := CurrentGameData()
+	infos := data.Table(InfoWorldSizes).All()
+	result := make([]WorldSizeOption, 0, len(infos))
+	for _, info := range infos {
+		result = append(result, WorldSizeOption{
+			Type:        info.Type,
+			Description: describe(data, info),
+			Width:       info.GridWidth * PlotsPerGridUnit,
+			Height:      info.GridHeight * PlotsPerGridUnit,
+		})
+	}
+	return result
+}
+
 // GetTeams returns the current list of teams.
 func (a *App) GetTeams() []*Team {
 	a.mu.Lock()
@@ -650,6 +752,7 @@ var optionKeys = map[string]string{
 	"worldSizes":    InfoWorldSizes,
 	"climates":      InfoClimates,
 	"seaLevels":     InfoSeaLevels,
+	"terrains":      InfoTerrains,
 }
 
 func describe(data *GameData, info *TypeInfo) string {

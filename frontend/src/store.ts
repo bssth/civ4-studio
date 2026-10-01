@@ -1,5 +1,5 @@
 import {reactive, ref} from "vue";
-import {GetCivilizations, GetGame, GetMapInfo, GetOptions} from "../wailsjs/go/editor/App";
+import {GetCivilizations, GetGame, GetMapInfo, GetOptions, GetWorldSizes} from "../wailsjs/go/editor/App";
 import {editor} from "../wailsjs/go/models";
 
 export const mapInfo = ref<editor.MapInfo | null>(null);
@@ -10,12 +10,12 @@ export const mapVersion = ref(0);
 export type OptionKey =
     'eras' | 'speeds' | 'calendars' | 'victories' | 'gameOptions' | 'mpOptions' | 'forceControls' |
     'leaders' | 'handicaps' | 'colors' | 'artStyles' | 'techs' | 'religions' | 'civics' | 'civicOptions' |
-    'projects' | 'worldSizes' | 'climates' | 'seaLevels';
+    'projects' | 'worldSizes' | 'climates' | 'seaLevels' | 'terrains';
 
 const optionKeys: OptionKey[] = [
     'eras', 'speeds', 'calendars', 'victories', 'gameOptions', 'mpOptions', 'forceControls',
     'leaders', 'handicaps', 'colors', 'artStyles', 'techs', 'religions', 'civics', 'civicOptions',
-    'projects', 'worldSizes', 'climates', 'seaLevels',
+    'projects', 'worldSizes', 'climates', 'seaLevels', 'terrains',
 ];
 
 function emptyEnums(): Record<OptionKey, editor.EnumOption[]> {
@@ -24,20 +24,23 @@ function emptyEnums(): Record<OptionKey, editor.EnumOption[]> {
 
 export const enums = reactive<Record<OptionKey, editor.EnumOption[]>>(emptyEnums());
 export const civilizations = ref<editor.CivilizationOption[]>([]);
+export const worldSizes = ref<editor.WorldSizeOption[]>([]);
 export const xmlReady = ref(false);
 
 export async function refreshEnums() {
-    const [options, civs] = await Promise.all([GetOptions(), GetCivilizations()]);
+    const [options, civs, sizes] = await Promise.all([GetOptions(), GetCivilizations(), GetWorldSizes()]);
     for (const key of optionKeys) {
         enums[key] = options?.[key] ?? [];
     }
     civilizations.value = civs ?? [];
+    worldSizes.value = sizes ?? [];
     xmlReady.value = true;
 }
 
 export function clearEnums() {
     Object.assign(enums, emptyEnums());
     civilizations.value = [];
+    worldSizes.value = [];
     xmlReady.value = false;
 }
 

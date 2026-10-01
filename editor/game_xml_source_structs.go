@@ -57,4 +57,6 @@ type civ4InfoEntry struct {
 	Era                string   `xml:"Era"`
 	CivicOptionType    string   `xml:"CivicOptionType"`
 	Leaders            []string `xml:"Leaders>Leader>LeaderName"`
+	GridWidth          int      `xml:"iGridWidth"`
+	GridHeight         int      `xml:"iGridHeight"`
 }

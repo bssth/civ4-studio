@@ -79,7 +79,10 @@ func (m *WbMap) ToWbFormat() []byte {
 		buf.Write(player.ToWbFormat())
 	}
 	if m.Map != nil {
-		buf.Write(m.Map.ToWbFormat())
+		props := *m.Map
+		props.NumPlotsWritten = uint64(len(m.Plots))
+		props.NumSignsWritten = uint64(len(m.Signs))
+		buf.Write(props.ToWbFormat())
 	}
 	for _, plot := range m.Plots {
 		buf.Write(plot.ToWbFormat())

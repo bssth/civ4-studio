@@ -10,6 +10,10 @@ export function ChooseGameDir() {
   return window['go']['editor']['App']['ChooseGameDir']();
 }
 
+export function CreatePlots(arg1, arg2) {
+  return window['go']['editor']['App']['CreatePlots'](arg1, arg2);
+}
+
 export function CurrentMapPath() {
   return window['go']['editor']['App']['CurrentMapPath']();
 }
@@ -30,6 +34,14 @@ export function GetMapInfo() {
   return window['go']['editor']['App']['GetMapInfo']();
 }
 
+export function GetMapProps() {
+  return window['go']['editor']['App']['GetMapProps']();
+}
+
+export function GetMapStats() {
+  return window['go']['editor']['App']['GetMapStats']();
+}
+
 export function GetModsList() {
   return window['go']['editor']['App']['GetModsList']();
 }
@@ -44,6 +56,10 @@ export function GetPlayers() {
 
 export function GetTeams() {
   return window['go']['editor']['App']['GetTeams']();
+}
+
+export function GetWorldSizes() {
+  return window['go']['editor']['App']['GetWorldSizes']();
 }
 
 export function HasMap() {
@@ -88,6 +104,10 @@ export function SetConfig(arg1) {
 
 export function SetGame(arg1) {
   return window['go']['editor']['App']['SetGame'](arg1);
+}
+
+export function SetMapProps(arg1) {
+  return window['go']['editor']['App']['SetMapProps'](arg1);
 }
 
 export function SetPlayers(arg1) {

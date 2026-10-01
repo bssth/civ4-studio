@@ -6,6 +6,8 @@ export function CheckGameDir():Promise<string>;
 
 export function ChooseGameDir():Promise<string>;
 
+export function CreatePlots(arg1:number,arg2:number):Promise<void>;
+
 export function CurrentMapPath():Promise<string>;
 
 export function GetCivilizations():Promise<Array<editor.CivilizationOption>>;
@@ -16,6 +18,10 @@ export function GetGame():Promise<editor.Game|null>;
 
 export function GetMapInfo():Promise<editor.MapInfo|null>;
 
+export function GetMapProps():Promise<editor.MapProps|null>;
+
+export function GetMapStats():Promise<editor.MapStats|null>;
+
 export function GetModsList():Promise<Array<string>>;
 
 export function GetOptions():Promise<Record<string, Array<editor.EnumOption>>>;
@@ -23,6 +29,8 @@ export function GetOptions():Promise<Record<string, Array<editor.EnumOption>>>;
 export function GetPlayers():Promise<Array<editor.Player>|null>;
 
 export function GetTeams():Promise<Array<editor.Team>|null>;
+
+export function GetWorldSizes():Promise<Array<editor.WorldSizeOption>>;
 
 export function HasMap():Promise<boolean>;
 
@@ -45,6 +53,8 @@ export function SaveMapAs():Promise<string>;
 export function SetConfig(arg1:editor.Config):Promise<void>;
 
 export function SetGame(arg1:editor.Game):Promise<void>;
+
+export function SetMapProps(arg1:editor.MapProps):Promise<void>;
 
 export function SetPlayers(arg1:Array<editor.Player>):Promise<void>;
 

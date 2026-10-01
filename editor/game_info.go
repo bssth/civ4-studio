@@ -28,13 +28,14 @@ const (
 	InfoWorldSizes    = "WorldInfos"
 	InfoClimates      = "ClimateInfos"
 	InfoSeaLevels     = "SeaLevelInfos"
+	InfoTerrains      = "TerrainInfos"
 )
 
 // KnownInfoCategories lists all info categories loaded from game XML files
 var KnownInfoCategories = []string{
 	InfoEras, InfoSpeeds, InfoCalendars, InfoVictories, InfoGameOptions, InfoMPOptions, InfoForceControls,
 	InfoCivilizations, InfoLeaders, InfoHandicaps, InfoPlayerColors, InfoArtStyles, InfoTechs, InfoReligions,
-	InfoCivics, InfoCivicOptions, InfoProjects, InfoWorldSizes, InfoClimates, InfoSeaLevels,
+	InfoCivics, InfoCivicOptions, InfoProjects, InfoWorldSizes, InfoClimates, InfoSeaLevels, InfoTerrains,
 }
 
 // TypeInfo is a single entry of a game info XML file (a civilization, a tech, a leader etc.)
@@ -51,6 +52,9 @@ type TypeInfo struct {
 	ArtStyleType       string
 	Leaders            []string
 	Playable           bool
+	// World size-only fields: map size in grid units of 4x4 plots
+	GridWidth  int
+	GridHeight int
 }
 
 // InfoTable keeps entries of one category in the order they are defined in XML files

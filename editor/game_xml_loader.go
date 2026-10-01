@@ -191,6 +191,8 @@ func addInfoEntries(table *InfoTable, entries []civ4InfoEntry) {
 			ArtStyleType:       e.ArtStyleType,
 			Leaders:            e.Leaders,
 			Playable:           e.Playable == "1",
+			GridWidth:          e.GridWidth,
+			GridHeight:         e.GridHeight,
 		})
 	}
 }

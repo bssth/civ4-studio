@@ -59,6 +59,11 @@ func fakeGameInstall(t *testing.T) (btsDir string) {
 		<CivicInfo><CivicOptionType>CIVICOPTION_GOVERNMENT</CivicOptionType><Type>CIVIC_DESPOTISM</Type><Description>TXT_KEY_CIVIC_DESPOTISM</Description></CivicInfo>
 	</CivicInfos>
 </Civ4CivicInfos>`)
+	writeTestFile(t, filepath.Join(btsDir, XmlDir, "GameInfo", "CIV4WorldInfo.xml"), `<Civ4WorldInfo>
+	<WorldInfos>
+		<WorldInfo><Type>WORLDSIZE_STANDARD</Type><Description>TXT_KEY_WORLDSIZE_STANDARD</Description><iGridWidth>21</iGridWidth><iGridHeight>13</iGridHeight></WorldInfo>
+	</WorldInfos>
+</Civ4WorldInfo>`)
 	writeTestFile(t, filepath.Join(btsDir, BtsExe), "")
 	writeTestFile(t, filepath.Join(btsDir, PublicMapsDir, ".keep"), "")
 
@@ -138,6 +143,9 @@ func TestGetCivilizationsAndOptions(t *testing.T) {
 	options := app.GetOptions()
 	if len(options["techs"]) != 2 {
 		t.Errorf("without the mod base techs are expected: %+v", options["techs"])
+	}
+	if sizes := app.GetWorldSizes(); len(sizes) != 1 || sizes[0].Width != 84 || sizes[0].Height != 52 {
+		t.Errorf("world sizes must be converted to plots: %+v", sizes)
 	}
 	if colors := options["artStyles"]; len(colors) != 2 || colors[1].Description != "Asian" {
 		t.Errorf("types without description must be humanized: %+v", colors)

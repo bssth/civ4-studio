@@ -225,4 +225,70 @@ export namespace editor {
 	    }
 	}
 
+	// MapProps maps the editor.MapProps struct (BeginMap section), default Go JSON field names
+	export class MapProps {
+	    GridWidth: number;
+	    GridHeight: number;
+	    TopLatitude: number;
+	    BottomLatitude: number;
+	    WrapX: number;
+	    WrapY: number;
+	    WorldSize: string;
+	    Climate: string;
+	    SeaLevel: string;
+	    NumPlotsWritten: number;
+	    NumSignsWritten: number;
+	    RandomizeResources: boolean;
+	    Extra?: string[];
+
+	    static createFrom(source: any = {}) {
+	        return new MapProps(source);
+	    }
+
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.GridWidth = source["GridWidth"] ?? 0;
+	        this.GridHeight = source["GridHeight"] ?? 0;
+	        this.TopLatitude = source["TopLatitude"] ?? 90;
+	        this.BottomLatitude = source["BottomLatitude"] ?? -90;
+	        this.WrapX = source["WrapX"] ?? 0;
+	        this.WrapY = source["WrapY"] ?? 0;
+	        this.WorldSize = source["WorldSize"] ?? "";
+	        this.Climate = source["Climate"] ?? "";
+	        this.SeaLevel = source["SeaLevel"] ?? "";
+	        this.NumPlotsWritten = source["NumPlotsWritten"] ?? 0;
+	        this.NumSignsWritten = source["NumSignsWritten"] ?? 0;
+	        this.RandomizeResources = source["RandomizeResources"] ?? false;
+	        this.Extra = source["Extra"];
+	    }
+	}
+
+	export interface CountStat {
+	    type: string;
+	    count: number;
+	}
+
+	export interface MapStats {
+	    plots: number;
+	    expected_plots: number;
+	    peaks: number;
+	    hills: number;
+	    flat: number;
+	    water: number;
+	    cities: number;
+	    units: number;
+	    signs: number;
+	    starting_plots: number;
+	    bonuses: number;
+	    terrains: CountStat[] | null;
+	    problems: string[];
+	}
+
+	export interface WorldSizeOption {
+	    type: string;
+	    description: string;
+	    width: number;
+	    height: number;
+	}
+
 }
