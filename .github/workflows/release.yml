@@ -1,0 +1,51 @@
+name: Release
+
+# Pushing a tag like v1.2.3 builds the app for every platform and publishes a GitHub release
+# with the archives. Tags with a suffix (v1.2.3-beta.1) are published as pre-releases.
+on:
+  push:
+    tags: [ "v*" ]
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+      - name: Test
+        run: go test ./editor/...
+
+  build:
+    needs: test
+    uses: ./.github/workflows/build.yml
+    with:
+      version: ${{ github.ref_name }}
+
+  publish:
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: civ4studio-*
+          path: dist
+          merge-multiple: true
+
+      - name: Create release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ github.ref_name }}
+        run: |
+          ls -l dist
+          flags=(--repo "$GITHUB_REPOSITORY" --title "Civ4 Studio $TAG" --generate-notes --verify-tag)
+          if [[ "$TAG" == *-* ]]; then
+            flags+=(--prerelease)
+          fi
+          gh release create "$TAG" dist/* "${flags[@]}"

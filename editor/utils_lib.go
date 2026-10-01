@@ -1,53 +1,15 @@
 package editor
 
 import (
-	"bufio"
-	"encoding/xml"
-	"golang.org/x/net/html/charset"
 	"os"
-	"regexp"
 	"sort"
 	"strconv"
 )
 
-// WaitCloseChan is a channel that will be closed when the UI window is closed
-type WaitCloseChan <-chan bool
-
-// xmlTypeRegex is used to determine the XML file type by reading the first line
-var xmlTypeRegex = regexp.MustCompile("<([a-zA-Z0-9]+)[ |>]")
-
-// ParseXMLFromFile opens a file and returns an XML decoder and the Civilization XML file type
-func ParseXMLFromFile(path string) (decoder *xml.Decoder, tag CivXmlType, err error) {
-	var xmlFile *os.File
-	xmlFile, err = os.Open(path)
-	if err != nil {
-		ConsoleWrite("Error opening file: %s", err)
-		return
-	}
-
-	// Read line-by-line to find the XML file type. It's needed to determine which struct to use
-	// No need to parse the whole file, first line is enough
-	sc := bufio.NewScanner(xmlFile)
-	for sc.Scan() {
-		matches := xmlTypeRegex.FindStringSubmatch(sc.Text())
-		if len(matches) > 1 {
-			tag = CivXmlType(matches[1])
-			break
-		}
-	}
-
-	xmlFile.Close()
-	// Reopen file to parse it from the beginning
-	xmlFile, err = os.Open(path)
-	if err != nil {
-		ConsoleWrite("Error reopening file: %s", err)
-		return
-	}
-
-	decoder = xml.NewDecoder(xmlFile)
-	decoder.CharsetReader = charset.NewReaderLabel // needed for non-UTF-8 files, sometimes it's something like "iso-8859-1"
-	decoder.Strict = false                         // a bit faster and safer because some mod files are not strictly valid XML
-	return
+// IsDir reports whether path exists and is a directory
+func IsDir(path string) bool {
+	info, err := os.Stat(path)
+	return err == nil && info.IsDir()
 }
 
 // ToInt converts a string to an integer

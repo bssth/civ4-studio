@@ -2,11 +2,9 @@ package editor
 
 import (
 	"errors"
-	"fmt"
 	"os"
 	"path/filepath"
 	"runtime"
-	"strings"
 )
 
 const BtsExe = "Civ4BeyondSword.exe"
@@ -83,30 +81,6 @@ func GetModsList(path string) []string {
 	return mods
 }
 
-// GetFilesFromGameDirsRecursive returns a list of files by path (filepath or directory to scan) from all game directories (core game + mods) recursively
-func GetFilesFromGameDirsRecursive(path string, ext string) (files []string, err error) {
-	var currentErr error
-
-	for _, dir := range GetRootDirs() {
-		subDir := dir + string(os.PathSeparator) + path
-
-		currentErr = filepath.Walk(subDir, func(walkFileName string, f os.FileInfo, err error) error {
-			if !strings.HasSuffix(strings.ToLower(walkFileName), "."+ext) {
-				return nil
-			}
-
-			files = append(files, walkFileName)
-			return nil
-		})
-
-		if currentErr != nil {
-			err = fmt.Errorf("%w\n%s", err, currentErr)
-		}
-	}
-
-	return
-}
-
 // GetFilesFromGameDirs returns a list of files by path (filepath or directory to scan) from all game directories (core game + mods)
 func GetFilesFromGameDirs(path string) []string {
 	var files []string
@@ -149,7 +123,7 @@ func LaunchGame(mapFileName string) error {
 	var argv []string
 	var err error
 	if GlobalConfig.Mod != "" {
-		argv = append(argv, "mod=\" "+GlobalConfig.Mod+"\"")
+		argv = append(argv, "mod= \""+GlobalConfig.Mod+"\"")
 	}
 
 	if mapFileName != "" {
@@ -162,7 +136,8 @@ func LaunchGame(mapFileName string) error {
 
 	if runtime.GOOS != "windows" {
 		var game *os.Process
-		game, err = os.StartProcess(GetExe(), argv, &os.ProcAttr{
+		// argv[0] must be the program itself, otherwise the first real argument is swallowed
+		game, err = os.StartProcess(GetExe(), append([]string{GetExe()}, argv...), &os.ProcAttr{
 			Dir:   GlobalConfig.GameDir,
 			Files: []*os.File{os.Stdin, os.Stdout, os.Stderr},
 			Sys:   nil,

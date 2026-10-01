@@ -5,7 +5,8 @@ import (
 	"log"
 )
 
-var consoleChannel = make(chan string, 10)
+// The buffer must hold a burst of lines (e.g. game data loading) until the frontend reads them
+var consoleChannel = make(chan string, 1024)
 var consoleChannelUsed = false
 
 func GetConsoleChannel() <-chan string {

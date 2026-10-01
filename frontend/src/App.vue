@@ -1,20 +1,26 @@
 <template>
   <v-app id="inspire">
-    <v-system-bar window>
-      <v-icon class="me-4" icon="mdi-folder-open" @click="openMap" />
-      <v-icon class="me-4" icon="mdi-content-save" @click="saveMap" />
-      <v-icon class="me-4" icon="mdi-rocket-launch" @click="launch" />
-      <v-icon class="me-4" icon="mdi-cog" @click="tab = 'settings'" />
+    <v-system-bar window style="--wails-draggable:drag">
+      <v-icon class="me-4 no-drag" icon="mdi-file-plus-outline" title="New map (Ctrl+N)" @click="newMap" />
+      <v-icon class="me-4 no-drag" icon="mdi-folder-open" title="Open (Ctrl+O)" @click="openMap" />
+      <v-icon class="me-4 no-drag" icon="mdi-content-save" title="Save (Ctrl+S)" @click="saveMap" />
+      <v-icon class="me-4 no-drag" icon="mdi-content-save-edit" title="Save as (Ctrl+Shift+S)" @click="saveMapAs" />
+      <v-icon class="me-4 no-drag" icon="mdi-rocket-launch" title="Launch the game" @click="launch" />
+      <v-icon class="me-4 no-drag" icon="mdi-cog" title="Settings" @click="tab = 'settings'" />
 
-      <span class="text-caption text-medium-emphasis ms-4 text-truncate" style="max-width: 50%;">
-        {{ mapInfo?.path || 'No map loaded' }}
+      <span class="text-caption text-medium-emphasis ms-4 text-truncate" style="max-width: 50%;"
+            :title="mapInfo?.path ?? ''">
+        <template v-if="mapInfo">
+          {{ mapInfo.dirty ? '● ' : '' }}{{ mapInfo.path ? fileName(mapInfo.path) : 'New map (not saved)' }}
+        </template>
+        <template v-else>No map loaded</template>
       </span>
 
       <v-spacer></v-spacer>
 
-      <v-btn icon="mdi-minus" variant="text" @click="minimize" />
-      <v-btn class="ms-2" icon="mdi-checkbox-blank-outline" variant="text" @click="maximize" />
-      <v-btn class="ms-2" icon="mdi-close" variant="text" @click="quit" />
+      <v-btn class="no-drag" icon="mdi-minus" variant="text" @click="minimize" />
+      <v-btn class="ms-2 no-drag" icon="mdi-checkbox-blank-outline" variant="text" @click="maximize" />
+      <v-btn class="ms-2 no-drag" icon="mdi-close" variant="text" @click="quit" />
     </v-system-bar>
 
     <v-app-bar
@@ -28,9 +34,17 @@
           color="grey-darken-2"
           centered v-model="tab"
       >
-        <v-tab value="map">
+        <v-tab value="game">
           <v-icon icon="mdi-tune-vertical-variant" class="me-1"></v-icon>
-          Map Settings
+          Game
+        </v-tab>
+        <v-tab value="map">
+          <v-icon icon="mdi-earth" class="me-1"></v-icon>
+          Map
+        </v-tab>
+        <v-tab value="world">
+          <v-icon icon="mdi-map" class="me-1"></v-icon>
+          World
         </v-tab>
         <v-tab value="teams">
           <v-icon icon="mdi-account-group" class="me-1"></v-icon>
@@ -39,6 +53,10 @@
         <v-tab value="players">
           <v-icon icon="mdi-human-edit" class="me-1"></v-icon>
           Players
+        </v-tab>
+        <v-tab value="check">
+          <v-icon icon="mdi-clipboard-check-outline" class="me-1"></v-icon>
+          Check
         </v-tab>
         <v-tab value="settings">
           <v-icon icon="mdi-cog" class="me-1"></v-icon>
@@ -56,10 +74,13 @@
     <v-main class="bg-grey-lighten-3" style="--wails-draggable:no-drag">
       <v-container fluid>
         <v-row no-gutters>
-          <v-col cols="12" md="9" class="pe-2">
+          <v-col cols="12" :md="wide ? 12 : 9" :class="wide ? '' : 'pe-2'">
             <v-sheet height="80vh" rounded="lg" class="overflow-y-auto">
               <Settings v-if="tab === 'settings'" />
-              <MapSettings v-else-if="tab === 'map'" />
+              <MapSettings v-else-if="tab === 'game'" />
+              <MapProperties v-else-if="tab === 'map'" />
+              <WorldView v-else-if="tab === 'world'" />
+              <CheckView v-else-if="tab === 'check'" />
               <Teams v-else-if="tab === 'teams'" />
               <Players v-else-if="tab === 'players'" />
               <div v-else class="pa-5 text-grey">
@@ -68,7 +89,8 @@
             </v-sheet>
           </v-col>
 
-          <v-col cols="12" md="3">
+          <!-- v-show keeps the console mounted, so it does not miss lines while hidden -->
+          <v-col v-show="!wide" cols="12" md="3">
             <v-sheet height="80vh" rounded="lg" class="pa-3">
               <Console />
             </v-sheet>
@@ -77,6 +99,22 @@
       </v-container>
     </v-main>
 
+    <v-dialog v-model="saveCheck.open" max-width="640">
+      <v-card>
+        <v-card-title>The scenario has {{ saveCheck.errors }} error(s)</v-card-title>
+        <v-card-text>
+          The game may fail to load the map or behave unexpectedly. Save anyway?
+          <ProblemList :problems="saveCheck.problems" :limit="6" @navigate="closeSaveCheck(false)" />
+        </v-card-text>
+        <v-card-actions>
+          <v-btn variant="text" @click="closeSaveCheck(false); tab = 'check'">Show all problems</v-btn>
+          <v-spacer />
+          <v-btn variant="text" @click="closeSaveCheck(false)">Cancel</v-btn>
+          <v-btn color="error" variant="tonal" @click="closeSaveCheck(true)">Save anyway</v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
+
     <v-snackbar v-model="errorOpen" color="error" timeout="6000">
       {{ errorMessage }}
     </v-snackbar>
@@ -84,10 +122,14 @@
 </template>
 
 <script setup lang="ts">
-import {onMounted, onUnmounted, ref} from "vue";
+import {computed, onMounted, onUnmounted, reactive, ref, watch} from "vue";
 import Console from "./components/Console.vue";
 import Settings from "./components/Settings.vue";
 import MapSettings from "./components/MapSettings.vue";
+import MapProperties from "./components/MapProperties.vue";
+import WorldView from "./components/WorldView.vue";
+import CheckView from "./components/CheckView.vue";
+import ProblemList from "./components/ProblemList.vue";
 import Teams from "./components/Teams.vue";
 import Players from "./components/Players.vue";
 import {EventsOff, EventsOn, Quit, WindowMaximise, WindowMinimise, WindowToggleMaximise} from "../wailsjs/runtime";
@@ -95,16 +137,61 @@ import {
   CheckGameDir,
   LaunchGame,
   LoadGameXML,
+  NewMap,
   OpenMapDialog,
   SaveMap,
+  SaveMapAs,
+  ValidateMap,
 } from "../wailsjs/go/editor/App";
-import {mapInfo, refreshEnums, refreshMap} from "./store";
+import {editor} from "../wailsjs/go/models";
+import {clearEnums, mapInfo, refreshEnums, refreshMap, refreshMapInfo, requestedTab} from "./store";
 
 const minimize = WindowMinimise;
 const maximize = WindowToggleMaximise;
 const quit = Quit;
 
-const tab = ref<string>('map');
+const tab = ref<string>('game');
+
+// The title bar shows only the file name, the full path is in the tooltip
+function fileName(path: string): string {
+  return path.split(/[\\/]/).pop() ?? path;
+}
+// The world map needs the whole width, the console is hidden there
+const wide = computed(() => tab.value === 'world');
+
+// Other components ask to show a tab, e.g. the problem list
+watch(requestedTab, t => {
+  if (t) {
+    tab.value = t;
+    requestedTab.value = null;
+  }
+});
+
+// Check before saving: the dialog resolves to true when the user wants to save despite errors
+const saveCheck = reactive<{ open: boolean, errors: number, problems: editor.Problem[], resolve: ((save: boolean) => void) | null }>({
+  open: false, errors: 0, problems: [], resolve: null,
+});
+
+function closeSaveCheck(save: boolean) {
+  saveCheck.open = false;
+  saveCheck.resolve?.(save);
+  saveCheck.resolve = null;
+}
+
+async function confirmSave(): Promise<boolean> {
+  const problems = (await ValidateMap()) ?? [];
+  const errors = problems.filter(p => p.severity === 'error');
+  if (errors.length === 0) return true;
+  saveCheck.errors = errors.length;
+  saveCheck.problems = errors;
+  saveCheck.open = true;
+  return new Promise(resolve => saveCheck.resolve = resolve);
+}
+
+// The dialog closed by clicking outside or Escape means cancel
+watch(() => saveCheck.open, open => {
+  if (!open && saveCheck.resolve) closeSaveCheck(false);
+});
 const loadingMessage = ref<string>('');
 const errorOpen = ref(false);
 const errorMessage = ref('');
@@ -114,18 +201,37 @@ function showError(msg: string) {
   errorOpen.value = true;
 }
 
-async function bootstrap() {
-  const reason = await CheckGameDir();
-  if (reason) {
-    showError(`Game directory not configured: ${reason}. Open Settings to fix.`);
-    tab.value = 'settings';
-    return;
-  }
+let bootstrapping = false;
 
-  loadingMessage.value = 'Parsing game XML files...';
+async function bootstrap() {
+  if (bootstrapping) return;
+  bootstrapping = true;
   try {
+    // A map may be already opened from the command line
+    await refreshMap();
+
+    const reason = await CheckGameDir();
+    if (reason) {
+      showError(`Game directory not configured: ${reason}. Open Settings to fix.`);
+      tab.value = 'settings';
+      return;
+    }
+
+    loadingMessage.value = 'Parsing game XML files...';
     await LoadGameXML();
     await refreshEnums();
+  } catch (err: any) {
+    showError(String(err));
+  } finally {
+    loadingMessage.value = '';
+    bootstrapping = false;
+  }
+}
+
+async function run(message: string, action: () => Promise<unknown>) {
+  loadingMessage.value = message;
+  try {
+    await action();
   } catch (err: any) {
     showError(String(err));
   } finally {
@@ -133,19 +239,23 @@ async function bootstrap() {
   }
 }
 
-async function openMap() {
-  loadingMessage.value = 'Loading and parsing map...';
-  try {
-    const path = await OpenMapDialog();
-    if (path) {
+function newMap() {
+  return run('Creating map...', async () => {
+    if (await NewMap()) {
+      // Do not rely on the map-loaded event only: editors must drop the old map before any edit
       await refreshMap();
       tab.value = 'map';
     }
-  } catch (err: any) {
-    showError(String(err));
-  } finally {
-    loadingMessage.value = '';
-  }
+  });
+}
+
+function openMap() {
+  return run('Loading and parsing map...', async () => {
+    if (await OpenMapDialog()) {
+      await refreshMap();
+      tab.value = 'game';
+    }
+  });
 }
 
 async function saveMap() {
@@ -153,17 +263,23 @@ async function saveMap() {
     showError('No map loaded');
     return;
   }
-  loadingMessage.value = 'Saving...';
-  try {
-    const path = await SaveMap('');
-    if (path) {
-      await refreshMap();
-    }
-  } catch (err: any) {
-    showError(String(err));
-  } finally {
-    loadingMessage.value = '';
+  if (!await confirmSave().catch(err => (showError(String(err)), false))) return;
+  return run('Saving...', async () => {
+    await SaveMap('');
+    await refreshMapInfo();
+  });
+}
+
+async function saveMapAs() {
+  if (!mapInfo.value) {
+    showError('No map loaded');
+    return;
   }
+  if (!await confirmSave().catch(err => (showError(String(err)), false))) return;
+  return run('Saving...', async () => {
+    await SaveMapAs();
+    await refreshMapInfo();
+  });
 }
 
 async function launch() {
@@ -171,6 +287,20 @@ async function launch() {
     await LaunchGame();
   } catch (err: any) {
     showError(String(err));
+  }
+}
+
+function onKeyDown(e: KeyboardEvent) {
+  if (!(e.ctrlKey || e.metaKey)) return;
+  const key = e.key.toLowerCase();
+  const actions: Record<string, () => unknown> = {
+    n: newMap,
+    o: openMap,
+    s: e.shiftKey ? saveMapAs : saveMap,
+  };
+  if (actions[key]) {
+    e.preventDefault();
+    actions[key]();
   }
 }
 
@@ -182,20 +312,35 @@ onMounted(() => {
   EventsOn('xml-done', () => {
     loadingMessage.value = '';
   });
+  EventsOn('xml-reset', () => {
+    clearEnums();
+    bootstrap();
+  });
   EventsOn('map-loaded', async () => {
     await refreshMap();
   });
+  EventsOn('map-state', async () => {
+    await refreshMapInfo();
+  });
+  window.addEventListener('keydown', onKeyDown);
   bootstrap();
 });
 
 onUnmounted(() => {
   EventsOff('xml-progress');
   EventsOff('xml-done');
+  EventsOff('xml-reset');
   EventsOff('map-loaded');
+  EventsOff('map-state');
+  window.removeEventListener('keydown', onKeyDown);
 });
 </script>
 
 <style>
+.no-drag {
+  --wails-draggable: no-drag;
+}
+
 body {
   overflow: hidden;
 }
