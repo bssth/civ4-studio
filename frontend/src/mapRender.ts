@@ -87,16 +87,43 @@ export interface RenderOptions {
     brush?: { x: number, y: number, size: number } | null;
     // River edge under the cursor in river mode
     edge?: RiverEdge | null;
+    // Map column shown at the left edge of a map wrapping east-west (0 shows the map as it is stored)
+    offset?: number;
+    // The map wraps east-west: the brush continues on the other side of the seam
+    wrapX?: boolean;
 }
 
-/** Plots covered by a square brush of the given size centered at x, y, clipped to the map */
-export function brushCells(view: editor.MapView, x: number, y: number, size: number): { x: number, y: number }[] {
+/** Remainder that is never negative, e.g. mod(-1, 10) = 9 */
+export function mod(a: number, n: number): number {
+    return ((a % n) + n) % n;
+}
+
+/** Screen column of a map column when the map is shifted by offset columns */
+export function screenColumn(x: number, width: number, offset: number): number {
+    return mod(x - offset, width);
+}
+
+/** Map column shown in a screen column, inverse of screenColumn */
+export function mapColumn(column: number, width: number, offset: number): number {
+    return mod(column + offset, width);
+}
+
+/**
+ * Plots covered by a square brush of the given size centered at x, y, clipped to the map.
+ * On a map wrapping east-west the brush continues on the other side of the seam.
+ */
+export function brushCells(view: editor.MapView, x: number, y: number, size: number, wrapX = false): { x: number, y: number }[] {
     const r = Math.floor((size - 1) / 2);
     const cells = [];
+    const seen = new Set<number>();
     for (let dy = -r; dy <= r; dy++) {
         for (let dx = -r; dx <= r; dx++) {
-            const cx = x + dx, cy = y + dy;
-            if (cx >= 0 && cy >= 0 && cx < view.width && cy < view.height) cells.push({x: cx, y: cy});
+            const cx = wrapX ? mod(x + dx, view.width) : x + dx, cy = y + dy;
+            if (cx >= 0 && cy >= 0 && cx < view.width && cy < view.height && !seen.has(cy * view.width + cx)) {
+                // A brush wider than a narrow map must not cover a plot twice
+                seen.add(cy * view.width + cx);
+                cells.push({x: cx, y: cy});
+            }
         }
     }
     return cells;
@@ -128,13 +155,14 @@ export function lineCells(x0: number, y0: number, x1: number, y1: number): { x: 
  * River edge nearest to a point inside a plot. Edges of the neighbour plots are stored there:
  * the north edge is the south edge of the plot above, the west edge is the east edge of the plot on the left.
  */
-export function nearestEdge(view: editor.MapView, x: number, y: number, fx: number, fy: number): RiverEdge | null {
+export function nearestEdge(view: editor.MapView, x: number, y: number, fx: number, fy: number, wrapX = false): RiverEdge | null {
     // fx, fy are 0..1 inside the plot, fy grows downwards on the screen
     const distances: [number, RiverEdge][] = [
         [1 - fy, {x, y, side: 'south'}],
         [fy, {x, y: y + 1, side: 'south'}],
         [1 - fx, {x, y, side: 'east'}],
-        [fx, {x: x - 1, y, side: 'east'}],
+        // On a wrapping map the west edge of the first column is the east edge of the last one
+        [fx, {x: wrapX ? mod(x - 1, view.width) : x - 1, y, side: 'east'}],
     ];
     distances.sort((a, b) => a[0] - b[0]);
     for (const [, edge] of distances) {
@@ -151,6 +179,9 @@ export function rowOf(view: editor.MapView, y: number): number {
 export function drawMap(ctx: CanvasRenderingContext2D, view: editor.MapView, o: RenderOptions) {
     const {cell, layers} = o;
     const w = view.width, h = view.height;
+    const offset = o.offset ?? 0;
+    // Left pixel of a map column
+    const left = (x: number) => screenColumn(x, w, offset) * cell;
     ctx.clearRect(0, 0, w * cell, h * cell);
 
     const terrainFill = view.terrains.map(terrainColor);
@@ -160,7 +191,7 @@ export function drawMap(ctx: CanvasRenderingContext2D, view: editor.MapView, o: 
         const py = rowOf(view, y) * cell;
         for (let x = 0; x < w; x++) {
             const i = y * w + x;
-            const px = x * cell;
+            const px = left(x);
             const t = view.terrain[i];
             ctx.fillStyle = t >= 0 ? terrainFill[t] : '#000000';
             ctx.fillRect(px, py, cell, cell);
@@ -231,7 +262,7 @@ export function drawMap(ctx: CanvasRenderingContext2D, view: editor.MapView, o: 
             const flags = view.flags[i];
             if (!(flags & (FLAG_N_OF_RIVER | FLAG_W_OF_RIVER))) continue;
             const x = i % w, y = Math.floor(i / w);
-            const px = x * cell, py = rowOf(view, y) * cell;
+            const px = left(x), py = rowOf(view, y) * cell;
             if (flags & FLAG_N_OF_RIVER) {
                 // The river runs along the southern edge of the plot
                 ctx.moveTo(px, py + cell);
@@ -246,9 +277,21 @@ export function drawMap(ctx: CanvasRenderingContext2D, view: editor.MapView, o: 
         ctx.stroke();
     }
 
+    if (offset !== 0) {
+        // The seam: the first column of the map as it is stored
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.6)';
+        ctx.lineWidth = 1;
+        ctx.setLineDash([6, 4]);
+        ctx.beginPath();
+        ctx.moveTo(left(0) + 0.5, 0);
+        ctx.lineTo(left(0) + 0.5, h * cell);
+        ctx.stroke();
+        ctx.setLineDash([]);
+    }
+
     for (let i = 0; i < view.flags.length; i++) {
         const x = i % w, y = Math.floor(i / w);
-        const px = x * cell, py = rowOf(view, y) * cell;
+        const px = left(x), py = rowOf(view, y) * cell;
         const flags = view.flags[i];
 
         if (layers.resources && view.bonus[i] >= 0 && cell >= 4) {
@@ -297,7 +340,7 @@ export function drawMap(ctx: CanvasRenderingContext2D, view: editor.MapView, o: 
 
     if (layers.starts) {
         for (const s of o.starts) {
-            const cx = s.x * cell + cell / 2, cy = rowOf(view, s.y) * cell + cell / 2;
+            const cx = left(s.x) + cell / 2, cy = rowOf(view, s.y) * cell + cell / 2;
             const r = Math.max(4, cell * 0.6);
             ctx.globalAlpha = s.random ? 0.45 : 1;
             ctx.fillStyle = s.color;
@@ -321,18 +364,28 @@ export function drawMap(ctx: CanvasRenderingContext2D, view: editor.MapView, o: 
     }
 
     if (o.brush) {
-        const r = Math.floor((o.brush.size - 1) / 2);
-        const left = Math.max(0, o.brush.x - r), right = Math.min(w - 1, o.brush.x + r);
-        const top = Math.min(h - 1, o.brush.y + r), bottom = Math.max(0, o.brush.y - r);
-        ctx.strokeStyle = '#ffffff';
-        ctx.lineWidth = 2;
-        ctx.setLineDash([4, 3]);
-        ctx.strokeRect(left * cell, rowOf(view, top) * cell, (right - left + 1) * cell, (top - bottom + 1) * cell);
-        ctx.setLineDash([]);
+        const cells = brushCells(view, o.brush.x, o.brush.y, o.brush.size, o.wrapX);
+        if (cells.length > 0) {
+            const top = Math.max(...cells.map(c => c.y)), bottom = Math.min(...cells.map(c => c.y));
+            // A brush crossing the edge of the screen is drawn as two parts
+            const columns = [...new Set(cells.map(c => screenColumn(c.x, w, offset)))].sort((a, b) => a - b);
+            ctx.strokeStyle = '#ffffff';
+            ctx.lineWidth = 2;
+            ctx.setLineDash([4, 3]);
+            let start = 0;
+            for (let i = 1; i <= columns.length; i++) {
+                if (i === columns.length || columns[i] !== columns[i - 1] + 1) {
+                    ctx.strokeRect(columns[start] * cell, rowOf(view, top) * cell,
+                        (columns[i - 1] - columns[start] + 1) * cell, (top - bottom + 1) * cell);
+                    start = i;
+                }
+            }
+            ctx.setLineDash([]);
+        }
     }
 
     if (o.edge) {
-        const px = o.edge.x * cell, py = rowOf(view, o.edge.y) * cell;
+        const px = left(o.edge.x), py = rowOf(view, o.edge.y) * cell;
         ctx.strokeStyle = '#ffeb3b';
         ctx.lineWidth = Math.max(3, cell / 4);
         ctx.beginPath();
@@ -347,7 +400,7 @@ export function drawMap(ctx: CanvasRenderingContext2D, view: editor.MapView, o: 
     }
 
     if (o.selected) {
-        const px = o.selected.x * cell, py = rowOf(view, o.selected.y) * cell;
+        const px = left(o.selected.x), py = rowOf(view, o.selected.y) * cell;
         ctx.strokeStyle = '#ffeb3b';
         ctx.lineWidth = Math.max(2, cell / 6);
         ctx.strokeRect(px, py, cell, cell);

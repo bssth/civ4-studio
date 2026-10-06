@@ -8,6 +8,7 @@ import {
   describeType,
   enums,
   mapInfo,
+  mapRevision,
   mapVersion,
   NONE,
   playerName,
@@ -34,7 +35,7 @@ async function load() {
 }
 
 onMounted(load);
-watch(mapVersion, load);
+watch([mapVersion, mapRevision], () => load());
 
 watch(players, batched(() => {
   SetPlayers(players.value.map(p => editor.Player.createFrom(p)));

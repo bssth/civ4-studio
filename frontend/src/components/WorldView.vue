@@ -1,15 +1,13 @@
 <script setup lang="ts">
 import {computed, nextTick, onMounted, onUnmounted, reactive, ref, shallowRef, watch} from "vue";
 import {
+  GetMapProps,
   GetMapView,
   GetPlayers,
   GetPlot,
-  HistoryState,
   PaintPlots,
-  Redo,
   SetPlayerStart,
-  SetPlot,
-  Undo
+  SetPlot
 } from "../../wailsjs/go/editor/App";
 import {editor} from "../../wailsjs/go/models";
 import {
@@ -20,10 +18,15 @@ import {
   describeType,
   enums,
   focusPlot,
+  history,
+  historyLabel,
+  mapRevision,
   mapVersion,
   NONE,
   playerColor,
-  playerName
+  playerName,
+  refreshHistory,
+  stepHistory
 } from "../store";
 import {
   brushCells,
@@ -32,10 +35,13 @@ import {
   FLAG_ROUTE,
   Layers,
   lineCells,
+  mapColumn,
+  mod,
   nearestEdge,
   PLOT_LAND,
   PLOT_OCEAN,
   RiverEdge,
+  screenColumn,
   StartMarker
 } from "../mapRender";
 import PlotEditor from "./PlotEditor.vue";
@@ -46,28 +52,16 @@ const {t} = useI18n();
 
 const heightNames = computed(() => [t('height.peak'), t('height.hills'), t('height.flat'), t('height.water')]);
 
-/** Text of a history label from the backend: "paint:<plots>", "plot:<x>,<y>", "start:<player>" */
-function historyLabel(label: string): string {
-  const [kind, value = ''] = label.split(':');
-  switch (kind) {
-    case 'paint':
-      return t('history.paint', {n: value});
-    case 'plot': {
-      const [x, y] = value.split(',');
-      return t('history.plot', {x, y});
-    }
-    case 'start':
-      return t('history.start', {n: value});
-  }
-  return label;
-}
-
 type Mode = 'select' | 'paint' | 'river';
 
 // The view holds big arrays, it is replaced or redrawn explicitly instead of being deeply reactive
 const view = shallowRef<editor.MapView | null>(null);
 const players = ref<editor.Player[]>([]);
 const cell = ref(8);
+// The map wraps east-west (as almost all maps do): it can be shifted to move the seam out of the way
+const wrapX = ref(false);
+// Map column shown at the left edge
+const offset = ref(0);
 const mode = ref<Mode>('select');
 const layers = reactive<Layers>({rivers: true, resources: true, cities: true, units: true, starts: true, grid: false});
 const layerNames: { key: keyof Layers, title: string, icon: string }[] = [
@@ -88,7 +82,6 @@ const selectedPlot = ref<editor.Plot | null>(null);
 const hover = ref<{ x: number, y: number } | null>(null);
 const hoverEdge = ref<RiverEdge | null>(null);
 const error = ref('');
-const history = ref<editor.HistoryState>(editor.HistoryState.createFrom({undo: '', redo: ''}));
 
 const canvas = ref<HTMLCanvasElement | null>(null);
 const scroller = ref<HTMLElement | null>(null);
@@ -98,14 +91,13 @@ function setView(v: editor.MapView | null) {
   view.value = v && v.width > 0 && v.height > 0 ? v : null;
 }
 
-async function refreshHistory() {
-  history.value = await HistoryState();
-}
-
 async function load(fit = false) {
-  const [v, p] = await Promise.all([GetMapView(), GetPlayers()]);
+  const [v, p, props] = await Promise.all([GetMapView(), GetPlayers(), GetMapProps()]);
   setView(v);
   players.value = p ?? [];
+  wrapX.value = !!props && props.WrapX !== 0;
+  if (!wrapX.value || !view.value) offset.value = 0;
+  else offset.value = mod(offset.value, view.value.width);
   await refreshHistory();
   if (fit) {
     await nextTick();
@@ -122,12 +114,10 @@ const refreshView = batched(async () => {
 onMounted(async () => {
   await load(true);
   await consumeFocus();
-  window.addEventListener('keydown', onKeyDown);
 });
 
 onUnmounted(() => {
   cancelAnimationFrame(frame);
-  window.removeEventListener('keydown', onKeyDown);
 });
 
 // A plot requested from another tab (e.g. the problem list): zoom in, center it and open its editor
@@ -141,7 +131,7 @@ async function consumeFocus() {
   await nextTick();
   const el = scroller.value;
   if (el) {
-    el.scrollLeft = (target.x + 0.5) * cell.value - el.clientWidth / 2;
+    el.scrollLeft = (column(target.x) + 0.5) * cell.value - el.clientWidth / 2;
     el.scrollTop = (view.value.height - target.y - 0.5) * cell.value - el.clientHeight / 2;
   }
 }
@@ -150,8 +140,11 @@ watch(focusPlot, consumeFocus);
 watch(mapVersion, () => {
   selected.value = null;
   selectedPlot.value = null;
+  offset.value = 0;
   load(true);
 });
+// Undo and redo may change plots and start positions
+watch(mapRevision, () => load());
 
 const maxCell = computed(() => {
   if (!view.value) return 32;
@@ -211,19 +204,40 @@ function draw() {
     selected: mode.value === 'select' ? selected.value : null,
     brush: mode.value === 'paint' && hover.value ? {...hover.value, size: brush.size} : null,
     edge: mode.value === 'river' ? hoverEdge.value : null,
+    offset: offset.value,
+    wrapX: wrapX.value,
   });
 }
 
-watch([view, cell, selected, hover, hoverEdge, mode, () => brush.size], scheduleDraw);
+watch([view, cell, selected, hover, hoverEdge, mode, offset, () => brush.size], scheduleDraw);
 watch([layers, starts, () => enums.colors], scheduleDraw, {deep: true});
+
+/** Screen column of a map column, see offset */
+function column(x: number): number {
+  return view.value ? screenColumn(x, view.value.width, offset.value) : x;
+}
 
 function cellAt(e: MouseEvent): { x: number, y: number } | null {
   const v = view.value;
   if (!v) return null;
-  const x = Math.floor(e.offsetX / cell.value);
+  const col = Math.floor(e.offsetX / cell.value);
   const row = Math.floor(e.offsetY / cell.value);
-  if (x < 0 || x >= v.width || row < 0 || row >= v.height) return null;
-  return {x, y: v.height - 1 - row};
+  if (col < 0 || col >= v.width || row < 0 || row >= v.height) return null;
+  return {x: mapColumn(col, v.width, offset.value), y: v.height - 1 - row};
+}
+
+/** Moves the seam of a wrapping map by the given number of columns */
+function shift(columns: number) {
+  if (!view.value) return;
+  offset.value = mod(offset.value + columns, view.value.width);
+}
+
+/** Shifts the map so that the selected plot (or the seam, if nothing is selected) is in the middle of the screen */
+function centerSelected() {
+  const v = view.value;
+  if (!v) return;
+  const x = selected.value?.x ?? 0;
+  offset.value = mod(x - Math.floor(v.width / 2), v.width);
 }
 
 // --- Painting -------------------------------------------------------------
@@ -271,8 +285,9 @@ function paintAt(from: { x: number, y: number }, to: { x: number, y: number }) {
   const v = view.value;
   if (!v || !stroke) return;
   const added = [];
-  for (const point of lineCells(from.x, from.y, to.x, to.y)) {
-    for (const c of brushCells(v, point.x, point.y, brush.size)) {
+  // The line is drawn in screen columns: on a shifted map neighbour columns may be the two ends of the map
+  for (const point of lineCells(column(from.x), from.y, column(to.x), to.y)) {
+    for (const c of brushCells(v, mapColumn(point.x, v.width, offset.value), point.y, brush.size, wrapX.value)) {
       const key = `${c.x},${c.y}`;
       if (!stroke.cells.has(key)) {
         stroke.cells.set(key, c);
@@ -304,9 +319,9 @@ async function finishStroke() {
 function edgeAt(e: MouseEvent): RiverEdge | null {
   const v = view.value, at = cellAt(e);
   if (!v || !at) return null;
-  const fx = e.offsetX / cell.value - at.x;
+  const fx = e.offsetX / cell.value - column(at.x);
   const fy = e.offsetY / cell.value - (v.height - 1 - at.y);
-  return nearestEdge(v, at.x, at.y, fx, fy);
+  return nearestEdge(v, at.x, at.y, fx, fy, wrapX.value);
 }
 
 // Flow directions of the game: 0 north, 1 east, 2 south, 3 west. Without a river the direction is not
@@ -420,31 +435,10 @@ function onWheel(e: WheelEvent) {
 
 async function step(undo: boolean) {
   try {
-    history.value = undo ? await Undo() : await Redo();
+    await stepHistory(undo);
     error.value = '';
   } catch (err: any) {
     error.value = String(err);
-    return;
-  }
-  // Undo may change plots and start positions
-  const [v, p] = await Promise.all([GetMapView(), GetPlayers()]);
-  setView(v);
-  players.value = p ?? [];
-  if (selected.value) selectedPlot.value = await GetPlot(selected.value.x, selected.value.y);
-}
-
-function onKeyDown(e: KeyboardEvent) {
-  if (!(e.ctrlKey || e.metaKey)) return;
-  // Text fields keep their own undo
-  const target = e.target as HTMLElement | null;
-  if (target && (target.isContentEditable || ['INPUT', 'TEXTAREA', 'SELECT'].includes(target.tagName))) return;
-  const key = e.key.toLowerCase();
-  if (key === 'z' && !e.shiftKey && history.value.undo) {
-    e.preventDefault();
-    step(true);
-  } else if ((key === 'y' || (key === 'z' && e.shiftKey)) && history.value.redo) {
-    e.preventDefault();
-    step(false);
   }
 }
 
@@ -510,6 +504,16 @@ const canvasCursor = computed(() => {
             <v-icon :icon="l.icon"/>
           </v-btn>
         </v-btn-toggle>
+        <template v-if="wrapX && view">
+          <v-btn icon="mdi-arrow-left-bold" size="small" variant="text" :title="$t('world.seamLeft')"
+                 @click="shift(Math.max(1, Math.round(view.width / 8)))"/>
+          <v-btn icon="mdi-image-filter-center-focus" size="small" variant="text" :title="$t('world.seamCenter')"
+                 @click="centerSelected"/>
+          <v-btn icon="mdi-arrow-right-bold" size="small" variant="text" :title="$t('world.seamRight')"
+                 @click="shift(-Math.max(1, Math.round(view.width / 8)))"/>
+          <v-btn v-if="offset !== 0" icon="mdi-restore" size="small" variant="text" :title="$t('world.seamReset')"
+                 @click="offset = 0"/>
+        </template>
         <v-spacer/>
         <v-icon icon="mdi-magnify-minus-outline" size="small"/>
         <v-slider v-model="cell" :min="2" :max="maxCell" :step="1" hide-details density="compact"

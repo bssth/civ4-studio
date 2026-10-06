@@ -93,9 +93,15 @@ const en = {
         "water": "Water"
     },
     "history": {
+        "clear": "clearing of player {n}",
+        "game": "game settings",
+        "map": "map properties",
         "paint": "painting of {n} plots",
         "plot": "edit of plot {x}, {y}",
-        "start": "start position of player {n}"
+        "start": "start position of player {n}",
+        "players": "players",
+        "swap": "swap of players {a} and {b}",
+        "teams": "teams"
     },
     "languages": {
         "Chinese": "Chinese",
@@ -396,6 +402,10 @@ const en = {
         "nothingToRedo": "Nothing to redo",
         "nothingToUndo": "Nothing to undo",
         "randomStart": "(random start)",
+        "seamCenter": "Put the selected plot or the seam in the middle (the map wraps east-west)",
+        "seamLeft": "Move the map left",
+        "seamReset": "Show the map from its first column",
+        "seamRight": "Move the map right",
         "redo": "Redo: {what} (Ctrl+Y)",
         "riversDirection": "New rivers flow east or south; change the direction of a river in the plot editor (select mode).",
         "riversHelp": "Click near the edge between two plots to add a river there, click it again to remove it. The highlighted edge shows where the click goes.",

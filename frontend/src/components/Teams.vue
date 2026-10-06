@@ -2,7 +2,7 @@
 import {computed, onMounted, reactive, ref, watch} from "vue";
 import {GetPlayers, GetTeams, SetTeams} from "../../wailsjs/go/editor/App";
 import {editor} from "../../wailsjs/go/models";
-import {batched, describeType, enums, mapVersion, NONE, withCurrent} from "../store";
+import {batched, describeType, enums, mapRevision, mapVersion, NONE, withCurrent} from "../store";
 import {useI18n} from "vue-i18n";
 
 const {t} = useI18n();
@@ -30,7 +30,7 @@ async function load() {
 }
 
 onMounted(load);
-watch(mapVersion, load);
+watch([mapVersion, mapRevision], () => load());
 
 watch(teams, batched(() => {
   SetTeams(teams.value.map(t => editor.Team.createFrom(t)));

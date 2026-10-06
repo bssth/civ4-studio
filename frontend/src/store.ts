@@ -1,5 +1,14 @@
 import {reactive, ref} from "vue";
-import {GetCivilizations, GetGame, GetMapInfo, GetOptions, GetWorldSizes} from "../wailsjs/go/editor/App";
+import {
+    GetCivilizations,
+    GetGame,
+    GetMapInfo,
+    GetOptions,
+    GetWorldSizes,
+    HistoryState,
+    Redo,
+    Undo
+} from "../wailsjs/go/editor/App";
 import {editor} from "../wailsjs/go/models";
 import {t} from "./i18n";
 
@@ -7,6 +16,8 @@ export const mapInfo = ref<editor.MapInfo | null>(null);
 export const game = ref<editor.Game | null>(null);
 // Incremented every time a map is opened or created, so editors reload their local copies
 export const mapVersion = ref(0);
+// Incremented after undo and redo: editors reload their copies but keep their view (zoom, selection)
+export const mapRevision = ref(0);
 
 export type OptionKey =
     'eras' | 'speeds' | 'calendars' | 'victories' | 'gameOptions' | 'mpOptions' | 'forceControls' |
@@ -53,10 +64,53 @@ export async function refreshMapInfo() {
 }
 
 export async function refreshMap() {
+    const [info, g, h] = await Promise.all([GetMapInfo(), GetGame(), HistoryState()]);
+    mapInfo.value = info;
+    game.value = g;
+    history.value = h;
+    mapVersion.value++;
+}
+
+// --- Undo -------------------------------------------------------------------
+
+export const history = ref<editor.HistoryState>(editor.HistoryState.createFrom({undo: '', redo: ''}));
+
+export async function refreshHistory() {
+    history.value = await HistoryState();
+}
+
+/** Reverts (undo = true) or repeats the last change and reloads the editors */
+export async function stepHistory(undo: boolean) {
+    history.value = undo ? await Undo() : await Redo();
     const [info, g] = await Promise.all([GetMapInfo(), GetGame()]);
     mapInfo.value = info;
     game.value = g;
-    mapVersion.value++;
+    mapRevision.value++;
+}
+
+/**
+ * Text of a history label from the backend: "paint:<plots>", "plot:<x>,<y>", "start:<player>",
+ * "game", "map", "teams", "players", "swap:<a>,<b>", "clear:<player>"
+ */
+export function historyLabel(label: string): string {
+    const [kind, value = ''] = label.split(':');
+    const [first, second] = value.split(',');
+    switch (kind) {
+        case 'paint':
+        case 'start':
+        case 'clear':
+            return t(`history.${kind}`, {n: value});
+        case 'plot':
+            return t('history.plot', {x: first, y: second});
+        case 'swap':
+            return t('history.swap', {a: first, b: second});
+        case 'game':
+        case 'map':
+        case 'teams':
+        case 'players':
+            return t(`history.${kind}`);
+    }
+    return label;
 }
 
 export const NONE = 'NONE';

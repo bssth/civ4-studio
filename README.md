@@ -14,11 +14,14 @@ instead of raw identifiers.
 
 - **World map.** Terrain, hills and peaks, forests and other features, rivers, resources, cities, units and start
   positions in player colors, with zoom and layers. Click a plot to change its terrain, feature, resource, improvement
-  and route, or to add and edit cities and units. Drag a start flag to move a player.
+  and route, or to add and edit cities and units. Drag a start flag to move a player. A map that wraps east-west can
+  be shifted to move the seam out of the way, e.g. to see the Pacific in one piece.
 - **Painting.** A brush of size 1–9 paints terrain, height, features, resources, improvements and routes, with presets
-  like Ocean, Grassland, Hills or Forest; painting water or land terrain fixes the height. Rivers are added and removed
-  by clicking the edge between two plots. Every stroke and plot edit can be undone with `Ctrl+Z` and redone with
-  `Ctrl+Y`.
+  like Ocean, Grassland, Hills or Forest; painting water or land terrain fixes the height. On a wrapping map the brush
+  continues across the seam. Rivers are added and removed by clicking the edge between two plots.
+- **Undo.** Every change can be undone with `Ctrl+Z` or the toolbar and redone with `Ctrl+Y`, on any tab: strokes and
+  plot edits, players, teams, game settings, map properties, swapping and clearing of player slots. Typing a name is
+  undone at once, not letter by letter.
 - **Players.** Pick a civilization and a leader from the game or mod data: names, color and art style are filled in
   automatically. Handicap, state religion, starting era, starting civics and city names are editable too. Swap two
   player slots or clear one — units, cities, culture, attitudes and signs follow their players.
@@ -39,8 +42,8 @@ instead of raw identifiers.
 Game data is read from the base game, Warlords, Beyond the Sword and the selected mod, the same way the game does it:
 a mod file replaces the base file with the same path.
 
-Shortcuts: `Ctrl+N` new map, `Ctrl+O` open, `Ctrl+S` save, `Ctrl+Shift+S` save as, `Ctrl+Z` / `Ctrl+Y` undo and
-redo map edits, `Ctrl+wheel` zooms the map.
+Shortcuts: `Ctrl+N` new map, `Ctrl+O` open, `Ctrl+S` save, `Ctrl+Shift+S` save as, `Ctrl+Z` / `Ctrl+Y` (or
+`Ctrl+Shift+Z`) undo and redo changes outside of text fields, `Ctrl+wheel` zooms the map.
 
 | Players | Teams and diplomacy |
 |---|---|
@@ -136,8 +139,7 @@ comfortable with.
 ### Cautions and known problems
 
 1. The first `wails dev` / `wails build` may take a while as Go and npm dependencies are downloaded and compiled.
-2. The map view does not wrap around its edges, and undo covers map edits on the World tab only (painting, plots,
-   rivers, start positions), not players, teams or game settings.
+2. The map view can be shifted only east-west; maps wrapping north-south are shown as they are stored.
 3. You may encounter "@todo" markings in the code. You can implement and contribute what is marked, unless otherwise
    explicitly stated in the comment.
 4. I love French hot dogs 😋

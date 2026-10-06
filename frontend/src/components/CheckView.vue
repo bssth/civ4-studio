@@ -2,7 +2,7 @@
 import {computed, onMounted, ref, watch} from "vue";
 import {ValidateMap} from "../../wailsjs/go/editor/App";
 import {editor} from "../../wailsjs/go/models";
-import {mapInfo, mapVersion, xmlReady} from "../store";
+import {mapInfo, mapRevision, mapVersion, xmlReady} from "../store";
 import ProblemList from "./ProblemList.vue";
 import {useI18n} from "vue-i18n";
 
@@ -22,7 +22,7 @@ async function check() {
 }
 
 onMounted(check);
-watch([mapVersion, xmlReady], check);
+watch([mapVersion, mapRevision, xmlReady], check);
 
 const hasUnknownTypes = computed(() => problems.value.some(p => p.code === 'unknownType'));
 

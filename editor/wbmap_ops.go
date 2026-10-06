@@ -122,7 +122,11 @@ func (a *App) SwapPlayers(first, second int) error {
 		a.mu.Unlock()
 		return errors.New("no map loaded")
 	}
+	before := a.wbMap.snapshot()
 	err := a.wbMap.SwapPlayers(first, second)
+	if err == nil && first != second {
+		a.history.push(snapshotEntry(fmt.Sprintf("swap:%d,%d", first, second), before, a.wbMap.snapshot()))
+	}
 	a.mu.Unlock()
 	if err != nil {
 		return err
@@ -141,7 +145,11 @@ func (a *App) ClearPlayer(index int, removeAssets bool) error {
 		a.mu.Unlock()
 		return errors.New("no map loaded")
 	}
+	before := a.wbMap.snapshot()
 	units, cities, err := a.wbMap.ClearPlayer(index, removeAssets)
+	if err == nil {
+		a.history.push(snapshotEntry(fmt.Sprintf("clear:%d", index), before, a.wbMap.snapshot()))
+	}
 	a.mu.Unlock()
 	if err != nil {
 		return err

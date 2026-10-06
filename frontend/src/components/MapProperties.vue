@@ -4,7 +4,7 @@ import {CreatePlots, GetMapProps, GetMapStats, SetMapProps} from "../../wailsjs/
 import {editor} from "../../wailsjs/go/models";
 import {useI18n} from "vue-i18n";
 import {problemText} from "../problems";
-import {batched, describeType, enums, mapVersion, withCurrent, withNone, worldSizes} from "../store";
+import {batched, describeType, enums, mapRevision, mapVersion, withCurrent, withNone, worldSizes} from "../store";
 
 const {t} = useI18n();
 
@@ -31,7 +31,7 @@ async function refreshStats() {
 }
 
 onMounted(load);
-watch(mapVersion, load);
+watch([mapVersion, mapRevision], () => load());
 
 watch(() => props.value && JSON.stringify(props.value), batched(async () => {
   if (!props.value) return;

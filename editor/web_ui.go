@@ -22,6 +22,7 @@ const (
 	EventXmlReset    = "xml-reset"
 	EventMapLoaded   = "map-loaded"
 	EventMapState    = "map-state"
+	EventHistory     = "history"
 	// EventGameLanguage is sent when names of the game data change language
 	EventGameLanguage = "game-language"
 )
@@ -174,10 +175,13 @@ func (a *App) setDirty(dirty bool) {
 	a.mu.Lock()
 	changed := a.dirty != dirty
 	a.dirty = dirty
+	history := a.history.state()
 	a.mu.Unlock()
 	if changed {
 		a.emit(EventMapState, dirty)
 	}
+	// Every change of the map goes through here, so undo buttons follow the history
+	a.emit(EventHistory, history)
 }
 
 // WriteConsole appends a line to the editor console.
@@ -544,8 +548,12 @@ func (a *App) SetGame(g *Game) error {
 		a.mu.Unlock()
 		return errors.New("no map loaded")
 	}
-	changed := a.wbMap.Game == nil || !bytes.Equal(a.wbMap.Game.ToWbFormat(), g.ToWbFormat())
+	old := a.wbMap.Game
+	changed := old == nil || !bytes.Equal(old.ToWbFormat(), g.ToWbFormat())
 	a.wbMap.Game = g
+	if changed {
+		a.history.push(sectionEntry("game", old, g, func(m *WbMap, v *Game) { m.Game = v }))
+	}
 	a.mu.Unlock()
 
 	if changed {
@@ -589,6 +597,9 @@ func (a *App) SetMapProps(props *MapProps) error {
 	}
 	changed := old == nil || !bytes.Equal(old.ToWbFormat(), props.ToWbFormat())
 	a.wbMap.Map = props
+	if changed {
+		a.history.push(sectionEntry("map", old, props, func(m *WbMap, v *MapProps) { m.Map = v }))
+	}
 	a.mu.Unlock()
 
 	if changed {
@@ -677,8 +688,12 @@ func (a *App) SetTeams(teams []*Team) error {
 		a.mu.Unlock()
 		return errors.New("no map loaded")
 	}
-	changed := !sameWbFormat(a.wbMap.Teams, teams)
+	old := a.wbMap.Teams
+	changed := !sameWbFormat(old, teams)
 	a.wbMap.Teams = teams
+	if changed {
+		a.history.push(sectionEntry("teams", old, teams, func(m *WbMap, v []*Team) { m.Teams = v }))
+	}
 	a.mu.Unlock()
 
 	if changed {
@@ -704,8 +719,12 @@ func (a *App) SetPlayers(players []*Player) error {
 		a.mu.Unlock()
 		return errors.New("no map loaded")
 	}
-	changed := !sameWbFormat(a.wbMap.Players, players)
+	old := a.wbMap.Players
+	changed := !sameWbFormat(old, players)
 	a.wbMap.Players = players
+	if changed {
+		a.history.push(sectionEntry("players", old, players, func(m *WbMap, v []*Player) { m.Players = v }))
+	}
 	a.mu.Unlock()
 
 	if changed {

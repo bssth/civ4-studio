@@ -5,6 +5,12 @@
       <v-icon class="me-4 no-drag" icon="mdi-folder-open" :title="$t('toolbar.open')" @click="openMap" />
       <v-icon class="me-4 no-drag" icon="mdi-content-save" :title="$t('toolbar.save')" @click="saveMap" />
       <v-icon class="me-4 no-drag" icon="mdi-content-save-edit" :title="$t('toolbar.saveAs')" @click="saveMapAs" />
+      <v-icon class="me-4 no-drag" icon="mdi-undo" :disabled="!history.undo"
+              :title="history.undo ? $t('world.undo', {what: historyLabel(history.undo)}) : $t('world.nothingToUndo')"
+              @click="undo(true)" />
+      <v-icon class="me-4 no-drag" icon="mdi-redo" :disabled="!history.redo"
+              :title="history.redo ? $t('world.redo', {what: historyLabel(history.redo)}) : $t('world.nothingToRedo')"
+              @click="undo(false)" />
       <v-icon class="me-4 no-drag" icon="mdi-rocket-launch" :title="$t('toolbar.launch')" @click="launch" />
       <v-icon class="me-4 no-drag" icon="mdi-cog" :title="$t('toolbar.settings')" @click="tab = 'settings'" />
 
@@ -147,7 +153,17 @@ import {
   ValidateMap,
 } from "../wailsjs/go/editor/App";
 import {editor} from "../wailsjs/go/models";
-import {clearEnums, mapInfo, refreshEnums, refreshMap, refreshMapInfo, requestedTab} from "./store";
+import {
+  clearEnums,
+  history,
+  historyLabel,
+  mapInfo,
+  refreshEnums,
+  refreshMap,
+  refreshMapInfo,
+  requestedTab,
+  stepHistory
+} from "./store";
 
 const {t} = useI18n();
 
@@ -298,9 +314,26 @@ async function launch() {
   }
 }
 
+async function undo(back: boolean) {
+  if (!(back ? history.value.undo : history.value.redo)) return;
+  try {
+    await stepHistory(back);
+  } catch (err: any) {
+    showError(String(err));
+  }
+}
+
 function onKeyDown(e: KeyboardEvent) {
   if (!(e.ctrlKey || e.metaKey)) return;
   const key = e.key.toLowerCase();
+  if (key === 'z' || key === 'y') {
+    // Text fields keep their own undo
+    const target = e.target as HTMLElement | null;
+    if (target && (target.isContentEditable || ['INPUT', 'TEXTAREA', 'SELECT'].includes(target.tagName))) return;
+    e.preventDefault();
+    undo(key === 'z' && !e.shiftKey);
+    return;
+  }
   const actions: Record<string, () => unknown> = {
     n: newMap,
     o: openMap,
@@ -331,6 +364,9 @@ onMounted(() => {
   EventsOn('map-state', async () => {
     await refreshMapInfo();
   });
+  EventsOn('history', (state: editor.HistoryState) => {
+    history.value = state;
+  });
   window.addEventListener('keydown', onKeyDown);
   bootstrap();
 });
@@ -342,6 +378,7 @@ onUnmounted(() => {
   EventsOff('game-language');
   EventsOff('map-loaded');
   EventsOff('map-state');
+  EventsOff('history');
   window.removeEventListener('keydown', onKeyDown);
 });
 </script>
