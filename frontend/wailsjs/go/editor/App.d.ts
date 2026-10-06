@@ -68,7 +68,7 @@ export function OpenMapDialog():Promise<string>;
 
 export function PaintPlots(arg1:editor.PaintOp):Promise<number>;
 
-export function PasteRegion(arg1:number,arg2:number,arg3:boolean):Promise<number>;
+export function PasteRegion(arg1:number,arg2:number,arg3:boolean,arg4:boolean,arg5:boolean):Promise<number>;
 
 export function Redo():Promise<editor.HistoryState>;
 
@@ -79,6 +79,8 @@ export function ResizeMap(arg1:number,arg2:number,arg3:number,arg4:number):Promi
 export function SaveMap(arg1:string):Promise<string>;
 
 export function SaveMapAs():Promise<string>;
+
+export function SearchMap(arg1:string):Promise<Array<editor.SearchResult>>;
 
 export function SetConfig(arg1:editor.Config):Promise<void>;
 

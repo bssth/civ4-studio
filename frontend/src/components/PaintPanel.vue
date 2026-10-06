@@ -1,5 +1,16 @@
 <script setup lang="ts">
-import {applyBrushPreset, brush, brushIsEmpty, brushPresets, emptyIfNone, enums, noneIfEmpty, withCurrent, withNone} from "../store";
+import {
+  applyBrushPreset,
+  brush,
+  BRUSH_FILL,
+  brushIsEmpty,
+  brushPresets,
+  emptyIfNone,
+  enums,
+  noneIfEmpty,
+  withCurrent,
+  withNone
+} from "../store";
 import {PLOT_HILLS, PLOT_LAND, PLOT_OCEAN, PLOT_PEAK} from "../mapRender";
 import {computed} from "vue";
 import {useI18n} from "vue-i18n";
@@ -36,8 +47,12 @@ function optional(options: any[], value: string) {
       <span class="text-body-2 me-3">{{ $t('brush.size') }}</span>
       <v-btn-toggle v-model="brush.size" mandatory density="compact" divided variant="outlined">
         <v-btn v-for="s in sizes" :key="s" :value="s" size="small">{{ s }}</v-btn>
+        <v-btn :value="BRUSH_FILL" size="small" :title="$t('brush.fillTitle')">
+          <v-icon icon="mdi-format-color-fill"/>
+        </v-btn>
       </v-btn-toggle>
     </div>
+    <div v-if="brush.size === BRUSH_FILL" class="text-caption text-medium-emphasis mt-1">{{ $t('brush.fillHint') }}</div>
 
     <v-divider class="my-3"/>
 

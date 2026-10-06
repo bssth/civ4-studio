@@ -126,19 +126,94 @@ func pasteInto(dst, src *Plot, assets bool) {
 	}
 }
 
-// PasteRegion pastes the copied region with its south-western plot at x, y as one undoable step.
-// Parts outside of the map are skipped. Returns the number of changed plots.
-func (a *App) PasteRegion(x, y int, assets bool) (int, error) {
+// flipped returns a mirrored copy of the clip: flipX mirrors west and east, flipY north and south.
+// Rivers move to the mirrored edges and change their flow; rivers on the outer edges of the clip
+// would land outside of it and are dropped.
+func (c *regionClip) flipped(flipX, flipY bool) *regionClip {
+	if !flipX && !flipY {
+		return c
+	}
+	w, h := c.width, c.height
+	at := func(x, y int) int { return x*h + y }
+	out := &regionClip{width: w, height: h, plots: make([]*Plot, len(c.plots))}
+	for x := 0; x < w; x++ {
+		for y := 0; y < h; y++ {
+			if src := c.plots[at(x, y)]; src != nil {
+				p := clonePlot(src)
+				p.IsNOfRiver, p.IsWOfRiver = false, false
+				nx, ny := x, y
+				if flipX {
+					nx = w - 1 - x
+				}
+				if flipY {
+					ny = h - 1 - y
+				}
+				out.plots[at(nx, ny)] = p
+			}
+		}
+	}
+	for x := 0; x < w; x++ {
+		for y := 0; y < h; y++ {
+			src := c.plots[at(x, y)]
+			if src == nil {
+				continue
+			}
+			// The southern edge of x, y: with flipY it becomes the northern edge, i.e. the southern edge of the plot above
+			if src.IsNOfRiver {
+				nx, ny, dir := x, y, src.RiverWEDirection
+				if flipX {
+					nx = w - 1 - x
+					dir = flipDirection(dir)
+				}
+				if flipY {
+					ny = h - y
+				}
+				if ny < h && out.plots[at(nx, ny)] != nil {
+					out.plots[at(nx, ny)].IsNOfRiver, out.plots[at(nx, ny)].RiverWEDirection = true, dir
+				}
+			}
+			// The eastern edge of x, y: with flipX it becomes the western edge, i.e. the eastern edge of the plot on the left
+			if src.IsWOfRiver {
+				nx, ny, dir := x, y, src.RiverNSDirection
+				if flipY {
+					ny = h - 1 - y
+					dir = flipDirection(dir)
+				}
+				if flipX {
+					nx = w - 2 - x
+				}
+				if nx >= 0 && out.plots[at(nx, ny)] != nil {
+					out.plots[at(nx, ny)].IsWOfRiver, out.plots[at(nx, ny)].RiverNSDirection = true, dir
+				}
+			}
+		}
+	}
+	return out
+}
+
+// flipDirection turns a flow direction around: north (0) <-> south (2), east (1) <-> west (3)
+func flipDirection(dir int) int {
+	switch dir {
+	case 0, 1, 2, 3:
+		return (dir + 2) % 4
+	}
+	return dir
+}
+
+// PasteRegion pastes the copied region with its south-western plot at x, y as one undoable step,
+// mirrored west-east with flipX and north-south with flipY. Parts outside of the map are skipped.
+// Returns the number of changed plots.
+func (a *App) PasteRegion(x, y int, assets, flipX, flipY bool) (int, error) {
 	a.mu.Lock()
 	if a.wbMap == nil {
 		a.mu.Unlock()
 		return 0, errors.New("no map loaded")
 	}
-	clip := a.clipboard
-	if clip == nil {
+	if a.clipboard == nil {
 		a.mu.Unlock()
 		return 0, errors.New("nothing is copied")
 	}
+	clip := a.clipboard.flipped(flipX, flipY)
 	cells, err := a.wbMap.regionCells(Region{X: x, Y: y, Width: clip.width, Height: clip.height})
 	if err != nil {
 		a.mu.Unlock()

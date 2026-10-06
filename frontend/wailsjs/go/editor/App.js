@@ -134,8 +134,8 @@ export function PaintPlots(arg1) {
   return window['go']['editor']['App']['PaintPlots'](arg1);
 }
 
-export function PasteRegion(arg1, arg2, arg3) {
-  return window['go']['editor']['App']['PasteRegion'](arg1, arg2, arg3);
+export function PasteRegion(arg1, arg2, arg3, arg4, arg5) {
+  return window['go']['editor']['App']['PasteRegion'](arg1, arg2, arg3, arg4, arg5);
 }
 
 export function Redo() {
@@ -156,6 +156,10 @@ export function SaveMap(arg1) {
 
 export function SaveMapAs() {
   return window['go']['editor']['App']['SaveMapAs']();
+}
+
+export function SearchMap(arg1) {
+  return window['go']['editor']['App']['SearchMap'](arg1);
 }
 
 export function SetConfig(arg1) {

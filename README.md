@@ -19,10 +19,14 @@ instead of raw identifiers.
   be shifted to move the seam out of the way, e.g. to see the Pacific in one piece.
 - **Painting.** A brush of size 1–9 paints terrain, height, features, resources, improvements and routes, with presets
   like Ocean, Grassland, Hills or Forest; painting water or land terrain fixes the height. On a wrapping map the brush
-  continues across the seam. Rivers are added and removed by clicking the edge between two plots.
+  continues across the seam. The fill brush paints a whole connected area of the same terrain and height at once,
+  like a lake or a desert. Rivers are added and removed by clicking the edge between two plots.
 - **Areas.** Select a rectangle of plots (also across the seam), copy it with `Ctrl+C` and paste it with `Ctrl+V`
   elsewhere or into another map: terrain, height, features, resources, improvements, routes and rivers, optionally
-  with cities and units. A selection can be filled with the brush or cleared of units or cities.
+  with cities and units, and mirrored west–east or north–south (rivers follow), e.g. for symmetric multiplayer maps.
+  A selection can be filled with the brush or cleared of units or cities.
+- **Search.** `Ctrl+F` finds cities, civilizations and leaders (their start positions), signs, landmarks and
+  coordinates and jumps to the plot.
 - **Map image.** The map can be exported as a PNG picture with the current layers.
 - **Undo.** Every change can be undone with `Ctrl+Z` or the toolbar and redone with `Ctrl+Y`, on any tab: strokes and
   plot edits, pasted and filled areas, signs, players, teams, game settings, map properties and size, swapping and clearing of player slots. Typing a name is
@@ -50,8 +54,8 @@ Game data is read from the base game, Warlords, Beyond the Sword and the selecte
 a mod file replaces the base file with the same path.
 
 Shortcuts: `Ctrl+N` new map, `Ctrl+O` open, `Ctrl+S` save, `Ctrl+Shift+S` save as, `Ctrl+Z` / `Ctrl+Y` (or
-`Ctrl+Shift+Z`) undo and redo changes outside of text fields, `Ctrl+C` / `Ctrl+V` copy and paste areas on the World
-tab, `Esc` cancels pasting or the selection, `Ctrl+wheel` zooms the map.
+`Ctrl+Shift+Z`) undo and redo changes outside of text fields, `Ctrl+C` / `Ctrl+V` copy and paste areas and `Ctrl+F`
+searches on the World tab, `Esc` cancels pasting or the selection, `Ctrl+wheel` zooms the map.
 
 | Players | Teams and diplomacy |
 |---|---|

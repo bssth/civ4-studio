@@ -654,6 +654,26 @@ export namespace editor {
 	        this.starts = source["starts"];
 	    }
 	}
+	export class SearchResult {
+	    kind: string;
+	    label: string;
+	    x: number;
+	    y: number;
+	    player: number;
+	
+	    static createFrom(source: any = {}) {
+	        return new SearchResult(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.kind = source["kind"];
+	        this.label = source["label"];
+	        this.x = source["x"];
+	        this.y = source["y"];
+	        this.player = source["player"];
+	    }
+	}
 	export class Sign {
 	    PlotX: number;
 	    PlotY: number;

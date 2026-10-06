@@ -190,6 +190,36 @@ export function brushCells(view: editor.MapView, x: number, y: number, size: num
     return cells;
 }
 
+/**
+ * Plots connected to x, y (through their sides) with the same terrain and height, like a lake or a desert.
+ * On a map wrapping east-west the area continues across the seam.
+ */
+export function floodCells(view: editor.MapView, x: number, y: number, wrapX = false): { x: number, y: number }[] {
+    const w = view.width, h = view.height;
+    const start = y * w + x;
+    const terrain = view.terrain[start], plotType = view.plot_type[start];
+    const seen = new Uint8Array(w * h);
+    const queue = [start];
+    seen[start] = 1;
+    const cells = [];
+    while (queue.length > 0) {
+        const i = queue.pop()!;
+        const cx = i % w, cy = Math.floor(i / w);
+        cells.push({x: cx, y: cy});
+        const neighbours = [[cx - 1, cy], [cx + 1, cy], [cx, cy - 1], [cx, cy + 1]];
+        for (let [nx, ny] of neighbours) {
+            if (wrapX) nx = mod(nx, w);
+            if (nx < 0 || ny < 0 || nx >= w || ny >= h) continue;
+            const j = ny * w + nx;
+            if (!seen[j] && view.terrain[j] === terrain && view.plot_type[j] === plotType) {
+                seen[j] = 1;
+                queue.push(j);
+            }
+        }
+    }
+    return cells;
+}
+
 /** Plots on the line between two plots, so fast mouse moves do not leave gaps */
 export function lineCells(x0: number, y0: number, x1: number, y1: number): { x: number, y: number }[] {
     const cells = [];

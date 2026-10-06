@@ -157,6 +157,7 @@ import {
   clearEnums,
   history,
   historyLabel,
+  isTextField,
   mapInfo,
   refreshEnums,
   refreshMap,
@@ -328,8 +329,7 @@ function onKeyDown(e: KeyboardEvent) {
   const key = e.key.toLowerCase();
   if (key === 'z' || key === 'y') {
     // Text fields keep their own undo
-    const target = e.target as HTMLElement | null;
-    if (target && (target.isContentEditable || ['INPUT', 'TEXTAREA', 'SELECT'].includes(target.tagName))) return;
+    if (isTextField(e.target)) return;
     e.preventDefault();
     undo(key === 'z' && !e.shiftKey);
     return;
