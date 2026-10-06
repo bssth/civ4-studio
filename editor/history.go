@@ -67,7 +67,7 @@ func (h *History) reset() {
 // HistoryState tells which steps can be undone and redone, empty labels mean none.
 // Labels are codes the frontend turns into text: "paint:<plots>", "plot:<x>,<y>", "start:<player>",
 // "game", "map", "teams", "players", "swap:<a>,<b>", "clear:<player>", "signs:<x>,<y>", "resize:<width>,<height>",
-// "paste:<plots>", "clearArea:<plots>".
+// "paste:<plots>", "clearArea:<plots>", "generate:<seed>", "starts", "fix:<problems>", "replace:<what>".
 type HistoryState struct {
 	Undo string `json:"undo"`
 	Redo string `json:"redo"`
@@ -152,6 +152,7 @@ func sectionEntry[T any](label string, before, after T, set func(m *WbMap, v T))
 
 // mapSnapshot holds the parts of the map changed by player operations
 type mapSnapshot struct {
+	game    *Game
 	props   *MapProps
 	players []*Player
 	teams   []*Team
@@ -160,7 +161,7 @@ type mapSnapshot struct {
 }
 
 func (m *WbMap) snapshot() mapSnapshot {
-	s := mapSnapshot{props: cloneValue(m.Map), players: cloneValue(m.Players), teams: cloneValue(m.Teams), signs: cloneValue(m.Signs)}
+	s := mapSnapshot{game: cloneValue(m.Game), props: cloneValue(m.Map), players: cloneValue(m.Players), teams: cloneValue(m.Teams), signs: cloneValue(m.Signs)}
 	s.plots = make([]*Plot, len(m.Plots))
 	for i, p := range m.Plots {
 		s.plots[i] = clonePlot(p)
@@ -169,12 +170,12 @@ func (m *WbMap) snapshot() mapSnapshot {
 }
 
 func (s mapSnapshot) restore(m *WbMap) {
-	c := mapSnapshot{props: cloneValue(s.props), players: cloneValue(s.players), teams: cloneValue(s.teams), signs: cloneValue(s.signs)}
+	c := mapSnapshot{game: cloneValue(s.game), props: cloneValue(s.props), players: cloneValue(s.players), teams: cloneValue(s.teams), signs: cloneValue(s.signs)}
 	c.plots = make([]*Plot, len(s.plots))
 	for i, p := range s.plots {
 		c.plots[i] = clonePlot(p)
 	}
-	m.Map, m.Players, m.Teams, m.Plots, m.Signs = c.props, c.players, c.teams, c.plots, c.signs
+	m.Game, m.Map, m.Players, m.Teams, m.Plots, m.Signs = c.game, c.props, c.players, c.teams, c.plots, c.signs
 }
 
 func snapshotEntry(label string, before, after mapSnapshot) historyEntry {

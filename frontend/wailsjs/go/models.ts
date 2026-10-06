@@ -302,6 +302,7 @@ export namespace editor {
 	    y: number;
 	    player: number;
 	    team: number;
+	    fix?: string;
 	
 	    static createFrom(source: any = {}) {
 	        return new Problem(source);
@@ -318,6 +319,7 @@ export namespace editor {
 	        this.y = source["y"];
 	        this.player = source["player"];
 	        this.team = source["team"];
+	        this.fix = source["fix"];
 	    }
 	}
 	export class MapStats {

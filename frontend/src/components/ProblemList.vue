@@ -11,8 +11,13 @@ function sectionName(section: string): string {
   return te(`sections.${section}`) ? t(`sections.${section}`) : section;
 }
 
-const props = defineProps<{ problems: editor.Problem[], limit?: number }>();
-const emit = defineEmits<{ (e: 'navigate'): void }>();
+// fixable shows the buttons of automatic fixes
+const props = defineProps<{ problems: editor.Problem[], limit?: number, fixable?: boolean }>();
+const emit = defineEmits<{
+  (e: 'navigate'): void,
+  (e: 'fix', problem: editor.Problem): void,
+  (e: 'replace', problem: editor.Problem): void,
+}>();
 
 const shown = computed(() => props.limit ? props.problems.slice(0, props.limit) : props.problems);
 
@@ -41,8 +46,14 @@ function navigate(p: editor.Problem) {
         <v-icon :icon="p.severity === 'error' ? 'mdi-alert-circle' : 'mdi-alert'"
                 :color="p.severity === 'error' ? 'error' : 'warning'"/>
       </template>
-      <template v-slot:append v-if="canNavigate(p)">
-        <v-icon icon="mdi-chevron-right" size="small"/>
+      <template v-slot:append>
+        <template v-if="fixable && p.fix">
+          <v-btn v-if="p.fix === 'replace'" size="small" variant="tonal" prepend-icon="mdi-swap-horizontal" class="me-2"
+                 @click.stop="emit('replace', p)">{{ $t('check.replace') }}</v-btn>
+          <v-btn v-else size="small" variant="tonal" color="primary" prepend-icon="mdi-auto-fix" class="me-2"
+                 :title="$t('fixes.' + p.fix)" @click.stop="emit('fix', p)">{{ $t('check.fix') }}</v-btn>
+        </template>
+        <v-icon v-if="canNavigate(p)" icon="mdi-chevron-right" size="small"/>
       </template>
     </v-list-item>
     <v-list-item v-if="limit && problems.length > limit" class="text-medium-emphasis"

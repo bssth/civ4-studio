@@ -22,6 +22,9 @@ type Problem struct {
 	Y        int               `json:"y"`
 	Player   int               `json:"player"`
 	Team     int               `json:"team"`
+	// Fix names the automatic fix of the problem (see FixProblems), "replace" for unknown types
+	// that can be replaced with ReplaceType; empty when the problem must be fixed by hand
+	Fix string `json:"fix,omitempty"`
 }
 
 func newProblem(severity, section, code string, args map[string]string, message string, x, y, player, team int) Problem {
@@ -115,6 +118,10 @@ func (m *WbMap) Validate(data *GameData) []Problem {
 			u.problem.Message += fmt.Sprintf(" (%d times)", u.count)
 		}
 		v.problems = append(v.problems, u.problem)
+	}
+
+	for i := range v.problems {
+		v.problems[i].Fix = problemFixes[v.problems[i].Code]
 	}
 
 	// Errors first, the rest keeps the order of sections

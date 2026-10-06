@@ -82,9 +82,15 @@ export async function refreshHistory() {
 /** Reverts (undo = true) or repeats the last change and reloads the editors */
 export async function stepHistory(undo: boolean) {
     history.value = undo ? await Undo() : await Redo();
-    const [info, g] = await Promise.all([GetMapInfo(), GetGame()]);
+    await reloadEditors();
+}
+
+/** Reloads the editors after the map was changed behind them (undo, fixes of the scenario check...) */
+export async function reloadEditors() {
+    const [info, g, h] = await Promise.all([GetMapInfo(), GetGame(), HistoryState()]);
     mapInfo.value = info;
     game.value = g;
+    history.value = h;
     mapRevision.value++;
 }
 
@@ -113,6 +119,10 @@ export function historyLabel(label: string): string {
             return t('history.resize', {width: first, height: second});
         case 'generate':
             return t('history.generate', {seed: value});
+        case 'fix':
+            return t('history.fix', {n: value});
+        case 'replace':
+            return t('history.replace', {what: t('what.' + value)});
         case 'game':
         case 'map':
         case 'starts':

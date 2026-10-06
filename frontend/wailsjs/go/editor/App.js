@@ -34,6 +34,10 @@ export function ExportImage(arg1) {
   return window['go']['editor']['App']['ExportImage'](arg1);
 }
 
+export function FixProblems(arg1) {
+  return window['go']['editor']['App']['FixProblems'](arg1);
+}
+
 export function GenerateTerrain(arg1) {
   return window['go']['editor']['App']['GenerateTerrain'](arg1);
 }
@@ -156,6 +160,10 @@ export function PlaceStarts(arg1) {
 
 export function Redo() {
   return window['go']['editor']['App']['Redo']();
+}
+
+export function ReplaceType(arg1, arg2, arg3) {
+  return window['go']['editor']['App']['ReplaceType'](arg1, arg2, arg3);
 }
 
 export function ResetGameXML() {

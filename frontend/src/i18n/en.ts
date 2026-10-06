@@ -54,6 +54,15 @@ const en = {
         "title": "Brush"
     },
     "check": {
+        "fix": "Fix",
+        "fixAll": "Fix all ({n})",
+        "fixed": "Fixed problems: {n}. Ctrl+Z undoes it.",
+        "removeEverywhere": "(remove everywhere)",
+        "replace": "Replace",
+        "replaceText": "The {what} is used {n} times. Choose a type of the loaded game or mod data; every use is replaced at once.",
+        "replaceTitle": "Replace {value}",
+        "replaceWith": "Replace with",
+        "replaced": "{value} is replaced {n} times. Ctrl+Z undoes it.",
         "again": "Check again",
         "all": "All ({n})",
         "clickHint": "Click a problem to go to its place.",
@@ -127,6 +136,18 @@ const en = {
         "peak": "Peak",
         "water": "Water"
     },
+    "fixes": {
+        "keepFirstCity": "Keep only the first city of the plot",
+        "makeLand": "Turn the plot into flat grassland",
+        "moveStart": "Move the start to the nearest free flat land",
+        "removeCity": "Remove the city",
+        "removeRelation": "Remove the relation with the missing team",
+        "removeSign": "Remove the sign",
+        "removeUnits": "Remove the units of the empty slot",
+        "resetMaxTurns": "Use the turn limit of the game speed",
+        "setPopulation": "Set the population to 1",
+        "showSignToAll": "Show the sign to everyone"
+    },
     "generator": {
         "confirmText": "Terrain, heights, features, rivers, resources and improvements of all plots will be replaced. Cities, units, signs and start positions stay. Ctrl+Z undoes it.",
         "confirmTitle": "Generate terrain?",
@@ -148,6 +169,8 @@ const en = {
         "title": "Terrain generator"
     },
     "history": {
+        "fix": "fixes of {n} problems",
+        "replace": "replacement of a {what}",
         "generate": "generated terrain (seed {seed})",
         "starts": "start positions",
         "clearArea": "clearing of an area ({n} plots)",
