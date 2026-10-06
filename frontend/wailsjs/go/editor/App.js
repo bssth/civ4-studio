@@ -70,6 +70,10 @@ export function GetPlot(arg1, arg2) {
   return window['go']['editor']['App']['GetPlot'](arg1, arg2);
 }
 
+export function GetSigns() {
+  return window['go']['editor']['App']['GetSigns']();
+}
+
 export function GetTeams() {
   return window['go']['editor']['App']['GetTeams']();
 }
@@ -122,6 +126,10 @@ export function ResetGameXML() {
   return window['go']['editor']['App']['ResetGameXML']();
 }
 
+export function ResizeMap(arg1, arg2, arg3, arg4) {
+  return window['go']['editor']['App']['ResizeMap'](arg1, arg2, arg3, arg4);
+}
+
 export function SaveMap(arg1) {
   return window['go']['editor']['App']['SaveMap'](arg1);
 }
@@ -152,6 +160,10 @@ export function SetPlayers(arg1) {
 
 export function SetPlot(arg1) {
   return window['go']['editor']['App']['SetPlot'](arg1);
+}
+
+export function SetPlotSigns(arg1, arg2, arg3) {
+  return window['go']['editor']['App']['SetPlotSigns'](arg1, arg2, arg3);
 }
 
 export function SetTeams(arg1) {

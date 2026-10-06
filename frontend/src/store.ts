@@ -90,7 +90,7 @@ export async function stepHistory(undo: boolean) {
 
 /**
  * Text of a history label from the backend: "paint:<plots>", "plot:<x>,<y>", "start:<player>",
- * "game", "map", "teams", "players", "swap:<a>,<b>", "clear:<player>"
+ * "game", "map", "teams", "players", "swap:<a>,<b>", "clear:<player>", "signs:<x>,<y>", "resize:<width>,<height>"
  */
 export function historyLabel(label: string): string {
     const [kind, value = ''] = label.split(':');
@@ -104,6 +104,10 @@ export function historyLabel(label: string): string {
             return t('history.plot', {x: first, y: second});
         case 'swap':
             return t('history.swap', {a: first, b: second});
+        case 'signs':
+            return t('history.signs', {x: first, y: second});
+        case 'resize':
+            return t('history.resize', {width: first, height: second});
         case 'game':
         case 'map':
         case 'teams':

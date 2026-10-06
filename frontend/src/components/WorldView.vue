@@ -5,6 +5,7 @@ import {
   GetMapView,
   GetPlayers,
   GetPlot,
+  GetSigns,
   PaintPlots,
   SetPlayerStart,
   SetPlot
@@ -33,6 +34,7 @@ import {
   drawMap,
   FLAG_IMPROVEMENT,
   FLAG_ROUTE,
+  FLAG_SIGN,
   Layers,
   lineCells,
   mapColumn,
@@ -45,6 +47,7 @@ import {
   StartMarker
 } from "../mapRender";
 import PlotEditor from "./PlotEditor.vue";
+import PlotSigns from "./PlotSigns.vue";
 import PaintPanel from "./PaintPanel.vue";
 import {useI18n} from "vue-i18n";
 
@@ -57,19 +60,21 @@ type Mode = 'select' | 'paint' | 'river';
 // The view holds big arrays, it is replaced or redrawn explicitly instead of being deeply reactive
 const view = shallowRef<editor.MapView | null>(null);
 const players = ref<editor.Player[]>([]);
+const signs = ref<editor.Sign[]>([]);
 const cell = ref(8);
 // The map wraps east-west (as almost all maps do): it can be shifted to move the seam out of the way
 const wrapX = ref(false);
 // Map column shown at the left edge
 const offset = ref(0);
 const mode = ref<Mode>('select');
-const layers = reactive<Layers>({rivers: true, resources: true, cities: true, units: true, starts: true, grid: false});
+const layers = reactive<Layers>({rivers: true, resources: true, cities: true, units: true, starts: true, signs: true, grid: false});
 const layerNames: { key: keyof Layers, title: string, icon: string }[] = [
   {key: 'rivers', title: 'layers.rivers', icon: 'mdi-waves'},
   {key: 'resources', title: 'layers.resources', icon: 'mdi-diamond-stone'},
   {key: 'cities', title: 'layers.cities', icon: 'mdi-home-city'},
   {key: 'units', title: 'layers.units', icon: 'mdi-chess-pawn'},
   {key: 'starts', title: 'layers.starts', icon: 'mdi-flag'},
+  {key: 'signs', title: 'layers.signs', icon: 'mdi-sign-text'},
   {key: 'grid', title: 'layers.grid', icon: 'mdi-grid'},
 ];
 const activeLayers = computed({
@@ -92,9 +97,10 @@ function setView(v: editor.MapView | null) {
 }
 
 async function load(fit = false) {
-  const [v, p, props] = await Promise.all([GetMapView(), GetPlayers(), GetMapProps()]);
+  const [v, p, props, s] = await Promise.all([GetMapView(), GetPlayers(), GetMapProps(), GetSigns()]);
   setView(v);
   players.value = p ?? [];
+  signs.value = s ?? [];
   wrapX.value = !!props && props.WrapX !== 0;
   if (!wrapX.value || !view.value) offset.value = 0;
   else offset.value = mod(offset.value, view.value.width);
@@ -107,7 +113,9 @@ async function load(fit = false) {
 }
 
 const refreshView = batched(async () => {
-  setView(await GetMapView());
+  const [v, s] = await Promise.all([GetMapView(), GetSigns()]);
+  setView(v);
+  signs.value = s ?? [];
   await refreshHistory();
 });
 
@@ -458,6 +466,9 @@ const hoverText = computed(() => {
   for (const s of here) {
     parts.push(t('world.startOf', {n: s.player, player: playerName(players.value, s.player)}) + (s.random ? ' ' + t('world.randomStart') : ''));
   }
+  if (v.flags[i] & FLAG_SIGN) {
+    for (const s of signs.value.filter(s => s.PlotX === h.x && s.PlotY === h.y)) parts.push(`«${s.Caption}»`);
+  }
   return parts.filter(Boolean).join(' · ');
 });
 
@@ -541,7 +552,12 @@ const canvasCursor = computed(() => {
         <div class="text-body-2">{{ $t('world.riversHelp') }}</div>
         <div class="text-caption text-medium-emphasis mt-2">{{ $t('world.riversDirection') }}</div>
       </div>
-      <PlotEditor v-else-if="selectedPlot" :plot="selectedPlot" :players="players" @changed="refreshView"/>
+      <template v-else-if="selectedPlot">
+        <PlotEditor :plot="selectedPlot" :players="players" @changed="refreshView"/>
+        <v-divider/>
+        <PlotSigns class="pt-2" :x="selectedPlot.X" :y="selectedPlot.Y" :signs="signs" :players="players"
+                   @changed="refreshView"/>
+      </template>
       <div v-else class="pa-4 text-grey text-body-2">
         <template v-if="selected">{{ $t('world.noPlotAt', {x: selected.x, y: selected.y}) }}</template>
         <template v-else>{{ $t('world.selectHint') }}</template>

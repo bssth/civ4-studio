@@ -83,3 +83,12 @@ func TestAppSetPlotAndStart(t *testing.T) {
 		t.Error("a start outside of the map must be rejected")
 	}
 }
+
+func TestViewMarksSigns(t *testing.T) {
+	wb := opsTestMap()
+	wb.Signs = []*Sign{{PlotX: 1, PlotY: 0, Caption: "Here"}, {PlotX: 9, PlotY: 9, Caption: "Outside"}}
+	view := wb.View()
+	if view.Flags[1]&PlotFlagSign == 0 || view.Flags[0]&PlotFlagSign != 0 {
+		t.Errorf("flags = %v", view.Flags)
+	}
+}

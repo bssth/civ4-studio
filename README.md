@@ -14,13 +14,14 @@ instead of raw identifiers.
 
 - **World map.** Terrain, hills and peaks, forests and other features, rivers, resources, cities, units and start
   positions in player colors, with zoom and layers. Click a plot to change its terrain, feature, resource, improvement
-  and route, or to add and edit cities and units. Drag a start flag to move a player. A map that wraps east-west can
+  and route, or to add and edit cities, units and signs (texts on the map, for everyone or one player). Drag a start
+  flag to move a player. A map that wraps east-west can
   be shifted to move the seam out of the way, e.g. to see the Pacific in one piece.
 - **Painting.** A brush of size 1–9 paints terrain, height, features, resources, improvements and routes, with presets
   like Ocean, Grassland, Hills or Forest; painting water or land terrain fixes the height. On a wrapping map the brush
   continues across the seam. Rivers are added and removed by clicking the edge between two plots.
 - **Undo.** Every change can be undone with `Ctrl+Z` or the toolbar and redone with `Ctrl+Y`, on any tab: strokes and
-  plot edits, players, teams, game settings, map properties, swapping and clearing of player slots. Typing a name is
+  plot edits, signs, players, teams, game settings, map properties and size, swapping and clearing of player slots. Typing a name is
   undone at once, not letter by letter.
 - **Players.** Pick a civilization and a leader from the game or mod data: names, color and art style are filled in
   automatically. Handicap, state religion, starting era, starting civics and city names are editable too. Swap two
@@ -28,7 +29,9 @@ instead of raw identifiers.
 - **Teams.** Starting techs and projects, every tech up to an era for all teams at once, and a diplomacy matrix for
   contact, war, open borders, defensive pacts and permanent war/peace.
 - **Map.** World size, climate, sea level, wrapping and latitudes, map statistics. A new map gets empty player slots
-  and can be filled with ocean plots of the chosen size, ready for the game's WorldBuilder.
+  and can be filled with ocean plots of the chosen size, ready for the game's WorldBuilder. An existing map can be
+  resized: columns and rows are added (as ocean) or cut on any side, while plots, cities, units, start positions and
+  signs keep their places.
 - **Scenario check.** Unknown types (e.g. from a mod that is not selected), start positions in water or outside of the
   map, cities and units of empty slots, missing teams and more. Click a problem to go to its place; errors are shown
   before saving.

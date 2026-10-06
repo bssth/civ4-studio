@@ -66,7 +66,7 @@ func (h *History) reset() {
 
 // HistoryState tells which steps can be undone and redone, empty labels mean none.
 // Labels are codes the frontend turns into text: "paint:<plots>", "plot:<x>,<y>", "start:<player>",
-// "game", "map", "teams", "players", "swap:<a>,<b>", "clear:<player>".
+// "game", "map", "teams", "players", "swap:<a>,<b>", "clear:<player>", "signs:<x>,<y>", "resize:<width>,<height>".
 type HistoryState struct {
 	Undo string `json:"undo"`
 	Redo string `json:"redo"`
@@ -151,6 +151,7 @@ func sectionEntry[T any](label string, before, after T, set func(m *WbMap, v T))
 
 // mapSnapshot holds the parts of the map changed by player operations
 type mapSnapshot struct {
+	props   *MapProps
 	players []*Player
 	teams   []*Team
 	plots   []*Plot
@@ -158,7 +159,7 @@ type mapSnapshot struct {
 }
 
 func (m *WbMap) snapshot() mapSnapshot {
-	s := mapSnapshot{players: cloneValue(m.Players), teams: cloneValue(m.Teams), signs: cloneValue(m.Signs)}
+	s := mapSnapshot{props: cloneValue(m.Map), players: cloneValue(m.Players), teams: cloneValue(m.Teams), signs: cloneValue(m.Signs)}
 	s.plots = make([]*Plot, len(m.Plots))
 	for i, p := range m.Plots {
 		s.plots[i] = clonePlot(p)
@@ -167,12 +168,12 @@ func (m *WbMap) snapshot() mapSnapshot {
 }
 
 func (s mapSnapshot) restore(m *WbMap) {
-	c := mapSnapshot{players: cloneValue(s.players), teams: cloneValue(s.teams), signs: cloneValue(s.signs)}
+	c := mapSnapshot{props: cloneValue(s.props), players: cloneValue(s.players), teams: cloneValue(s.teams), signs: cloneValue(s.signs)}
 	c.plots = make([]*Plot, len(s.plots))
 	for i, p := range s.plots {
 		c.plots[i] = clonePlot(p)
 	}
-	m.Players, m.Teams, m.Plots, m.Signs = c.players, c.teams, c.plots, c.signs
+	m.Map, m.Players, m.Teams, m.Plots, m.Signs = c.props, c.players, c.teams, c.plots, c.signs
 }
 
 func snapshotEntry(label string, before, after mapSnapshot) historyEntry {
