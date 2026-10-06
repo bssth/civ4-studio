@@ -41,7 +41,11 @@ instead of raw identifiers.
 - **Teams.** Starting techs and projects, every tech up to an era for all teams at once, and a diplomacy matrix for
   contact, war, open borders, defensive pacts and permanent war/peace.
 - **Map.** World size, climate, sea level, wrapping and latitudes, map statistics. A new map gets empty player slots
-  and can be filled with ocean plots of the chosen size, ready for the game's WorldBuilder. An existing map can be
+  and can be filled with ocean plots of the chosen size, ready for the game's WorldBuilder.
+- **Terrain generator.** Fills a map with continents, mountain chains, climate zones by latitude (snow and tundra
+  near the poles, deserts in the subtropics, jungle at the equator), forests, rivers running to the sea and
+  resources of the game or mod, by a seed and a few sliders; the same seed gives the same map. Start positions of
+  all players can be placed on good land as far from each other as possible. An existing map can be
   resized: columns and rows are added (as ocean) or cut on any side, while plots, cities, units, start positions and
   signs keep their places.
 - **Scenario check.** Unknown types (e.g. from a mod that is not selected, including city production), start positions in water or outside of the

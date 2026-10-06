@@ -18,6 +18,8 @@ export function CurrentMapPath():Promise<string>;
 
 export function ExportImage(arg1:string):Promise<string>;
 
+export function GenerateTerrain(arg1:editor.TerrainOptions):Promise<editor.TerrainResult>;
+
 export function GetCities():Promise<Array<editor.CityEntry>>;
 
 export function GetCivilizations():Promise<Array<editor.CivilizationOption>>;
@@ -73,6 +75,8 @@ export function OpenMapDialog():Promise<string>;
 export function PaintPlots(arg1:editor.PaintOp):Promise<number>;
 
 export function PasteRegion(arg1:number,arg2:number,arg3:boolean,arg4:boolean,arg5:boolean):Promise<number>;
+
+export function PlaceStarts(arg1:number):Promise<number>;
 
 export function Redo():Promise<editor.HistoryState>;
 

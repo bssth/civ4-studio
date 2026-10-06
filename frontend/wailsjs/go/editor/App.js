@@ -34,6 +34,10 @@ export function ExportImage(arg1) {
   return window['go']['editor']['App']['ExportImage'](arg1);
 }
 
+export function GenerateTerrain(arg1) {
+  return window['go']['editor']['App']['GenerateTerrain'](arg1);
+}
+
 export function GetCities() {
   return window['go']['editor']['App']['GetCities']();
 }
@@ -144,6 +148,10 @@ export function PaintPlots(arg1) {
 
 export function PasteRegion(arg1, arg2, arg3, arg4, arg5) {
   return window['go']['editor']['App']['PasteRegion'](arg1, arg2, arg3, arg4, arg5);
+}
+
+export function PlaceStarts(arg1) {
+  return window['go']['editor']['App']['PlaceStarts'](arg1);
 }
 
 export function Redo() {
