@@ -14,6 +14,14 @@ export function ClearPlayer(arg1, arg2) {
   return window['go']['editor']['App']['ClearPlayer'](arg1, arg2);
 }
 
+export function ClearRegion(arg1, arg2, arg3) {
+  return window['go']['editor']['App']['ClearRegion'](arg1, arg2, arg3);
+}
+
+export function CopyRegion(arg1) {
+  return window['go']['editor']['App']['CopyRegion'](arg1);
+}
+
 export function CreatePlots(arg1, arg2) {
   return window['go']['editor']['App']['CreatePlots'](arg1, arg2);
 }
@@ -22,8 +30,16 @@ export function CurrentMapPath() {
   return window['go']['editor']['App']['CurrentMapPath']();
 }
 
+export function ExportImage(arg1) {
+  return window['go']['editor']['App']['ExportImage'](arg1);
+}
+
 export function GetCivilizations() {
   return window['go']['editor']['App']['GetCivilizations']();
+}
+
+export function GetClipboard() {
+  return window['go']['editor']['App']['GetClipboard']();
 }
 
 export function GetConfig() {
@@ -116,6 +132,10 @@ export function OpenMapDialog() {
 
 export function PaintPlots(arg1) {
   return window['go']['editor']['App']['PaintPlots'](arg1);
+}
+
+export function PasteRegion(arg1, arg2, arg3) {
+  return window['go']['editor']['App']['PasteRegion'](arg1, arg2, arg3);
 }
 
 export function Redo() {

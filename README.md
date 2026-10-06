@@ -20,8 +20,12 @@ instead of raw identifiers.
 - **Painting.** A brush of size 1–9 paints terrain, height, features, resources, improvements and routes, with presets
   like Ocean, Grassland, Hills or Forest; painting water or land terrain fixes the height. On a wrapping map the brush
   continues across the seam. Rivers are added and removed by clicking the edge between two plots.
+- **Areas.** Select a rectangle of plots (also across the seam), copy it with `Ctrl+C` and paste it with `Ctrl+V`
+  elsewhere or into another map: terrain, height, features, resources, improvements, routes and rivers, optionally
+  with cities and units. A selection can be filled with the brush or cleared of units or cities.
+- **Map image.** The map can be exported as a PNG picture with the current layers.
 - **Undo.** Every change can be undone with `Ctrl+Z` or the toolbar and redone with `Ctrl+Y`, on any tab: strokes and
-  plot edits, signs, players, teams, game settings, map properties and size, swapping and clearing of player slots. Typing a name is
+  plot edits, pasted and filled areas, signs, players, teams, game settings, map properties and size, swapping and clearing of player slots. Typing a name is
   undone at once, not letter by letter.
 - **Players.** Pick a civilization and a leader from the game or mod data: names, color and art style are filled in
   automatically. Handicap, state religion, starting era, starting civics and city names are editable too. Swap two
@@ -46,7 +50,8 @@ Game data is read from the base game, Warlords, Beyond the Sword and the selecte
 a mod file replaces the base file with the same path.
 
 Shortcuts: `Ctrl+N` new map, `Ctrl+O` open, `Ctrl+S` save, `Ctrl+Shift+S` save as, `Ctrl+Z` / `Ctrl+Y` (or
-`Ctrl+Shift+Z`) undo and redo changes outside of text fields, `Ctrl+wheel` zooms the map.
+`Ctrl+Shift+Z`) undo and redo changes outside of text fields, `Ctrl+C` / `Ctrl+V` copy and paste areas on the World
+tab, `Esc` cancels pasting or the selection, `Ctrl+wheel` zooms the map.
 
 | Players | Teams and diplomacy |
 |---|---|

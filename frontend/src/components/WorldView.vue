@@ -1,12 +1,17 @@
 <script setup lang="ts">
 import {computed, nextTick, onMounted, onUnmounted, reactive, ref, shallowRef, watch} from "vue";
 import {
+  ClearRegion,
+  CopyRegion,
+  ExportImage,
+  GetClipboard,
   GetMapProps,
   GetMapView,
   GetPlayers,
   GetPlot,
   GetSigns,
   PaintPlots,
+  PasteRegion,
   SetPlayerStart,
   SetPlot
 } from "../../wailsjs/go/editor/App";
@@ -38,10 +43,12 @@ import {
   Layers,
   lineCells,
   mapColumn,
+  MapRegion,
   mod,
   nearestEdge,
   PLOT_LAND,
   PLOT_OCEAN,
+  regionCells,
   RiverEdge,
   screenColumn,
   StartMarker
@@ -55,7 +62,7 @@ const {t} = useI18n();
 
 const heightNames = computed(() => [t('height.peak'), t('height.hills'), t('height.flat'), t('height.water')]);
 
-type Mode = 'select' | 'paint' | 'river';
+type Mode = 'select' | 'paint' | 'river' | 'area';
 
 // The view holds big arrays, it is replaced or redrawn explicitly instead of being deeply reactive
 const view = shallowRef<editor.MapView | null>(null);
@@ -87,6 +94,12 @@ const selectedPlot = ref<editor.Plot | null>(null);
 const hover = ref<{ x: number, y: number } | null>(null);
 const hoverEdge = ref<RiverEdge | null>(null);
 const error = ref('');
+// Selected rectangle in map coordinates and the screen cell where its drag started
+const area = ref<MapRegion | null>(null);
+let areaStart: { col: number, row: number } | null = null;
+const clipboard = ref<editor.ClipboardInfo>(editor.ClipboardInfo.createFrom({width: 0, height: 0, cities: 0, units: 0}));
+// Waiting for a click that places the copied area
+const pasting = ref(false);
 
 const canvas = ref<HTMLCanvasElement | null>(null);
 const scroller = ref<HTMLElement | null>(null);
@@ -122,10 +135,13 @@ const refreshView = batched(async () => {
 onMounted(async () => {
   await load(true);
   await consumeFocus();
+  clipboard.value = await GetClipboard();
+  window.addEventListener('keydown', onKeyDown);
 });
 
 onUnmounted(() => {
   cancelAnimationFrame(frame);
+  window.removeEventListener('keydown', onKeyDown);
 });
 
 // A plot requested from another tab (e.g. the problem list): zoom in, center it and open its editor
@@ -149,10 +165,16 @@ watch(mapVersion, () => {
   selected.value = null;
   selectedPlot.value = null;
   offset.value = 0;
+  area.value = null;
+  pasting.value = false;
   load(true);
 });
 // Undo and redo may change plots and start positions
 watch(mapRevision, () => load());
+watch(mode, m => {
+  if (m !== 'area') pasting.value = false;
+  areaMessage.value = '';
+});
 
 const maxCell = computed(() => {
   if (!view.value) return 32;
@@ -212,12 +234,14 @@ function draw() {
     selected: mode.value === 'select' ? selected.value : null,
     brush: mode.value === 'paint' && hover.value ? {...hover.value, size: brush.size} : null,
     edge: mode.value === 'river' ? hoverEdge.value : null,
+    area: mode.value === 'area' ? area.value : null,
+    paste: mode.value === 'area' ? pasteRegion.value : null,
     offset: offset.value,
     wrapX: wrapX.value,
   });
 }
 
-watch([view, cell, selected, hover, hoverEdge, mode, offset, () => brush.size], scheduleDraw);
+watch([view, cell, selected, hover, hoverEdge, mode, offset, area, pasting, () => brush.size], scheduleDraw);
 watch([layers, starts, () => enums.colors], scheduleDraw, {deep: true});
 
 /** Screen column of a map column, see offset */
@@ -356,11 +380,170 @@ async function toggleRiver(edge: RiverEdge) {
   if (selected.value) selectedPlot.value = await GetPlot(selected.value.x, selected.value.y);
 }
 
+// --- Area -----------------------------------------------------------------
+
+const pasteAssets = ref(false);
+const areaMessage = ref('');
+
+function screenCell(e: MouseEvent): { col: number, row: number } | null {
+  const v = view.value;
+  if (!v) return null;
+  const col = Math.floor(e.offsetX / cell.value), row = Math.floor(e.offsetY / cell.value);
+  if (col < 0 || col >= v.width || row < 0 || row >= v.height) return null;
+  return {col, row};
+}
+
+/** Rectangle between two screen cells; it is made in screen columns, so it may cross the seam */
+function areaBetween(a: { col: number, row: number }, b: { col: number, row: number }): MapRegion | null {
+  const v = view.value;
+  if (!v) return null;
+  const left = Math.min(a.col, b.col), right = Math.max(a.col, b.col);
+  const top = Math.min(a.row, b.row), bottom = Math.max(a.row, b.row);
+  return {x: mapColumn(left, v.width, offset.value), y: v.height - 1 - bottom, width: right - left + 1, height: bottom - top + 1};
+}
+
+// The copied area placed with its north-western corner under the cursor
+const pasteRegion = computed<MapRegion | null>(() => {
+  const h = hover.value, c = clipboard.value;
+  if (!pasting.value || !h || c.width === 0) return null;
+  return {x: h.x, y: h.y - c.height + 1, width: c.width, height: c.height};
+});
+
+async function reloadAfterEdit() {
+  const [v, s] = await Promise.all([GetMapView(), GetSigns()]);
+  setView(v);
+  signs.value = s ?? [];
+  await refreshHistory();
+  if (selected.value) selectedPlot.value = await GetPlot(selected.value.x, selected.value.y);
+}
+
+async function areaAction(action: () => Promise<string>) {
+  try {
+    areaMessage.value = await action();
+    error.value = '';
+  } catch (err: any) {
+    error.value = String(err);
+  }
+}
+
+function copyArea() {
+  const r = area.value;
+  if (!r) return;
+  return areaAction(async () => {
+    clipboard.value = await CopyRegion(editor.Region.createFrom(r));
+    return t('area.copied', {width: r.width, height: r.height});
+  });
+}
+
+function startPaste() {
+  if (clipboard.value.width === 0) return;
+  mode.value = 'area';
+  pasting.value = true;
+}
+
+function pasteAt(r: MapRegion) {
+  pasting.value = false;
+  return areaAction(async () => {
+    const n = await PasteRegion(r.x, r.y, pasteAssets.value);
+    await reloadAfterEdit();
+    // The pasted area becomes the selection, e.g. to copy it again or fill it
+    area.value = r;
+    return t('area.pasted', {n});
+  });
+}
+
+function fillArea() {
+  const v = view.value, r = area.value;
+  if (!v || !r) return;
+  if (brushIsEmpty()) {
+    error.value = t('world.brushEmpty');
+    return;
+  }
+  return areaAction(async () => {
+    const n = await PaintPlots(editor.PaintOp.createFrom({...brushOperation(), cells: regionCells(v, r, wrapX.value)}));
+    await reloadAfterEdit();
+    return t('area.filled', {n});
+  });
+}
+
+function clearArea(units: boolean, cities: boolean) {
+  const r = area.value;
+  if (!r) return;
+  return areaAction(async () => {
+    const removed = await ClearRegion(editor.Region.createFrom(r), units, cities);
+    await reloadAfterEdit();
+    return t('area.cleared', {units: removed.units, cities: removed.cities});
+  });
+}
+
+function onKeyDown(e: KeyboardEvent) {
+  const target = e.target as HTMLElement | null;
+  if (target && (target.isContentEditable || ['INPUT', 'TEXTAREA', 'SELECT'].includes(target.tagName))) return;
+  const key = e.key.toLowerCase();
+  if (key === 'escape') {
+    if (pasting.value) pasting.value = false;
+    else if (mode.value === 'area') area.value = null;
+    return;
+  }
+  if (!(e.ctrlKey || e.metaKey)) return;
+  if (key === 'c' && mode.value === 'area' && area.value) {
+    e.preventDefault();
+    copyArea();
+  } else if (key === 'v' && clipboard.value.width > 0) {
+    e.preventDefault();
+    startPaste();
+  }
+}
+
+// --- Export ---------------------------------------------------------------
+
+const exporting = ref(false);
+
+/** Draws the whole map with the current layers and seam, without the cursor and selection, and saves it */
+async function exportImage() {
+  const v = view.value;
+  if (!v) return;
+  exporting.value = true;
+  try {
+    const size = Math.max(8, Math.min(16, cell.value));
+    const c = document.createElement('canvas');
+    c.width = v.width * size;
+    c.height = v.height * size;
+    const ctx = c.getContext('2d');
+    if (!ctx) return;
+    drawMap(ctx, v, {
+      cell: size,
+      layers,
+      ownerColor: owner => playerColor(players.value, owner),
+      starts: starts.value,
+      selected: null,
+      offset: offset.value,
+      wrapX: wrapX.value,
+    });
+    const path = await ExportImage(c.toDataURL('image/png'));
+    if (path) areaMessage.value = t('world.exported', {path});
+    error.value = '';
+  } catch (err: any) {
+    error.value = String(err);
+  } finally {
+    exporting.value = false;
+  }
+}
+
 // --- Mouse ----------------------------------------------------------------
 
 function onMouseDown(e: MouseEvent) {
   const at = cellAt(e);
   if (!at || e.button !== 0) return;
+  if (mode.value === 'area') {
+    if (pasting.value && pasteRegion.value) {
+      pasteAt(pasteRegion.value);
+      return;
+    }
+    areaStart = screenCell(e);
+    area.value = areaStart && areaBetween(areaStart, areaStart);
+    return;
+  }
   if (mode.value === 'paint') {
     if (brushIsEmpty()) {
       error.value = t('world.brushEmpty');
@@ -386,6 +569,11 @@ function onMouseMove(e: MouseEvent) {
     hoverEdge.value = edgeAt(e);
     return;
   }
+  if (mode.value === 'area') {
+    const sc = screenCell(e);
+    if (areaStart && sc && (e.buttons & 1)) area.value = areaBetween(areaStart, sc);
+    return;
+  }
   if (stroke && at && (e.buttons & 1) && (at.x !== stroke.last.x || at.y !== stroke.last.y)) {
     paintAt(stroke.last, at);
     return;
@@ -398,6 +586,10 @@ function onMouseMove(e: MouseEvent) {
 async function onMouseUp(e: MouseEvent) {
   if (stroke) {
     await finishStroke();
+    return;
+  }
+  if (mode.value === 'area') {
+    areaStart = null;
     return;
   }
   if (mode.value !== 'select') return;
@@ -422,6 +614,7 @@ async function onMouseUp(e: MouseEvent) {
 }
 
 function onMouseLeave() {
+  areaStart = null;
   hover.value = null;
   hoverEdge.value = null;
   drag.value = null;
@@ -453,6 +646,7 @@ async function step(undo: boolean) {
 const hoverText = computed(() => {
   const v = view.value, h = hover.value;
   if (!v || !h) return '';
+  if (mode.value === 'area' && pasting.value) return t('area.pasteHint');
   const i = h.y * v.width + h.x;
   const parts = [`${h.x}, ${h.y}`];
   const terrain = v.terrain[i];
@@ -476,6 +670,7 @@ const hints: Record<Mode, string> = {
   select: 'world.hintSelect',
   paint: 'world.hintPaint',
   river: 'world.hintRiver',
+  area: 'world.hintArea',
 };
 
 const canvasCursor = computed(() => {
@@ -505,6 +700,9 @@ const canvasCursor = computed(() => {
           <v-btn value="river" size="small" :title="$t('world.modeRiver')">
             <v-icon icon="mdi-current-ac"/>
           </v-btn>
+          <v-btn value="area" size="small" :title="$t('world.modeArea')">
+            <v-icon icon="mdi-selection-drag"/>
+          </v-btn>
         </v-btn-toggle>
         <v-btn icon="mdi-undo" size="small" variant="text" :disabled="!history.undo"
                :title="history.undo ? $t('world.undo', {what: historyLabel(history.undo)}) : $t('world.nothingToUndo')" @click="step(true)"/>
@@ -528,9 +726,11 @@ const canvasCursor = computed(() => {
         <v-spacer/>
         <v-icon icon="mdi-magnify-minus-outline" size="small"/>
         <v-slider v-model="cell" :min="2" :max="maxCell" :step="1" hide-details density="compact"
-                  style="max-width: 180px; min-width: 120px"/>
+                  style="max-width: 150px; min-width: 100px"/>
         <v-icon icon="mdi-magnify-plus-outline" size="small"/>
-        <v-btn size="small" variant="text" prepend-icon="mdi-fit-to-screen-outline" @click="fitToScreen">{{ $t('world.fit') }}</v-btn>
+        <v-btn icon="mdi-fit-to-screen-outline" size="small" variant="text" :title="$t('world.fit')" @click="fitToScreen"/>
+        <v-btn icon="mdi-file-image-outline" size="small" variant="text" :title="$t('world.export')" :loading="exporting"
+               @click="exportImage"/>
       </div>
       <div class="px-3 py-1 text-caption text-medium-emphasis text-truncate hover-line">
         {{ hoverText || $t(hints[mode]) }}
@@ -547,6 +747,41 @@ const canvasCursor = computed(() => {
 
     <div class="editor-panel">
       <PaintPanel v-if="mode === 'paint'"/>
+      <div v-else-if="mode === 'area'" class="pa-3">
+        <h3 class="mb-1">{{ $t('area.title') }}</h3>
+        <div class="text-body-2 mb-3">{{ $t('area.help') }}</div>
+        <v-alert v-if="areaMessage" type="success" variant="tonal" density="compact" class="mb-3" closable
+                 @click:close="areaMessage = ''">{{ areaMessage }}</v-alert>
+
+        <template v-if="area">
+          <div class="text-body-2 mb-2">
+            {{ $t('area.selected', {width: area.width, height: area.height, x: area.x, y: area.y}) }}
+          </div>
+          <div class="d-flex flex-wrap ga-2 mb-3">
+            <v-btn size="small" variant="tonal" prepend-icon="mdi-content-copy" @click="copyArea">{{ $t('area.copy') }}</v-btn>
+            <v-btn size="small" variant="tonal" prepend-icon="mdi-format-color-fill" @click="fillArea">{{ $t('area.fill') }}</v-btn>
+            <v-btn size="small" variant="tonal" prepend-icon="mdi-account-remove" @click="clearArea(true, false)">{{ $t('area.removeUnits') }}</v-btn>
+            <v-btn size="small" variant="tonal" prepend-icon="mdi-home-remove" @click="clearArea(false, true)">{{ $t('area.removeCities') }}</v-btn>
+            <v-btn size="small" variant="text" prepend-icon="mdi-close" @click="area = null">{{ $t('area.deselect') }}</v-btn>
+          </div>
+          <div class="text-caption text-medium-emphasis mb-3">{{ $t('area.fillHint') }}</div>
+        </template>
+        <div v-else class="text-body-2 text-grey mb-3">{{ $t('area.nothingSelected') }}</div>
+
+        <v-divider class="mb-3"/>
+        <template v-if="clipboard.width > 0">
+          <div class="text-body-2 mb-1">
+            {{ $t('area.clipboard', {width: clipboard.width, height: clipboard.height, cities: clipboard.cities, units: clipboard.units}) }}
+          </div>
+          <v-checkbox v-model="pasteAssets" :label="$t('area.withAssets')" density="compact" hide-details/>
+          <v-btn size="small" :color="pasting ? 'warning' : 'primary'" variant="tonal" prepend-icon="mdi-content-paste"
+                 @click="pasting ? (pasting = false) : startPaste()">
+            {{ pasting ? $t('common.cancel') : $t('area.paste') }}
+          </v-btn>
+          <div v-if="pasting" class="text-caption text-medium-emphasis mt-2">{{ $t('area.pasteHint') }}</div>
+        </template>
+        <div v-else class="text-caption text-medium-emphasis">{{ $t('area.clipboardEmpty') }}</div>
+      </div>
       <div v-else-if="mode === 'river'" class="pa-3">
         <h3 class="mb-1">{{ $t('world.riversTitle') }}</h3>
         <div class="text-body-2">{{ $t('world.riversHelp') }}</div>

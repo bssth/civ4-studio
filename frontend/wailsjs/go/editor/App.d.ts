@@ -8,11 +8,19 @@ export function ChooseGameDir():Promise<string>;
 
 export function ClearPlayer(arg1:number,arg2:boolean):Promise<void>;
 
+export function ClearRegion(arg1:editor.Region,arg2:boolean,arg3:boolean):Promise<editor.ClipboardInfo>;
+
+export function CopyRegion(arg1:editor.Region):Promise<editor.ClipboardInfo>;
+
 export function CreatePlots(arg1:number,arg2:number):Promise<void>;
 
 export function CurrentMapPath():Promise<string>;
 
+export function ExportImage(arg1:string):Promise<string>;
+
 export function GetCivilizations():Promise<Array<editor.CivilizationOption>>;
+
+export function GetClipboard():Promise<editor.ClipboardInfo>;
 
 export function GetConfig():Promise<editor.Config>;
 
@@ -59,6 +67,8 @@ export function OpenMap(arg1:string):Promise<void>;
 export function OpenMapDialog():Promise<string>;
 
 export function PaintPlots(arg1:editor.PaintOp):Promise<number>;
+
+export function PasteRegion(arg1:number,arg2:number,arg3:boolean):Promise<number>;
 
 export function Redo():Promise<editor.HistoryState>;
 
