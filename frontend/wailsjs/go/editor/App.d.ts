@@ -18,6 +18,8 @@ export function CurrentMapPath():Promise<string>;
 
 export function ExportImage(arg1:string):Promise<string>;
 
+export function FixProblems(arg1:Array<editor.Problem>):Promise<number>;
+
 export function GenerateTerrain(arg1:editor.TerrainOptions):Promise<editor.TerrainResult>;
 
 export function GetCities():Promise<Array<editor.CityEntry>>;
@@ -79,6 +81,8 @@ export function PasteRegion(arg1:number,arg2:number,arg3:boolean,arg4:boolean,ar
 export function PlaceStarts(arg1:number):Promise<number>;
 
 export function Redo():Promise<editor.HistoryState>;
+
+export function ReplaceType(arg1:string,arg2:string,arg3:string):Promise<number>;
 
 export function ResetGameXML():Promise<void>;
 

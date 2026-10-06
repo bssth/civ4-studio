@@ -50,7 +50,9 @@ instead of raw identifiers.
   signs keep their places.
 - **Scenario check.** Unknown types (e.g. from a mod that is not selected, including city production), start positions in water or outside of the
   map, cities and units of empty slots, missing teams and more. Click a problem to go to its place; errors are shown
-  before saving.
+  before saving. Most problems are fixed with one click (or *Fix all*): a start in water moves to the nearest free
+  land, units and cities of empty slots are removed, a city in water gets land... An unknown type, e.g. a resource
+  of another mod, is replaced with a type of the loaded data (or removed) everywhere in the map at once.
 - **Game settings.** Era, speed, calendar, victory conditions, game and multiplayer options, locked options.
 - **Languages.** The interface is in English and Russian (the system language by default). Names of
   civilizations, leaders, techs etc. are shown in any language of the game or mod texts (French, German, a Russian
