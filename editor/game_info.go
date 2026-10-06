@@ -38,6 +38,7 @@ const (
 	InfoUnitAIs       = "UnitAIInfos"
 	InfoBuildings     = "BuildingInfos"
 	InfoPromotions    = "PromotionInfos"
+	InfoProcesses     = "ProcessInfos"
 	InfoColorVals     = "ColorVals"
 )
 
@@ -47,7 +48,7 @@ var KnownInfoCategories = []string{
 	InfoCivilizations, InfoLeaders, InfoHandicaps, InfoPlayerColors, InfoArtStyles, InfoTechs, InfoReligions,
 	InfoCivics, InfoCivicOptions, InfoProjects, InfoWorldSizes, InfoClimates, InfoSeaLevels, InfoTerrains,
 	InfoFeatures, InfoBonuses, InfoImprovements, InfoRoutes, InfoUnits, InfoUnitAIs, InfoBuildings,
-	InfoPromotions, InfoColorVals,
+	InfoPromotions, InfoProcesses, InfoColorVals,
 }
 
 // TypeInfo is a single entry of a game info XML file (a civilization, a tech, a leader etc.)

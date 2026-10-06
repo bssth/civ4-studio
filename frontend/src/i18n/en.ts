@@ -83,6 +83,16 @@ const en = {
         "south": "South",
         "west": "West"
     },
+    "facing": {
+        "e": "East",
+        "n": "North",
+        "ne": "North-east",
+        "nw": "North-west",
+        "s": "South",
+        "se": "South-east",
+        "sw": "South-west",
+        "w": "West"
+    },
     "field": {
         "feature": "Feature",
         "height": "Height",
@@ -194,6 +204,32 @@ const en = {
         "wrapTorus": "Torus (wraps both ways)",
         "wrapping": "Wrapping"
     },
+    "objects": {
+        "ai": "AI",
+        "barbarians": "Barbarians",
+        "buildings": "Buildings",
+        "cities": "Cities ({n})",
+        "culture": "Culture",
+        "damage": "Damage",
+        "emptySlot": "(empty slot)",
+        "everyone": "All players",
+        "experience": "XP",
+        "hint": "Click a row to open the plot on the World tab.",
+        "holyCity": "Holy city",
+        "level": "Level",
+        "name": "Name",
+        "noCities": "No cities",
+        "noUnits": "No units",
+        "owner": "Owner",
+        "place": "Plot",
+        "population": "Population",
+        "production": "Production",
+        "promotions": "Promotions",
+        "religions": "Religions",
+        "search": "Search",
+        "unit": "Unit",
+        "units": "Units ({n})"
+    },
     "players": {
         "aiOnly": "AI only",
         "anyLeader": "Allow any leader for a civilization",
@@ -237,6 +273,16 @@ const en = {
         "whiteFlag": "White flag background"
     },
     "plotEditor": {
+        "addCulture": "Add culture of a player",
+        "cultureAndScript": "Culture and script data",
+        "cultureHint": "Culture points of each player in the city; the owner with the most culture controls the plots around.",
+        "damage": "Damage",
+        "duplicateUnit": "Duplicate the unit",
+        "facing": "Facing",
+        "nothing": "Nothing",
+        "production": "Production",
+        "removeCulture": "Remove",
+        "scriptData": "Script data (for mods)",
         "addCity": "Add city",
         "addUnit": "Add unit",
         "aiRole": "AI role",
@@ -365,6 +411,7 @@ const en = {
         "version": "Civ4 Studio {version}"
     },
     "tabs": {
+        "objects": "Cities and units",
         "check": "Check",
         "game": "Game",
         "map": "Map",
@@ -426,6 +473,7 @@ const en = {
         "settings": "Settings"
     },
     "what": {
+        "process": "process",
         "artStyle": "art style",
         "building": "building",
         "calendar": "calendar",

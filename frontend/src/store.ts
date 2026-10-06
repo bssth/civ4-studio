@@ -23,13 +23,13 @@ export type OptionKey =
     'eras' | 'speeds' | 'calendars' | 'victories' | 'gameOptions' | 'mpOptions' | 'forceControls' |
     'leaders' | 'handicaps' | 'colors' | 'artStyles' | 'techs' | 'religions' | 'civics' | 'civicOptions' |
     'projects' | 'worldSizes' | 'climates' | 'seaLevels' | 'terrains' |
-    'features' | 'bonuses' | 'improvements' | 'routes' | 'units' | 'unitAIs' | 'buildings' | 'promotions';
+    'features' | 'bonuses' | 'improvements' | 'routes' | 'units' | 'unitAIs' | 'buildings' | 'promotions' | 'processes';
 
 const optionKeys: OptionKey[] = [
     'eras', 'speeds', 'calendars', 'victories', 'gameOptions', 'mpOptions', 'forceControls',
     'leaders', 'handicaps', 'colors', 'artStyles', 'techs', 'religions', 'civics', 'civicOptions',
     'projects', 'worldSizes', 'climates', 'seaLevels', 'terrains',
-    'features', 'bonuses', 'improvements', 'routes', 'units', 'unitAIs', 'buildings', 'promotions',
+    'features', 'bonuses', 'improvements', 'routes', 'units', 'unitAIs', 'buildings', 'promotions', 'processes',
 ];
 
 function emptyEnums(): Record<OptionKey, editor.EnumOption[]> {

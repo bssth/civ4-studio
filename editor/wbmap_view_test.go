@@ -92,3 +92,31 @@ func TestViewMarksSigns(t *testing.T) {
 		t.Errorf("flags = %v", view.Flags)
 	}
 }
+
+func TestGetCitiesAndUnits(t *testing.T) {
+	app := NewApp()
+	app.wbMap = opsTestMap()
+	cities, units := app.GetCities(), app.GetUnits()
+	if len(cities) != 2 || cities[1].City.CityName != "Athens" || cities[1].X != 1 || cities[1].Index != 0 {
+		t.Errorf("cities = %+v", cities)
+	}
+	if len(units) != 2 || units[1].Unit.UnitType != "UNIT_ARCHER" || units[1].X != 0 || units[1].Index != 1 {
+		t.Errorf("units = %+v", units)
+	}
+	if n := len(NewApp().GetCities()); n != 0 {
+		t.Errorf("no map must give an empty list, got %d", n)
+	}
+}
+
+func TestSetPlotRefusesTooMuchDamage(t *testing.T) {
+	app := paintTestApp(t)
+	p := *app.GetPlot(1, 1)
+	p.Units = []*Unit{{UnitType: "UNIT_WARRIOR", Damage: 101}}
+	if err := app.SetPlot(&p); err == nil {
+		t.Error("damage over 100 must be refused")
+	}
+	p.Units[0].Damage = 100
+	if err := app.SetPlot(&p); err != nil {
+		t.Error(err)
+	}
+}

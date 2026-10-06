@@ -60,6 +60,10 @@
           <v-icon icon="mdi-human-edit" class="me-1"></v-icon>
           {{ $t('tabs.players') }}
         </v-tab>
+        <v-tab value="objects">
+          <v-icon icon="mdi-home-city" class="me-1"></v-icon>
+          {{ $t('tabs.objects') }}
+        </v-tab>
         <v-tab value="check">
           <v-icon icon="mdi-clipboard-check-outline" class="me-1"></v-icon>
           {{ $t('tabs.check') }}
@@ -89,6 +93,7 @@
               <CheckView v-else-if="tab === 'check'" />
               <Teams v-else-if="tab === 'teams'" />
               <Players v-else-if="tab === 'players'" />
+              <CitiesUnits v-else-if="tab === 'objects'" />
               <div v-else class="pa-5 text-grey">
                 {{ $t('app.openMapHint') }}
               </div>
@@ -138,6 +143,7 @@ import CheckView from "./components/CheckView.vue";
 import ProblemList from "./components/ProblemList.vue";
 import Teams from "./components/Teams.vue";
 import Players from "./components/Players.vue";
+import CitiesUnits from "./components/CitiesUnits.vue";
 import {EventsOff, EventsOn, Quit, WindowMaximise, WindowMinimise, WindowToggleMaximise} from "../wailsjs/runtime";
 import {useI18n} from "vue-i18n";
 import {setUILanguage} from "./i18n";

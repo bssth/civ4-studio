@@ -48,7 +48,7 @@ var typeNames = map[string]string{
 	"seaLevel": "sea level", "tech": "tech", "project": "project", "civilization": "civilization", "leader": "leader",
 	"handicap": "handicap", "playerColor": "player color", "artStyle": "art style", "religion": "religion",
 	"civicOption": "civic option", "civic": "civic", "terrain": "terrain", "feature": "feature", "resource": "resource",
-	"improvement": "improvement", "route": "route", "building": "building", "unit": "unit", "promotion": "promotion",
+	"improvement": "improvement", "route": "route", "building": "building", "unit": "unit", "promotion": "promotion", "process": "process",
 	"unitAI": "unit AI",
 }
 
@@ -316,6 +316,10 @@ func (v *validator) plots() {
 			for _, building := range city.BuildingType {
 				v.checkType("plots", InfoBuildings, "building", building, x, y, owner, -1)
 			}
+			v.checkType("plots", InfoUnits, "unit", city.ProductionUnit, x, y, owner, -1)
+			v.checkType("plots", InfoBuildings, "building", city.ProductionBuilding, x, y, owner, -1)
+			v.checkType("plots", InfoProjects, "project", city.ProductionProject, x, y, owner, -1)
+			v.checkType("plots", InfoProcesses, "process", city.ProductionProcess, x, y, owner, -1)
 			for _, religion := range append(append([]string{}, city.ReligionType...), city.HolyCityReligionType...) {
 				v.checkType("plots", InfoReligions, "religion", religion, x, y, owner, -1)
 			}
