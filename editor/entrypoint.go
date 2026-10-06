@@ -36,7 +36,7 @@ func RunApplication() {
 	app := NewApp()
 
 	err := wails.Run(&options.App{
-		Title:  "Civ4 Studio",
+		Title:  AppTitle(),
 		Width:  1024,
 		Height: 768,
 		AssetServer: &assetserver.Options{
@@ -44,6 +44,7 @@ func RunApplication() {
 		},
 		BackgroundColour: &options.RGBA{R: 27, G: 38, B: 54, A: 1},
 		OnStartup:        app.startup,
+		OnBeforeClose:    app.beforeClose,
 		Frameless:        true,
 		Bind: []interface{}{
 			app,

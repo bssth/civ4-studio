@@ -11,6 +11,11 @@
     "email": "bs@vortalcoil.com"
   },
   "info": {
+    "companyName": "Borys Stelmakh",
+    "productName": "Civ4 Studio",
+    "productVersion": "0.0.0",
+    "copyright": "Copyright (c) Borys Stelmakh",
+    "comments": "Scenario editor for Civilization IV: Beyond the Sword",
     "fileAssociations": [
       {
         "ext": "CivBeyondSwordWBSave",

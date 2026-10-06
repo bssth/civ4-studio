@@ -1,25 +1,15 @@
 <script setup lang="ts">
 import {computed, watch} from "vue";
 import {SetGame} from "../../wailsjs/go/editor/App";
-import {enums, game} from "../store";
+import {batched, enums, game, withCurrent} from "../store";
 import {editor} from "../../wailsjs/go/models";
 
-// Persist Game changes back to the Go side. We debounce via a microtask so a
-// flurry of synchronous edits collapses into a single round-trip.
-let pending: any = null;
-function persist() {
-  if (!game.value || pending) return;
-  pending = Promise.resolve().then(() => {
-    pending = null;
-    if (game.value) {
-      SetGame(editor.Game.createFrom(game.value));
-    }
-  });
-}
-
-watch(() => game.value && JSON.stringify(game.value), () => {
-  persist();
-});
+// Persist Game changes back to the Go side, a flurry of synchronous edits collapses into a single call
+watch(() => game.value && JSON.stringify(game.value), batched(() => {
+  if (game.value) {
+    SetGame(editor.Game.createFrom(game.value));
+  }
+}));
 
 function toggleInArray(arr: string[] | null | undefined, value: string, on: boolean): string[] {
   const list = (arr ?? []).filter(v => v !== value);
@@ -47,72 +37,72 @@ const forceControlSet = computed({
 
 <template>
   <div v-if="!game" class="pa-5 text-grey">
-    No map loaded. Open one from the toolbar to start editing.
+    {{ $t('common.noMapHint') }}
   </div>
 
   <div v-else class="pa-4">
-    <h3 class="mb-3">Game</h3>
+    <h3 class="mb-3">{{ $t('game.title') }}</h3>
 
     <v-row dense>
       <v-col cols="12" md="4">
-        <v-select label="Era" density="compact" hide-details
+        <v-select :label="$t('game.era')" density="compact" hide-details
                   v-model="game.Era"
-                  :items="enums.eras" item-value="type" item-title="description" />
+                  :items="withCurrent(enums.eras, game.Era)" item-value="type" item-title="description" />
       </v-col>
       <v-col cols="12" md="4">
-        <v-select label="Speed" density="compact" hide-details
+        <v-select :label="$t('game.speed')" density="compact" hide-details
                   v-model="game.Speed"
-                  :items="enums.speeds" item-value="type" item-title="description" />
+                  :items="withCurrent(enums.speeds, game.Speed)" item-value="type" item-title="description" />
       </v-col>
       <v-col cols="12" md="4">
-        <v-select label="Calendar" density="compact" hide-details
+        <v-select :label="$t('game.calendar')" density="compact" hide-details
                   v-model="game.Calendar"
-                  :items="enums.calendars" item-value="type" item-title="description" />
+                  :items="withCurrent(enums.calendars, game.Calendar)" item-value="type" item-title="description" />
       </v-col>
     </v-row>
 
     <v-row dense class="mt-2">
       <v-col cols="12" md="6">
-        <v-text-field label="Starting turn" type="number" density="compact" hide-details
+        <v-text-field :label="$t('game.startTurn')" type="number" density="compact" hide-details
                       v-model.number="game.GameTurn" />
       </v-col>
       <v-col cols="12" md="6">
-        <v-text-field label="Starting year" type="number" density="compact" hide-details
+        <v-text-field :label="$t('game.startYear')" type="number" density="compact" hide-details
                       v-model.number="game.StartYear" />
       </v-col>
       <v-col cols="12" md="6">
-        <v-text-field label="Max turns" type="number" density="compact" hide-details
+        <v-text-field :label="$t('game.maxTurns')" type="number" density="compact" hide-details
                       v-model.number="game.MaxTurns" />
       </v-col>
       <v-col cols="12" md="6">
-        <v-text-field label="Target score" type="number" density="compact" hide-details
+        <v-text-field :label="$t('game.targetScore')" type="number" density="compact" hide-details
                       v-model.number="game.TargetScore" />
       </v-col>
       <v-col cols="12" md="6">
-        <v-text-field label="Max city elimination" type="number" density="compact" hide-details
+        <v-text-field :label="$t('game.maxCityElimination')" type="number" density="compact" hide-details
                       v-model.number="game.MaxCityElimination" />
       </v-col>
       <v-col cols="12" md="6">
-        <v-text-field label="Advanced start points" type="number" density="compact" hide-details
+        <v-text-field :label="$t('game.advancedStart')" type="number" density="compact" hide-details
                       v-model.number="game.NumAdvancedStartPoints" />
       </v-col>
     </v-row>
 
     <v-row dense class="mt-2">
       <v-col cols="12">
-        <v-text-field label="Description" density="compact" hide-details v-model="game.Description" />
+        <v-text-field :label="$t('game.description')" density="compact" hide-details v-model="game.Description" />
       </v-col>
       <v-col cols="12">
-        <v-text-field label="Mod path" density="compact" hide-details v-model="game.ModPath" />
+        <v-text-field :label="$t('game.modPath')" density="compact" hide-details v-model="game.ModPath" />
       </v-col>
     </v-row>
 
-    <v-checkbox v-model="game.Tutorial" hide-details density="compact" label="Tutorial enabled" />
+    <v-checkbox v-model="game.Tutorial" hide-details density="compact" :label="$t('game.tutorial')" />
 
     <v-divider class="my-3" />
-    <h4>Victory conditions</h4>
+    <h4>{{ $t('game.victories') }}</h4>
     <div class="d-flex flex-wrap">
-      <v-checkbox v-for="opt in enums.victories" :key="opt.type"
+      <v-checkbox v-for="opt in withCurrent(enums.victories, ...victorySet)" :key="opt.type"
                   :label="opt.description"
                   :model-value="victorySet.includes(opt.type)"
                   @update:model-value="(v) => victorySet = toggleInArray(victorySet, opt.type, !!v)"
@@ -120,9 +110,9 @@ const forceControlSet = computed({
     </div>
 
     <v-divider class="my-3" />
-    <h4>Game options</h4>
+    <h4>{{ $t('game.options') }}</h4>
     <div class="d-flex flex-wrap">
-      <v-checkbox v-for="opt in enums.gameOptions" :key="opt.type"
+      <v-checkbox v-for="opt in withCurrent(enums.gameOptions, ...optionSet)" :key="opt.type"
                   :label="opt.description"
                   :model-value="optionSet.includes(opt.type)"
                   @update:model-value="(v) => optionSet = toggleInArray(optionSet, opt.type, !!v)"
@@ -130,9 +120,9 @@ const forceControlSet = computed({
     </div>
 
     <v-divider class="my-3" />
-    <h4>Multiplayer options</h4>
+    <h4>{{ $t('game.mpOptions') }}</h4>
     <div class="d-flex flex-wrap">
-      <v-checkbox v-for="opt in enums.mpOptions" :key="opt.type"
+      <v-checkbox v-for="opt in withCurrent(enums.mpOptions, ...mpOptionSet)" :key="opt.type"
                   :label="opt.description"
                   :model-value="mpOptionSet.includes(opt.type)"
                   @update:model-value="(v) => mpOptionSet = toggleInArray(mpOptionSet, opt.type, !!v)"
@@ -140,9 +130,9 @@ const forceControlSet = computed({
     </div>
 
     <v-divider class="my-3" />
-    <h4>Locked (force control)</h4>
+    <h4>{{ $t('game.forceControls') }}</h4>
     <div class="d-flex flex-wrap">
-      <v-checkbox v-for="opt in enums.forceControls" :key="opt.type"
+      <v-checkbox v-for="opt in withCurrent(enums.forceControls, ...forceControlSet)" :key="opt.type"
                   :label="opt.description"
                   :model-value="forceControlSet.includes(opt.type)"
                   @update:model-value="(v) => forceControlSet = toggleInArray(forceControlSet, opt.type, !!v)"

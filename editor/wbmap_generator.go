@@ -58,6 +58,13 @@ func (g *SimpleGenerator) AddLine(line string) {
 	g.buffer.WriteString("\n")
 }
 
+// AddLines adds several raw lines to the current section.
+func (g *SimpleGenerator) AddLines(lines []string) {
+	for _, line := range lines {
+		g.AddLine(line)
+	}
+}
+
 // AddComment adds a comment to next line without spacing. In doesn't use the current indent level
 func (g *SimpleGenerator) AddComment(comment string) {
 	g.buffer.WriteString("#" + comment)

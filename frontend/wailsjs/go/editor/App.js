@@ -6,64 +6,88 @@ export function CheckGameDir() {
   return window['go']['editor']['App']['CheckGameDir']();
 }
 
+export function ChooseGameDir() {
+  return window['go']['editor']['App']['ChooseGameDir']();
+}
+
+export function ClearPlayer(arg1, arg2) {
+  return window['go']['editor']['App']['ClearPlayer'](arg1, arg2);
+}
+
+export function CreatePlots(arg1, arg2) {
+  return window['go']['editor']['App']['CreatePlots'](arg1, arg2);
+}
+
 export function CurrentMapPath() {
   return window['go']['editor']['App']['CurrentMapPath']();
 }
 
-export function GetCalendarOptions() {
-  return window['go']['editor']['App']['GetCalendarOptions']();
+export function GetCivilizations() {
+  return window['go']['editor']['App']['GetCivilizations']();
 }
 
 export function GetConfig() {
   return window['go']['editor']['App']['GetConfig']();
 }
 
-export function GetEraOptions() {
-  return window['go']['editor']['App']['GetEraOptions']();
-}
-
-export function GetForceControlOptions() {
-  return window['go']['editor']['App']['GetForceControlOptions']();
-}
-
 export function GetGame() {
   return window['go']['editor']['App']['GetGame']();
 }
 
-export function GetGameOptionOptions() {
-  return window['go']['editor']['App']['GetGameOptionOptions']();
-}
-
-export function GetMPOptionOptions() {
-  return window['go']['editor']['App']['GetMPOptionOptions']();
+export function GetLanguages() {
+  return window['go']['editor']['App']['GetLanguages']();
 }
 
 export function GetMapInfo() {
   return window['go']['editor']['App']['GetMapInfo']();
 }
 
+export function GetMapProps() {
+  return window['go']['editor']['App']['GetMapProps']();
+}
+
+export function GetMapStats() {
+  return window['go']['editor']['App']['GetMapStats']();
+}
+
+export function GetMapView() {
+  return window['go']['editor']['App']['GetMapView']();
+}
+
 export function GetModsList() {
   return window['go']['editor']['App']['GetModsList']();
+}
+
+export function GetOptions() {
+  return window['go']['editor']['App']['GetOptions']();
 }
 
 export function GetPlayers() {
   return window['go']['editor']['App']['GetPlayers']();
 }
 
-export function GetSpeedOptions() {
-  return window['go']['editor']['App']['GetSpeedOptions']();
+export function GetPlot(arg1, arg2) {
+  return window['go']['editor']['App']['GetPlot'](arg1, arg2);
 }
 
 export function GetTeams() {
   return window['go']['editor']['App']['GetTeams']();
 }
 
-export function GetVictoryOptions() {
-  return window['go']['editor']['App']['GetVictoryOptions']();
+export function GetVersion() {
+  return window['go']['editor']['App']['GetVersion']();
+}
+
+export function GetWorldSizes() {
+  return window['go']['editor']['App']['GetWorldSizes']();
 }
 
 export function HasMap() {
   return window['go']['editor']['App']['HasMap']();
+}
+
+export function HistoryState() {
+  return window['go']['editor']['App']['HistoryState']();
 }
 
 export function LaunchGame() {
@@ -86,8 +110,24 @@ export function OpenMapDialog() {
   return window['go']['editor']['App']['OpenMapDialog']();
 }
 
+export function PaintPlots(arg1) {
+  return window['go']['editor']['App']['PaintPlots'](arg1);
+}
+
+export function Redo() {
+  return window['go']['editor']['App']['Redo']();
+}
+
+export function ResetGameXML() {
+  return window['go']['editor']['App']['ResetGameXML']();
+}
+
 export function SaveMap(arg1) {
   return window['go']['editor']['App']['SaveMap'](arg1);
+}
+
+export function SaveMapAs() {
+  return window['go']['editor']['App']['SaveMapAs']();
 }
 
 export function SetConfig(arg1) {
@@ -98,16 +138,40 @@ export function SetGame(arg1) {
   return window['go']['editor']['App']['SetGame'](arg1);
 }
 
+export function SetMapProps(arg1) {
+  return window['go']['editor']['App']['SetMapProps'](arg1);
+}
+
+export function SetPlayerStart(arg1, arg2, arg3) {
+  return window['go']['editor']['App']['SetPlayerStart'](arg1, arg2, arg3);
+}
+
 export function SetPlayers(arg1) {
   return window['go']['editor']['App']['SetPlayers'](arg1);
+}
+
+export function SetPlot(arg1) {
+  return window['go']['editor']['App']['SetPlot'](arg1);
 }
 
 export function SetTeams(arg1) {
   return window['go']['editor']['App']['SetTeams'](arg1);
 }
 
+export function SwapPlayers(arg1, arg2) {
+  return window['go']['editor']['App']['SwapPlayers'](arg1, arg2);
+}
+
 export function TranslateKey(arg1) {
   return window['go']['editor']['App']['TranslateKey'](arg1);
+}
+
+export function Undo() {
+  return window['go']['editor']['App']['Undo']();
+}
+
+export function ValidateMap() {
+  return window['go']['editor']['App']['ValidateMap']();
 }
 
 export function WriteConsole(arg1) {

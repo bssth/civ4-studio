@@ -4,57 +4,89 @@ import {editor} from '../models';
 
 export function CheckGameDir():Promise<string>;
 
+export function ChooseGameDir():Promise<string>;
+
+export function ClearPlayer(arg1:number,arg2:boolean):Promise<void>;
+
+export function CreatePlots(arg1:number,arg2:number):Promise<void>;
+
 export function CurrentMapPath():Promise<string>;
 
-export function GetCalendarOptions():Promise<Array<editor.EnumOption>>;
+export function GetCivilizations():Promise<Array<editor.CivilizationOption>>;
 
 export function GetConfig():Promise<editor.Config>;
 
-export function GetEraOptions():Promise<Array<editor.EnumOption>>;
+export function GetGame():Promise<editor.Game>;
 
-export function GetForceControlOptions():Promise<Array<editor.EnumOption>>;
+export function GetLanguages():Promise<Array<editor.LanguageOption>>;
 
-export function GetGame():Promise<editor.Game|null>;
+export function GetMapInfo():Promise<editor.MapInfo>;
 
-export function GetGameOptionOptions():Promise<Array<editor.EnumOption>>;
+export function GetMapProps():Promise<editor.MapProps>;
 
-export function GetMPOptionOptions():Promise<Array<editor.EnumOption>>;
+export function GetMapStats():Promise<editor.MapStats>;
 
-export function GetMapInfo():Promise<editor.MapInfo|null>;
+export function GetMapView():Promise<editor.MapView>;
 
 export function GetModsList():Promise<Array<string>>;
 
-export function GetPlayers():Promise<Array<editor.Player>|null>;
+export function GetOptions():Promise<Array<editor.OptionList>>;
 
-export function GetSpeedOptions():Promise<Array<editor.EnumOption>>;
+export function GetPlayers():Promise<Array<editor.Player>>;
 
-export function GetTeams():Promise<Array<editor.Team>|null>;
+export function GetPlot(arg1:number,arg2:number):Promise<editor.Plot>;
 
-export function GetVictoryOptions():Promise<Array<editor.EnumOption>>;
+export function GetTeams():Promise<Array<editor.Team>>;
+
+export function GetVersion():Promise<string>;
+
+export function GetWorldSizes():Promise<Array<editor.WorldSizeOption>>;
 
 export function HasMap():Promise<boolean>;
+
+export function HistoryState():Promise<editor.HistoryState>;
 
 export function LaunchGame():Promise<void>;
 
 export function LoadGameXML():Promise<void>;
 
-export function NewMap():Promise<void>;
+export function NewMap():Promise<boolean>;
 
 export function OpenMap(arg1:string):Promise<void>;
 
 export function OpenMapDialog():Promise<string>;
 
+export function PaintPlots(arg1:editor.PaintOp):Promise<number>;
+
+export function Redo():Promise<editor.HistoryState>;
+
+export function ResetGameXML():Promise<void>;
+
 export function SaveMap(arg1:string):Promise<string>;
+
+export function SaveMapAs():Promise<string>;
 
 export function SetConfig(arg1:editor.Config):Promise<void>;
 
 export function SetGame(arg1:editor.Game):Promise<void>;
 
+export function SetMapProps(arg1:editor.MapProps):Promise<void>;
+
+export function SetPlayerStart(arg1:number,arg2:number,arg3:number):Promise<void>;
+
 export function SetPlayers(arg1:Array<editor.Player>):Promise<void>;
+
+export function SetPlot(arg1:editor.Plot):Promise<void>;
 
 export function SetTeams(arg1:Array<editor.Team>):Promise<void>;
 
+export function SwapPlayers(arg1:number,arg2:number):Promise<void>;
+
 export function TranslateKey(arg1:string):Promise<string>;
+
+export function Undo():Promise<editor.HistoryState>;
+
+export function ValidateMap():Promise<Array<editor.Problem>>;
 
 export function WriteConsole(arg1:string):Promise<void>;
 
