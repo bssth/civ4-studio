@@ -30,6 +30,9 @@ instead of raw identifiers.
   map, cities and units of empty slots, missing teams and more. Click a problem to go to its place; errors are shown
   before saving.
 - **Game settings.** Era, speed, calendar, victory conditions, game and multiplayer options, locked options.
+- **Languages.** The interface is in English and Russian (the system language by default). Names of
+  civilizations, leaders, techs etc. are shown in any language of the game or mod texts (French, German, a Russian
+  localization...), with English for texts that have no translation.
 - **Safe saving.** The original file is copied to `<map>.bak` before it is overwritten for the first time, keys the
   editor does not know (e.g. added by mods) are kept as they are, optional autosave every 5 minutes.
 
@@ -52,6 +55,7 @@ redo map edits, `Ctrl+wheel` zooms the map.
 1. Download the archive for your system from [Releases](https://github.com/bssth/civ4-studio/releases) and unpack it.
 2. Start the editor. On the first start open **Settings**, choose the *Beyond the Sword* folder (the one with
    `Civ4BeyondSword.exe`) and, if the map is made for a mod, the mod. The editor loads the game data in a few seconds.
+   The languages of the interface and of the names from the game are chosen there too.
 3. Open a map with `Ctrl+O` (the dialog starts in `PublicMaps`) or create a new one with `Ctrl+N`.
 4. Check the **Check** tab before saving, then launch the game with the rocket button.
 
@@ -100,6 +104,10 @@ Run the tests with `go test ./editor/...`.
 
 `wails build` regenerates the TypeScript bindings in `frontend/wailsjs` from the Go code; commit them together with
 changes of the bound Go API.
+
+Interface texts live in `frontend/src/i18n/en.ts` and `ru.ts` with the same keys (`ru.ts` is type-checked against
+`en.ts`, so a missing key fails the build). Problems of the scenario check come from Go with a code and arguments
+and are translated by the frontend; the English message is the fallback.
 
 ### Releases
 

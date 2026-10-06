@@ -2,6 +2,14 @@
 import {computed} from "vue";
 import {editor} from "../../wailsjs/go/models";
 import {requestedTab, showPlot} from "../store";
+import {problemText} from "../problems";
+import {useI18n} from "vue-i18n";
+
+const {t, te} = useI18n();
+
+function sectionName(section: string): string {
+  return te(`sections.${section}`) ? t(`sections.${section}`) : section;
+}
 
 const props = defineProps<{ problems: editor.Problem[], limit?: number }>();
 const emit = defineEmits<{ (e: 'navigate'): void }>();
@@ -27,8 +35,8 @@ function navigate(p: editor.Problem) {
 <template>
   <v-list density="compact">
     <v-list-item v-for="(p, idx) in shown" :key="idx" @click="canNavigate(p) && navigate(p)">
-      <v-list-item-title class="problem-text">{{ p.message }}</v-list-item-title>
-      <v-list-item-subtitle>{{ p.x >= 0 ? `${p.section} · plot ${p.x}, ${p.y}` : p.section }}</v-list-item-subtitle>
+      <v-list-item-title class="problem-text">{{ problemText(p) }}</v-list-item-title>
+      <v-list-item-subtitle>{{ sectionName(p.section) }}<template v-if="p.x >= 0"> · {{ $t('check.plotAt', {x: p.x, y: p.y}) }}</template></v-list-item-subtitle>
       <template v-slot:prepend>
         <v-icon :icon="p.severity === 'error' ? 'mdi-alert-circle' : 'mdi-alert'"
                 :color="p.severity === 'error' ? 'error' : 'warning'"/>
@@ -38,7 +46,7 @@ function navigate(p: editor.Problem) {
       </template>
     </v-list-item>
     <v-list-item v-if="limit && problems.length > limit" class="text-medium-emphasis"
-                 :title="`… and ${problems.length - limit} more`"/>
+                 :title="$t('check.more', {n: problems.length - limit})"/>
   </v-list>
 </template>
 

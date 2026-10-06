@@ -10,12 +10,19 @@ import (
 
 // This file contains the structs for representing game's XML files.
 
-// Civ4GameText is a language file (Assets/XML/Text/*.xml)
+// Civ4GameText is a language file (Assets/XML/Text/*.xml). Every <TEXT> has a <Tag> and one element per
+// language: <English>, <French>, <German>, <Italian>, <Spanish>, and others added by localizations.
 type Civ4GameText struct {
 	TEXT []struct {
-		Tag     string   `xml:"Tag"`
-		English langText `xml:"English"`
+		Tag       string        `xml:"Tag"`
+		Languages []langElement `xml:",any"`
 	} `xml:"TEXT"`
+}
+
+// langElement is the text of one language, the language is the element name
+type langElement struct {
+	XMLName xml.Name
+	langText
 }
 
 // langText is either a plain string or a <Text> element with gender/plural attributes, e.g.

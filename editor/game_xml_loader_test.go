@@ -23,7 +23,7 @@ func fakeGameInstall(t *testing.T) (btsDir string) {
 
 	writeTestFile(t, filepath.Join(root, XmlDir, "Text", "CIV4GameTextInfos.xml"), `<?xml version="1.0" encoding="ISO-8859-1"?>
 <Civ4GameText xmlns="http://www.firaxis.com">
-	<TEXT><Tag>TXT_KEY_CIV_AMERICA_DESC</Tag><English>American Empire</English><French>Empire américain</French></TEXT>
+	<TEXT><Tag>TXT_KEY_CIV_AMERICA_DESC</Tag><English>American Empire</English><French>Empire am`+"\xe9"+`ricain</French></TEXT>
 	<TEXT><Tag>TXT_KEY_CIV_AMERICA_ADJECTIVE</Tag><English><Text>American</Text><Gender>Male</Gender><Plural>0</Plural></English></TEXT>
 	<TEXT><Tag>TXT_KEY_LEADER_WASHINGTON</Tag><English>Washington</English></TEXT>
 </Civ4GameText>`)
@@ -175,5 +175,62 @@ func TestHumanizeType(t *testing.T) {
 	}
 	if got := HumanizeType("NONE"); got != "None" {
 		t.Errorf("got %q", got)
+	}
+}
+
+func TestGameTextLanguages(t *testing.T) {
+	btsDir := fakeGameInstall(t)
+	withConfig(t, Config{GameDir: btsDir, Language: "French"})
+
+	data, err := LoadAllXML(nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if data.Language != "French" {
+		t.Fatalf("configured language must be used, got %q", data.Language)
+	}
+	if got := data.Text("TXT_KEY_CIV_AMERICA_DESC"); got != "Empire américain" {
+		t.Errorf("French text expected (ISO-8859-1 file), got %q", got)
+	}
+	if got := data.Text("TXT_KEY_LEADER_WASHINGTON"); got != "Washington" {
+		t.Errorf("missing translations must fall back to English, got %q", got)
+	}
+
+	languages := data.Languages()
+	if len(languages) != 2 || languages[0].Name != DefaultLanguage || languages[1].Name != "French" || languages[1].Texts != 1 {
+		t.Errorf("unexpected languages: %+v", languages)
+	}
+
+	english := data.WithLanguage("Klingon")
+	if english.Language != DefaultLanguage || english.Text("TXT_KEY_CIV_AMERICA_DESC") != "American Empire" {
+		t.Errorf("unknown language must mean English: %q", english.Language)
+	}
+	if data.Text("TXT_KEY_CIV_AMERICA_DESC") != "Empire américain" {
+		t.Error("WithLanguage must not change the original data")
+	}
+}
+
+func TestSetConfigSwitchesLanguageWithoutReload(t *testing.T) {
+	btsDir := fakeGameInstall(t)
+	withConfig(t, Config{GameDir: btsDir})
+	t.Setenv("XDG_CONFIG_HOME", t.TempDir())
+	t.Setenv("HOME", t.TempDir())
+	t.Setenv("AppData", t.TempDir())
+
+	data, err := LoadAllXML(nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	SetGameData(data)
+	t.Cleanup(func() { SetGameData(NewGameData()) })
+
+	app := NewApp()
+	app.xmlReady = true
+	app.SetConfig(&Config{GameDir: btsDir, Language: "French"})
+	if !app.xmlReady {
+		t.Error("changing the language must not reload game data")
+	}
+	if got := GetLangString("TXT_KEY_CIV_AMERICA_DESC"); got != "Empire américain" {
+		t.Errorf("language not switched, got %q", got)
 	}
 }

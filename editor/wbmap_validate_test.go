@@ -73,3 +73,28 @@ func TestValidateTestMapWithoutGameData(t *testing.T) {
 		}
 	}
 }
+
+func TestProblemsHaveCodesAndArgs(t *testing.T) {
+	wb := opsTestMap()
+	plots, _ := GenerateOceanPlots(2, 1)
+	wb.Plots = plots
+	wb.Plots[1].TerrainType = "TERRAIN_MUD"
+	wb.Players[0].StartingX, wb.Players[0].StartingY = 0, 0
+
+	data := NewGameData()
+	data.Table(InfoTerrains).Set(&TypeInfo{Type: "TERRAIN_OCEAN"})
+
+	byCode := make(map[string]Problem)
+	for _, p := range wb.Validate(data) {
+		if p.Code == "" || p.Args == nil {
+			t.Errorf("problem without code or args: %+v", p)
+		}
+		byCode[p.Code] = p
+	}
+	if p := byCode["players.startWater"]; p.Args["player"] == "" {
+		t.Errorf("start in water must have the player argument: %+v", p)
+	}
+	if p := byCode["unknownType"]; p.Args["what"] != "terrain" || p.Args["value"] != "TERRAIN_MUD" || p.Args["count"] != "1" {
+		t.Errorf("unknown type must have what, value and count: %+v", p)
+	}
+}

@@ -33,7 +33,7 @@ func TestPaintPlotsAndUndo(t *testing.T) {
 	if p.TerrainType != "TERRAIN_GRASS" || p.PlotType != PlotLand || p.FeatureType[0] != "FEATURE_FOREST" || p.FeatureVariety[0] != "2" {
 		t.Errorf("land terrain must make the plot flat and get the feature: %+v", p)
 	}
-	if !app.dirty || app.HistoryState().Undo != "paint 2 plots" {
+	if !app.dirty || app.HistoryState().Undo != "paint:2" {
 		t.Errorf("paint must be recorded: %+v", app.HistoryState())
 	}
 
@@ -62,7 +62,7 @@ func TestPaintPlotsAndUndo(t *testing.T) {
 		t.Error("undo with empty history must fail")
 	}
 	state, err := app.Redo()
-	if err != nil || state.Redo == "" || state.Undo != "paint 2 plots" {
+	if err != nil || state.Redo == "" || state.Undo != "paint:2" {
 		t.Errorf("unexpected state after redo: %+v (%v)", state, err)
 	}
 	if p := app.GetPlot(1, 2); p.TerrainType != "TERRAIN_GRASS" {

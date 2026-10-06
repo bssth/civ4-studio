@@ -18,6 +18,8 @@ export function GetConfig():Promise<editor.Config>;
 
 export function GetGame():Promise<editor.Game>;
 
+export function GetLanguages():Promise<Array<editor.LanguageOption>>;
+
 export function GetMapInfo():Promise<editor.MapInfo>;
 
 export function GetMapProps():Promise<editor.MapProps>;

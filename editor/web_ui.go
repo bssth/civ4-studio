@@ -22,6 +22,8 @@ const (
 	EventXmlReset    = "xml-reset"
 	EventMapLoaded   = "map-loaded"
 	EventMapState    = "map-state"
+	// EventGameLanguage is sent when names of the game data change language
+	EventGameLanguage = "game-language"
 )
 
 const (
@@ -203,7 +205,17 @@ func (a *App) SetConfig(config *Config) {
 
 	if old == nil || old.GameDir != config.GameDir || old.Mod != config.Mod {
 		a.ResetGameXML()
+	} else if old.Language != config.Language {
+		// Texts of all languages are loaded already, only the active one changes
+		SetGameData(CurrentGameData().WithLanguage(config.Language))
+		ConsoleWrite("Game texts language: %s", CurrentGameData().Language)
+		a.emit(EventGameLanguage, CurrentGameData().Language)
 	}
+}
+
+// GetLanguages returns languages of the loaded game texts, the most complete first.
+func (a *App) GetLanguages() []LanguageOption {
+	return CurrentGameData().Languages()
 }
 
 // ChooseGameDir shows a directory dialog and returns the chosen path ("" if cancelled).

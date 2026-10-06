@@ -1,19 +1,19 @@
 <template>
   <v-app id="inspire">
     <v-system-bar window style="--wails-draggable:drag">
-      <v-icon class="me-4 no-drag" icon="mdi-file-plus-outline" title="New map (Ctrl+N)" @click="newMap" />
-      <v-icon class="me-4 no-drag" icon="mdi-folder-open" title="Open (Ctrl+O)" @click="openMap" />
-      <v-icon class="me-4 no-drag" icon="mdi-content-save" title="Save (Ctrl+S)" @click="saveMap" />
-      <v-icon class="me-4 no-drag" icon="mdi-content-save-edit" title="Save as (Ctrl+Shift+S)" @click="saveMapAs" />
-      <v-icon class="me-4 no-drag" icon="mdi-rocket-launch" title="Launch the game" @click="launch" />
-      <v-icon class="me-4 no-drag" icon="mdi-cog" title="Settings" @click="tab = 'settings'" />
+      <v-icon class="me-4 no-drag" icon="mdi-file-plus-outline" :title="$t('toolbar.new')" @click="newMap" />
+      <v-icon class="me-4 no-drag" icon="mdi-folder-open" :title="$t('toolbar.open')" @click="openMap" />
+      <v-icon class="me-4 no-drag" icon="mdi-content-save" :title="$t('toolbar.save')" @click="saveMap" />
+      <v-icon class="me-4 no-drag" icon="mdi-content-save-edit" :title="$t('toolbar.saveAs')" @click="saveMapAs" />
+      <v-icon class="me-4 no-drag" icon="mdi-rocket-launch" :title="$t('toolbar.launch')" @click="launch" />
+      <v-icon class="me-4 no-drag" icon="mdi-cog" :title="$t('toolbar.settings')" @click="tab = 'settings'" />
 
       <span class="text-caption text-medium-emphasis ms-4 text-truncate" style="max-width: 50%;"
             :title="mapInfo?.path ?? ''">
         <template v-if="mapInfo">
-          {{ mapInfo.dirty ? '● ' : '' }}{{ mapInfo.path ? fileName(mapInfo.path) : 'New map (not saved)' }}
+          {{ mapInfo.dirty ? '● ' : '' }}{{ mapInfo.path ? fileName(mapInfo.path) : $t('app.newMapNotSaved') }}
         </template>
-        <template v-else>No map loaded</template>
+        <template v-else>{{ $t('app.noMap') }}</template>
       </span>
 
       <v-spacer></v-spacer>
@@ -36,31 +36,31 @@
       >
         <v-tab value="game">
           <v-icon icon="mdi-tune-vertical-variant" class="me-1"></v-icon>
-          Game
+          {{ $t('tabs.game') }}
         </v-tab>
         <v-tab value="map">
           <v-icon icon="mdi-earth" class="me-1"></v-icon>
-          Map
+          {{ $t('tabs.map') }}
         </v-tab>
         <v-tab value="world">
           <v-icon icon="mdi-map" class="me-1"></v-icon>
-          World
+          {{ $t('tabs.world') }}
         </v-tab>
         <v-tab value="teams">
           <v-icon icon="mdi-account-group" class="me-1"></v-icon>
-          Teams
+          {{ $t('tabs.teams') }}
         </v-tab>
         <v-tab value="players">
           <v-icon icon="mdi-human-edit" class="me-1"></v-icon>
-          Players
+          {{ $t('tabs.players') }}
         </v-tab>
         <v-tab value="check">
           <v-icon icon="mdi-clipboard-check-outline" class="me-1"></v-icon>
-          Check
+          {{ $t('tabs.check') }}
         </v-tab>
         <v-tab value="settings">
           <v-icon icon="mdi-cog" class="me-1"></v-icon>
-          Settings
+          {{ $t('tabs.settings') }}
         </v-tab>
       </v-tabs>
       <v-spacer />
@@ -84,7 +84,7 @@
               <Teams v-else-if="tab === 'teams'" />
               <Players v-else-if="tab === 'players'" />
               <div v-else class="pa-5 text-grey">
-                To start editing, open a map from the toolbar.
+                {{ $t('app.openMapHint') }}
               </div>
             </v-sheet>
           </v-col>
@@ -101,16 +101,16 @@
 
     <v-dialog v-model="saveCheck.open" max-width="640">
       <v-card>
-        <v-card-title>The scenario has {{ saveCheck.errors }} error(s)</v-card-title>
+        <v-card-title>{{ $t('saveCheck.title', {n: saveCheck.errors}) }}</v-card-title>
         <v-card-text>
-          The game may fail to load the map or behave unexpectedly. Save anyway?
+          {{ $t('saveCheck.text') }}
           <ProblemList :problems="saveCheck.problems" :limit="6" @navigate="closeSaveCheck(false)" />
         </v-card-text>
         <v-card-actions>
-          <v-btn variant="text" @click="closeSaveCheck(false); tab = 'check'">Show all problems</v-btn>
+          <v-btn variant="text" @click="closeSaveCheck(false); tab = 'check'">{{ $t('saveCheck.showAll') }}</v-btn>
           <v-spacer />
-          <v-btn variant="text" @click="closeSaveCheck(false)">Cancel</v-btn>
-          <v-btn color="error" variant="tonal" @click="closeSaveCheck(true)">Save anyway</v-btn>
+          <v-btn variant="text" @click="closeSaveCheck(false)">{{ $t('common.cancel') }}</v-btn>
+          <v-btn color="error" variant="tonal" @click="closeSaveCheck(true)">{{ $t('saveCheck.saveAnyway') }}</v-btn>
         </v-card-actions>
       </v-card>
     </v-dialog>
@@ -133,8 +133,11 @@ import ProblemList from "./components/ProblemList.vue";
 import Teams from "./components/Teams.vue";
 import Players from "./components/Players.vue";
 import {EventsOff, EventsOn, Quit, WindowMaximise, WindowMinimise, WindowToggleMaximise} from "../wailsjs/runtime";
+import {useI18n} from "vue-i18n";
+import {setUILanguage} from "./i18n";
 import {
   CheckGameDir,
+  GetConfig,
   LaunchGame,
   LoadGameXML,
   NewMap,
@@ -145,6 +148,8 @@ import {
 } from "../wailsjs/go/editor/App";
 import {editor} from "../wailsjs/go/models";
 import {clearEnums, mapInfo, refreshEnums, refreshMap, refreshMapInfo, requestedTab} from "./store";
+
+const {t} = useI18n();
 
 const minimize = WindowMinimise;
 const maximize = WindowToggleMaximise;
@@ -207,17 +212,20 @@ async function bootstrap() {
   if (bootstrapping) return;
   bootstrapping = true;
   try {
+    const config = await GetConfig();
+    setUILanguage(config?.ui_language);
+
     // A map may be already opened from the command line
     await refreshMap();
 
     const reason = await CheckGameDir();
     if (reason) {
-      showError(`Game directory not configured: ${reason}. Open Settings to fix.`);
+      showError(t('app.gameDirNotConfigured', {reason}));
       tab.value = 'settings';
       return;
     }
 
-    loadingMessage.value = 'Parsing game XML files...';
+    loadingMessage.value = t('progress.parsingXml');
     await LoadGameXML();
     await refreshEnums();
   } catch (err: any) {
@@ -240,7 +248,7 @@ async function run(message: string, action: () => Promise<unknown>) {
 }
 
 function newMap() {
-  return run('Creating map...', async () => {
+  return run(t('progress.creatingMap'), async () => {
     if (await NewMap()) {
       // Do not rely on the map-loaded event only: editors must drop the old map before any edit
       await refreshMap();
@@ -250,7 +258,7 @@ function newMap() {
 }
 
 function openMap() {
-  return run('Loading and parsing map...', async () => {
+  return run(t('progress.loadingMap'), async () => {
     if (await OpenMapDialog()) {
       await refreshMap();
       tab.value = 'game';
@@ -260,11 +268,11 @@ function openMap() {
 
 async function saveMap() {
   if (!mapInfo.value) {
-    showError('No map loaded');
+    showError(t('app.noMap'));
     return;
   }
   if (!await confirmSave().catch(err => (showError(String(err)), false))) return;
-  return run('Saving...', async () => {
+  return run(t('progress.saving'), async () => {
     await SaveMap('');
     await refreshMapInfo();
   });
@@ -272,11 +280,11 @@ async function saveMap() {
 
 async function saveMapAs() {
   if (!mapInfo.value) {
-    showError('No map loaded');
+    showError(t('app.noMap'));
     return;
   }
   if (!await confirmSave().catch(err => (showError(String(err)), false))) return;
-  return run('Saving...', async () => {
+  return run(t('progress.saving'), async () => {
     await SaveMapAs();
     await refreshMapInfo();
   });
@@ -316,6 +324,7 @@ onMounted(() => {
     clearEnums();
     bootstrap();
   });
+  EventsOn('game-language', () => refreshEnums());
   EventsOn('map-loaded', async () => {
     await refreshMap();
   });
@@ -330,6 +339,7 @@ onUnmounted(() => {
   EventsOff('xml-progress');
   EventsOff('xml-done');
   EventsOff('xml-reset');
+  EventsOff('game-language');
   EventsOff('map-loaded');
   EventsOff('map-state');
   window.removeEventListener('keydown', onKeyDown);

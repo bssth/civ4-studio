@@ -35,7 +35,8 @@ func (h *History) reset() {
 	h.undo, h.redo = nil, nil
 }
 
-// HistoryState tells which steps can be undone and redone, empty labels mean none
+// HistoryState tells which steps can be undone and redone, empty labels mean none.
+// Labels are codes the frontend turns into text: "paint:<plots>", "plot:<x>,<y>", "start:<player>".
 type HistoryState struct {
 	Undo string `json:"undo"`
 	Redo string `json:"redo"`

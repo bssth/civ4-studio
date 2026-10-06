@@ -127,7 +127,7 @@ func (a *App) PaintPlots(op *PaintOp) (int, error) {
 	}
 	indexes, before, after := a.wbMap.Paint(op, data)
 	if len(indexes) > 0 {
-		a.history.push(plotsEntry(fmt.Sprintf("paint %d plots", len(indexes)), indexes, before, after))
+		a.history.push(plotsEntry(fmt.Sprintf("paint:%d", len(indexes)), indexes, before, after))
 	}
 	a.mu.Unlock()
 

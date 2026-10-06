@@ -3,15 +3,18 @@ import {computed, onMounted, reactive, ref, watch} from "vue";
 import {GetPlayers, GetTeams, SetTeams} from "../../wailsjs/go/editor/App";
 import {editor} from "../../wailsjs/go/models";
 import {batched, describeType, enums, mapVersion, NONE, withCurrent} from "../store";
+import {useI18n} from "vue-i18n";
+
+const {t} = useI18n();
 
 type RelationField = 'ContactWithTeam' | 'AtWar' | 'OpenBordersWithTeam' | 'DefensivePactWithTeam' | 'PermanentWarPeace';
 
 const relations: { field: RelationField, title: string, icon: string, color: string }[] = [
-  {field: 'ContactWithTeam', title: 'Contact', icon: 'mdi-handshake', color: 'blue'},
-  {field: 'AtWar', title: 'At war', icon: 'mdi-sword-cross', color: 'red'},
-  {field: 'OpenBordersWithTeam', title: 'Open borders', icon: 'mdi-door-open', color: 'green'},
-  {field: 'DefensivePactWithTeam', title: 'Defensive pact', icon: 'mdi-shield', color: 'purple'},
-  {field: 'PermanentWarPeace', title: 'Permanent war/peace', icon: 'mdi-lock', color: 'orange'},
+  {field: 'ContactWithTeam', title: 'relations.contact', icon: 'mdi-handshake', color: 'blue'},
+  {field: 'AtWar', title: 'relations.war', icon: 'mdi-sword-cross', color: 'red'},
+  {field: 'OpenBordersWithTeam', title: 'relations.openBorders', icon: 'mdi-door-open', color: 'green'},
+  {field: 'DefensivePactWithTeam', title: 'relations.defensivePact', icon: 'mdi-shield', color: 'purple'},
+  {field: 'PermanentWarPeace', title: 'relations.permanent', icon: 'mdi-lock', color: 'orange'},
 ];
 
 const teams = ref<editor.Team[]>([]);
@@ -39,7 +42,7 @@ function teamMembers(team: editor.Team): editor.Player[] {
 
 function teamName(team: editor.Team): string {
   const members = teamMembers(team);
-  if (members.length === 0) return `Team ${team.TeamID}`;
+  if (members.length === 0) return t('teams.team', {n: team.TeamID});
   return members.map(p => p.CivShortDesc || p.LeaderName || p.CivType).join(', ');
 }
 
@@ -102,8 +105,9 @@ function projectItems(team: editor.Team) {
 const bulk = reactive<{ era: string, target: 'all' | number }>({era: '', target: 'all'});
 
 const bulkTargets = computed(() => [
-  {value: 'all' as const, title: 'All teams with players'},
-  ...teams.value.filter(t => teamMembers(t).length > 0).map(t => ({value: t.TeamID, title: `Team ${t.TeamID} — ${teamName(t)}`})),
+  {value: 'all' as const, title: t('teams.allWithPlayers')},
+  ...teams.value.filter(team => teamMembers(team).length > 0)
+      .map(team => ({value: team.TeamID, title: t('teams.teamWithName', {n: team.TeamID, name: teamName(team)})})),
 ]);
 
 function bulkTeams(): editor.Team[] {
@@ -132,55 +136,55 @@ function removeTechs() {
 }
 
 function relationSummary(team: editor.Team): string {
-  const wars = (team.AtWar ?? []).map(id => byId(id)).filter(Boolean).map(t => teamName(t!));
-  return wars.length ? 'at war with ' + wars.join(', ') : '';
+  const wars = (team.AtWar ?? []).map(id => byId(id)).filter(Boolean).map(other => teamName(other!));
+  return wars.length ? t('teams.atWarWith', {teams: wars.join(', ')}) : '';
 }
 </script>
 
 <template>
   <div v-if="teams.length === 0" class="pa-5 text-grey">
-    No teams in the current map.
+    {{ $t('teams.none') }}
   </div>
 
   <div v-else class="pa-2">
-    <v-checkbox v-model="showEmpty" label="Show teams without players" hide-details density="compact" class="px-3" />
+    <v-checkbox v-model="showEmpty" :label="$t('teams.showEmpty')" hide-details density="compact" class="px-3" />
 
     <v-card variant="outlined" class="ma-2">
-      <v-card-title>Starting techs</v-card-title>
+      <v-card-title>{{ $t('teams.startingTechs') }}</v-card-title>
       <v-card-text>
         <v-row dense align="center">
           <v-col cols="12" md="4">
-            <v-select label="Teams" density="compact" hide-details :items="bulkTargets" v-model="bulk.target"/>
+            <v-select :label="$t('teams.teams')" density="compact" hide-details :items="bulkTargets" v-model="bulk.target"/>
           </v-col>
           <v-col cols="12" md="3">
-            <v-select label="Up to era" density="compact" hide-details :items="enums.eras"
+            <v-select :label="$t('teams.upToEra')" density="compact" hide-details :items="enums.eras"
                       item-value="type" item-title="description" v-model="bulk.era"/>
           </v-col>
           <v-col cols="12" md="5" class="d-flex flex-wrap" style="gap: 8px">
             <v-btn variant="tonal" color="primary" :disabled="techsUpToEra.length === 0" @click="giveTechs">
-              Give {{ techsUpToEra.length }} techs
+              {{ $t('teams.giveTechs', {n: techsUpToEra.length}) }}
             </v-btn>
-            <v-btn variant="text" color="error" @click="removeTechs">Remove all techs</v-btn>
+            <v-btn variant="text" color="error" @click="removeTechs">{{ $t('teams.removeTechs') }}</v-btn>
           </v-col>
         </v-row>
         <div class="text-caption text-medium-emphasis mt-1">
-          Gives every tech of the chosen era and earlier eras; techs the teams already have are kept.
+          {{ $t('teams.techsHint') }}
         </div>
       </v-card-text>
     </v-card>
 
     <v-card variant="outlined" class="ma-2">
       <v-card-title class="d-flex align-center flex-wrap">
-        Diplomacy
+        {{ $t('teams.diplomacy') }}
         <v-spacer />
         <v-btn-toggle v-model="relation" mandatory density="compact" divided>
           <v-btn v-for="r in relations" :key="r.field" :value="r.field" size="small">
-            <v-icon :icon="r.icon" class="me-1" />{{ r.title }}
+            <v-icon :icon="r.icon" class="me-1" />{{ $t(r.title) }}
           </v-btn>
         </v-btn-toggle>
       </v-card-title>
       <v-card-subtitle>
-        Click a cell to toggle "{{ currentRelation.title }}" between two teams. Relations are mutual.
+        {{ $t('teams.matrixHint', {relation: $t(currentRelation.title)}) }}
       </v-card-subtitle>
       <v-card-text class="matrix-wrap">
         <table class="matrix">
@@ -211,15 +215,15 @@ function relationSummary(team: editor.Team): string {
     <v-expansion-panels variant="accordion" class="mt-2">
       <v-expansion-panel v-for="team in visibleTeams" :key="team.TeamID">
         <v-expansion-panel-title>
-          Team #{{ team.TeamID }} — {{ teamName(team) }}
+          {{ $t('teams.panelTitle', {n: team.TeamID, name: teamName(team)}) }}
           <span class="ms-2 text-caption text-grey">
-            {{ (team.Tech ?? []).length }} techs <template v-if="relationSummary(team)">· {{ relationSummary(team) }}</template>
+            {{ $t('teams.techCount', {n: (team.Tech ?? []).length}) }} <template v-if="relationSummary(team)">· {{ relationSummary(team) }}</template>
           </span>
         </v-expansion-panel-title>
         <v-expansion-panel-text>
-          <v-checkbox v-model="team.RevealMap" label="Reveal the whole map" hide-details density="compact" />
+          <v-checkbox v-model="team.RevealMap" :label="$t('teams.revealMap')" hide-details density="compact" />
 
-          <v-autocomplete label="Starting techs" multiple chips closable-chips clearable
+          <v-autocomplete :label="$t('teams.startingTechs')" multiple chips closable-chips clearable
                           density="compact" class="mt-2" hide-details
                           :items="techItems(team)" item-value="type" item-title="description"
                           v-model="team.Tech">
@@ -228,7 +232,7 @@ function relationSummary(team: editor.Team): string {
             </template>
           </v-autocomplete>
 
-          <v-autocomplete label="Completed projects" multiple chips closable-chips clearable
+          <v-autocomplete :label="$t('teams.completedProjects')" multiple chips closable-chips clearable
                           density="compact" class="mt-3" hide-details
                           :items="projectItems(team)" item-value="type" item-title="description"
                           v-model="team.ProjectType" />

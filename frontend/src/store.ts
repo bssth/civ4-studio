@@ -1,6 +1,7 @@
 import {reactive, ref} from "vue";
 import {GetCivilizations, GetGame, GetMapInfo, GetOptions, GetWorldSizes} from "../wailsjs/go/editor/App";
 import {editor} from "../wailsjs/go/models";
+import {t} from "./i18n";
 
 export const mapInfo = ref<editor.MapInfo | null>(null);
 export const game = ref<editor.Game | null>(null);
@@ -73,7 +74,7 @@ export function withCurrent(options: editor.EnumOption[], ...values: (string | n
 }
 
 /** Options with a leading NONE entry, used by fields that may be empty */
-export function withNone(options: editor.EnumOption[], label = '(none)'): editor.EnumOption[] {
+export function withNone(options: editor.EnumOption[], label = t('common.none')): editor.EnumOption[] {
     return [editor.EnumOption.createFrom({type: NONE, description: label}), ...options];
 }
 
@@ -122,7 +123,7 @@ export function playerColor(players: editor.Player[], index: number): string {
 /** Short readable name of a player */
 export function playerName(players: editor.Player[], index: number): string {
     const p = players[index];
-    if (!p || !p.CivType || p.CivType === NONE) return `Player ${index}`;
+    if (!p || !p.CivType || p.CivType === NONE) return t('common.player', {n: index});
     const name = p.CivShortDesc && !p.CivShortDesc.startsWith('TXT_KEY_') ? p.CivShortDesc : humanizeCiv(p.CivType);
     return `${name}`;
 }
@@ -159,7 +160,8 @@ export const brush = reactive({
 });
 
 export interface BrushPreset {
-    title: string;
+    // Translation key in brush.presets
+    key: string;
     icon: string;
     terrain?: string;
     height?: number;
@@ -168,19 +170,19 @@ export interface BrushPreset {
 
 // Presets switch on only what they set
 export const brushPresets: BrushPreset[] = [
-    {title: 'Ocean', icon: 'mdi-waves', terrain: 'TERRAIN_OCEAN', height: 3, feature: ''},
-    {title: 'Coast', icon: 'mdi-wave', terrain: 'TERRAIN_COAST', height: 3, feature: ''},
-    {title: 'Grassland', icon: 'mdi-grass', terrain: 'TERRAIN_GRASS'},
-    {title: 'Plains', icon: 'mdi-barley', terrain: 'TERRAIN_PLAINS'},
-    {title: 'Desert', icon: 'mdi-weather-sunny', terrain: 'TERRAIN_DESERT'},
-    {title: 'Tundra', icon: 'mdi-snowflake-variant', terrain: 'TERRAIN_TUNDRA'},
-    {title: 'Snow', icon: 'mdi-snowflake', terrain: 'TERRAIN_SNOW'},
-    {title: 'Flat', icon: 'mdi-minus', height: 2},
-    {title: 'Hills', icon: 'mdi-image-filter-hdr', height: 1},
-    {title: 'Peak', icon: 'mdi-triangle', height: 0},
-    {title: 'Forest', icon: 'mdi-pine-tree', feature: 'FEATURE_FOREST'},
-    {title: 'Jungle', icon: 'mdi-palm-tree', feature: 'FEATURE_JUNGLE'},
-    {title: 'No feature', icon: 'mdi-eraser', feature: ''},
+    {key: 'ocean', icon: 'mdi-waves', terrain: 'TERRAIN_OCEAN', height: 3, feature: ''},
+    {key: 'coast', icon: 'mdi-wave', terrain: 'TERRAIN_COAST', height: 3, feature: ''},
+    {key: 'grassland', icon: 'mdi-grass', terrain: 'TERRAIN_GRASS'},
+    {key: 'plains', icon: 'mdi-barley', terrain: 'TERRAIN_PLAINS'},
+    {key: 'desert', icon: 'mdi-weather-sunny', terrain: 'TERRAIN_DESERT'},
+    {key: 'tundra', icon: 'mdi-snowflake-variant', terrain: 'TERRAIN_TUNDRA'},
+    {key: 'snow', icon: 'mdi-snowflake', terrain: 'TERRAIN_SNOW'},
+    {key: 'flat', icon: 'mdi-minus', height: 2},
+    {key: 'hills', icon: 'mdi-image-filter-hdr', height: 1},
+    {key: 'peak', icon: 'mdi-triangle', height: 0},
+    {key: 'forest', icon: 'mdi-pine-tree', feature: 'FEATURE_FOREST'},
+    {key: 'jungle', icon: 'mdi-palm-tree', feature: 'FEATURE_JUNGLE'},
+    {key: 'noFeature', icon: 'mdi-eraser', feature: ''},
 ];
 
 export function applyBrushPreset(preset: BrushPreset) {

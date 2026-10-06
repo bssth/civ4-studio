@@ -13,6 +13,10 @@ type Config struct {
 	GameDir  string `json:"game_dir"`
 	Mod      string `json:"mod"`
 	AutoSave bool   `json:"auto_save"`
+	// Language of names from the game files, e.g. "German"; empty means English
+	Language string `json:"language"`
+	// UILanguage is the language of the editor itself ("en", "ru"); empty means the system language
+	UILanguage string `json:"ui_language"`
 }
 
 // ConfigPath returns the config file location in the user config directory

@@ -37,9 +37,9 @@ onUnmounted(() => {
 <template>
   <div class="d-flex flex-column fill-height">
     <div class="d-flex align-center">
-      <h3>Console</h3>
+      <h3>{{ $t('console.title') }}</h3>
       <v-spacer />
-      <v-btn icon="mdi-delete-sweep" variant="text" size="small" title="Clear" @click="lines = []" />
+      <v-btn icon="mdi-delete-sweep" variant="text" size="small" :title="$t('console.clear')" @click="lines = []" />
     </div>
     <v-divider class="mb-2" />
     <div ref="output" class="console-output flex-grow-1">

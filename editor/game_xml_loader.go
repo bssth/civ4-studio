@@ -97,7 +97,7 @@ func LoadAllXML(progressHandler func(string)) (*GameData, error) {
 	if err != nil {
 		return nil, err
 	}
-	return LoadXMLFiles(files, progressHandler), nil
+	return LoadXMLFiles(files, progressHandler).WithLanguage(GlobalConfig.Language), nil
 }
 
 // LoadXMLFiles parses given files into a new GameData. Broken files are reported to the console and skipped.
@@ -123,7 +123,8 @@ func LoadXMLFiles(files []string, progressHandler func(string)) *GameData {
 			ConsoleWrite("Loaded %d %s", n, category)
 		}
 	}
-	return data
+	// Texts are usable right away, in English; the caller may choose another language
+	return data.WithLanguage(DefaultLanguage)
 }
 
 func loadXMLFile(data *GameData, path string) (int, error) {
@@ -139,8 +140,17 @@ func loadXMLFile(data *GameData, path string) (int, error) {
 			return 0, err
 		}
 		for _, t := range text.TEXT {
-			// @todo multiple languages
-			data.Lang[t.Tag] = strings.TrimSpace(t.English.String())
+			for _, l := range t.Languages {
+				value := strings.TrimSpace(l.String())
+				if value == "" {
+					continue
+				}
+				language := l.XMLName.Local
+				if data.Texts[language] == nil {
+					data.Texts[language] = make(map[string]string)
+				}
+				data.Texts[language][t.Tag] = value
+			}
 		}
 		return len(text.TEXT), nil
 

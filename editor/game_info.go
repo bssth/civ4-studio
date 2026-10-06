@@ -1,6 +1,7 @@
 package editor
 
 import (
+	"sort"
 	"strings"
 	"sync"
 )
@@ -109,9 +110,16 @@ func (t *InfoTable) All() []*TypeInfo {
 	return result
 }
 
+// DefaultLanguage is used for texts that have no translation into the chosen language
+const DefaultLanguage = "English"
+
 // GameData holds everything loaded from game (and mod) XML files
 type GameData struct {
+	// Texts keeps all languages: language -> text key -> text
+	Texts map[string]map[string]string
+	// Lang is the texts of Language with English for missing translations
 	Lang          map[string]string
+	Language      string
 	Infos         map[string]*InfoTable
 	IntDefines    map[string]int
 	FloatDefines  map[string]float64
@@ -120,7 +128,9 @@ type GameData struct {
 
 func NewGameData() *GameData {
 	data := &GameData{
+		Texts:         make(map[string]map[string]string),
 		Lang:          make(map[string]string),
+		Language:      DefaultLanguage,
 		Infos:         make(map[string]*InfoTable),
 		IntDefines:    make(map[string]int),
 		FloatDefines:  make(map[string]float64),
@@ -130,6 +140,49 @@ func NewGameData() *GameData {
 		data.Infos[category] = NewInfoTable()
 	}
 	return data
+}
+
+// WithLanguage returns a copy of the data using texts of the given language, with English for keys
+// it has no translation for. An unknown or empty language means English. The data itself is not
+// changed, so it stays safe for concurrent readers.
+func (d *GameData) WithLanguage(language string) *GameData {
+	if language == "" || d.Texts[language] == nil {
+		language = DefaultLanguage
+	}
+	lang := make(map[string]string, len(d.Texts[DefaultLanguage]))
+	for key, value := range d.Texts[DefaultLanguage] {
+		lang[key] = value
+	}
+	if language != DefaultLanguage {
+		for key, value := range d.Texts[language] {
+			lang[key] = value
+		}
+	}
+	copied := *d
+	copied.Lang = lang
+	copied.Language = language
+	return &copied
+}
+
+// LanguageOption is a language found in the text files with the number of its texts
+type LanguageOption struct {
+	Name  string `json:"name"`
+	Texts int    `json:"texts"`
+}
+
+// Languages lists languages of the loaded texts, the most complete first
+func (d *GameData) Languages() []LanguageOption {
+	result := make([]LanguageOption, 0, len(d.Texts))
+	for name, texts := range d.Texts {
+		result = append(result, LanguageOption{Name: name, Texts: len(texts)})
+	}
+	sort.Slice(result, func(i, j int) bool {
+		if result[i].Texts != result[j].Texts {
+			return result[i].Texts > result[j].Texts
+		}
+		return result[i].Name < result[j].Name
+	})
+	return result
 }
 
 // Table returns entries of a category (never nil)

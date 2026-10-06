@@ -64,6 +64,8 @@ export namespace editor {
 	    game_dir: string;
 	    mod: string;
 	    auto_save: boolean;
+	    language: string;
+	    ui_language: string;
 	
 	    static createFrom(source: any = {}) {
 	        return new Config(source);
@@ -74,6 +76,8 @@ export namespace editor {
 	        this.game_dir = source["game_dir"];
 	        this.mod = source["mod"];
 	        this.auto_save = source["auto_save"];
+	        this.language = source["language"];
+	        this.ui_language = source["ui_language"];
 	    }
 	}
 	export class CountStat {
@@ -164,6 +168,20 @@ export namespace editor {
 	        this.redo = source["redo"];
 	    }
 	}
+	export class LanguageOption {
+	    name: string;
+	    texts: number;
+	
+	    static createFrom(source: any = {}) {
+	        return new LanguageOption(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.name = source["name"];
+	        this.texts = source["texts"];
+	    }
+	}
 	export class MapInfo {
 	    path: string;
 	    version: number;
@@ -220,6 +238,34 @@ export namespace editor {
 	        this.RandomizeResources = source["RandomizeResources"];
 	    }
 	}
+	export class Problem {
+	    severity: string;
+	    section: string;
+	    code: string;
+	    args: Record<string, string>;
+	    message: string;
+	    x: number;
+	    y: number;
+	    player: number;
+	    team: number;
+	
+	    static createFrom(source: any = {}) {
+	        return new Problem(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.severity = source["severity"];
+	        this.section = source["section"];
+	        this.code = source["code"];
+	        this.args = source["args"];
+	        this.message = source["message"];
+	        this.x = source["x"];
+	        this.y = source["y"];
+	        this.player = source["player"];
+	        this.team = source["team"];
+	    }
+	}
 	export class MapStats {
 	    plots: number;
 	    expected_plots: number;
@@ -233,7 +279,7 @@ export namespace editor {
 	    starting_plots: number;
 	    bonuses: number;
 	    terrains: CountStat[];
-	    problems: string[];
+	    problems: Problem[];
 	
 	    static createFrom(source: any = {}) {
 	        return new MapStats(source);
@@ -253,7 +299,7 @@ export namespace editor {
 	        this.starting_plots = source["starting_plots"];
 	        this.bonuses = source["bonuses"];
 	        this.terrains = this.convertValues(source["terrains"], CountStat);
-	        this.problems = source["problems"];
+	        this.problems = this.convertValues(source["problems"], Problem);
 	    }
 	
 		convertValues(a: any, classs: any, asMap: boolean = false): any {
@@ -553,30 +599,7 @@ export namespace editor {
 		}
 	}
 	
-	export class Problem {
-	    severity: string;
-	    section: string;
-	    message: string;
-	    x: number;
-	    y: number;
-	    player: number;
-	    team: number;
 	
-	    static createFrom(source: any = {}) {
-	        return new Problem(source);
-	    }
-	
-	    constructor(source: any = {}) {
-	        if ('string' === typeof source) source = JSON.parse(source);
-	        this.severity = source["severity"];
-	        this.section = source["section"];
-	        this.message = source["message"];
-	        this.x = source["x"];
-	        this.y = source["y"];
-	        this.player = source["player"];
-	        this.team = source["team"];
-	    }
-	}
 	export class Team {
 	    TeamID: number;
 	    Tech: string[];

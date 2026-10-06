@@ -15,6 +15,9 @@ import {
   withCurrent,
   withNone
 } from "../store";
+import {useI18n} from "vue-i18n";
+
+const {t} = useI18n();
 
 const players = ref<editor.Player[]>([]);
 const showEmpty = ref(false);
@@ -46,11 +49,11 @@ const civOptions = computed(() => civilizations.value.map(c =>
 
 const teamOptions = computed(() => {
   const count = Math.max(mapInfo.value?.teams_count ?? 0, ...players.value.map(p => p.Team + 1));
-  return Array.from({length: count}, (_, i) => ({value: i, title: `Team ${i}`}));
+  return Array.from({length: count}, (_, i) => ({value: i, title: t('teams.team', {n: i})}));
 });
 
 function civItems(p: editor.Player) {
-  return withNone(withCurrent(civOptions.value, p.CivType === NONE ? '' : p.CivType), '(empty slot)');
+  return withNone(withCurrent(civOptions.value, p.CivType === NONE ? '' : p.CivType), t('players.emptySlot'));
 }
 
 function leaderItems(p: editor.Player) {
@@ -138,7 +141,7 @@ function setCivic(p: editor.Player, option: string, civic: string | null) {
 }
 
 function civicItems(option: string, current: string) {
-  return withNone(withCurrent(enums.civics.filter(c => c.group === option), current), '(default)');
+  return withNone(withCurrent(enums.civics.filter(c => c.group === option), current), t('players.defaultCivic'));
 }
 
 // Names may be text keys (TXT_KEY_...) which the game translates, show game data names for them
@@ -152,7 +155,7 @@ const clear = reactive({open: false, index: 0, removeAssets: true});
 const actionError = ref('');
 
 const slotItems = computed(() => players.value.map((p, i) => ({
-  value: i, title: `#${i} ${isEmpty(p) ? '(empty slot)' : playerName(players.value, i)}`,
+  value: i, title: `#${i} ${isEmpty(p) ? t('players.emptySlot') : playerName(players.value, i)}`,
 })));
 
 function openSwap(index: number) {
@@ -185,7 +188,7 @@ function doClear() {
 }
 
 function playerTitle(p: editor.Player): string {
-  if (isEmpty(p)) return '(empty slot)';
+  if (isEmpty(p)) return t('players.emptySlot');
   return isTextKey(p.LeaderName) ? describeType(enums.leaders, p.LeaderType) : p.LeaderName;
 }
 
@@ -196,13 +199,13 @@ function civTitle(p: editor.Player): string {
 
 <template>
   <div v-if="players.length === 0" class="pa-5 text-grey">
-    No players in the current map.
+    {{ $t('players.none') }}
   </div>
 
   <div v-else class="pa-2">
     <div class="d-flex flex-wrap px-3">
-      <v-checkbox v-model="showEmpty" label="Show empty player slots" hide-details density="compact" class="me-6" />
-      <v-checkbox v-model="anyLeader" label="Allow any leader for a civilization" hide-details density="compact" />
+      <v-checkbox v-model="showEmpty" :label="$t('players.showEmpty')" hide-details density="compact" class="me-6" />
+      <v-checkbox v-model="anyLeader" :label="$t('players.anyLeader')" hide-details density="compact" />
     </div>
 
     <v-alert v-if="actionError" type="error" variant="tonal" density="compact" class="mx-3 mb-2" closable
@@ -210,32 +213,31 @@ function civTitle(p: editor.Player): string {
     </v-alert>
 
     <v-dialog v-model="swap.open" max-width="520">
-      <v-card title="Swap player slots">
+      <v-card :title="$t('players.swapTitle')">
         <v-card-text>
-          Player #{{ swap.from }} and the chosen slot exchange their places. Units, cities, culture, attitudes
-          and signs move with their players.
-          <v-select class="mt-3" label="Swap with" :items="slotItems.filter(s => s.value !== swap.from)"
+          {{ $t('players.swapText', {n: swap.from}) }}
+          <v-select class="mt-3" :label="$t('players.swapWith')" :items="slotItems.filter(s => s.value !== swap.from)"
                     v-model="swap.to" density="compact" hide-details/>
         </v-card-text>
         <v-card-actions>
           <v-spacer/>
-          <v-btn variant="text" @click="swap.open = false">Cancel</v-btn>
-          <v-btn color="primary" variant="tonal" @click="doSwap">Swap</v-btn>
+          <v-btn variant="text" @click="swap.open = false">{{ $t('common.cancel') }}</v-btn>
+          <v-btn color="primary" variant="tonal" @click="doSwap">{{ $t('players.swap') }}</v-btn>
         </v-card-actions>
       </v-card>
     </v-dialog>
 
     <v-dialog v-model="clear.open" max-width="520">
-      <v-card :title="`Clear slot #${clear.index}`">
+      <v-card :title="$t('players.clearTitle', {n: clear.index})">
         <v-card-text>
-          {{ playerName(players, clear.index) }} becomes an empty slot, its team stays.
+          {{ $t('players.clearText', {player: playerName(players, clear.index)}) }}
           <v-checkbox v-model="clear.removeAssets" density="compact" hide-details class="mt-2"
-                      label="Also remove its units and cities from the map"/>
+                      :label="$t('players.clearAssets')"/>
         </v-card-text>
         <v-card-actions>
           <v-spacer/>
-          <v-btn variant="text" @click="clear.open = false">Cancel</v-btn>
-          <v-btn color="error" variant="tonal" @click="doClear">Clear</v-btn>
+          <v-btn variant="text" @click="clear.open = false">{{ $t('common.cancel') }}</v-btn>
+          <v-btn color="error" variant="tonal" @click="doClear">{{ $t('players.clear') }}</v-btn>
         </v-card-actions>
       </v-card>
     </v-dialog>
@@ -247,29 +249,29 @@ function civTitle(p: editor.Player): string {
             #{{ idx }} — {{ playerTitle(player) }}
             <span class="ms-2 text-caption text-grey">
               <template v-if="!isEmpty(player)">
-                {{ civTitle(player) }} · team {{ player.Team }}
-                <template v-if="!player.PlayableCiv"> · AI only</template>
+                {{ civTitle(player) }} · {{ $t('players.team', {n: player.Team}) }}
+                <template v-if="!player.PlayableCiv"> · {{ $t('players.aiOnly') }}</template>
               </template>
             </span>
           </v-expansion-panel-title>
           <v-expansion-panel-text>
             <div class="d-flex justify-end mb-1">
               <v-btn size="small" variant="text" prepend-icon="mdi-swap-horizontal" @click="openSwap(idx)">
-                Swap slot
+                {{ $t('players.swapSlot') }}
               </v-btn>
               <v-btn v-if="!isEmpty(player)" size="small" variant="text" color="error" prepend-icon="mdi-account-remove"
-                     @click="openClear(idx)">Clear slot
+                     @click="openClear(idx)">{{ $t('players.clearSlot') }}
               </v-btn>
             </div>
             <v-row dense>
               <v-col cols="12" md="6">
-                <v-autocomplete label="Civilization" density="compact" hide-details
+                <v-autocomplete :label="$t('players.civilization')" density="compact" hide-details
                                 :items="civItems(player)" item-value="type" item-title="description"
                                 :model-value="player.CivType"
                                 @update:model-value="(v: string) => onCivChange(player, v ?? NONE)" />
               </v-col>
               <v-col cols="12" md="6">
-                <v-autocomplete label="Leader" density="compact" hide-details
+                <v-autocomplete :label="$t('players.leader')" density="compact" hide-details
                                 :items="leaderItems(player)" item-value="type" item-title="description"
                                 :model-value="player.LeaderType"
                                 @update:model-value="(v: string) => onLeaderChange(player, v ?? NONE)" />
@@ -279,19 +281,19 @@ function civTitle(p: editor.Player): string {
             <template v-if="!isEmpty(player)">
               <v-row dense class="mt-1">
                 <v-col cols="12" md="6">
-                  <v-text-field label="Civ description" density="compact" hide-details v-model="player.CivDesc" />
+                  <v-text-field :label="$t('players.civDesc')" density="compact" hide-details v-model="player.CivDesc" />
                 </v-col>
                 <v-col cols="12" md="6">
-                  <v-text-field label="Civ short description" density="compact" hide-details v-model="player.CivShortDesc" />
+                  <v-text-field :label="$t('players.civShortDesc')" density="compact" hide-details v-model="player.CivShortDesc" />
                 </v-col>
                 <v-col cols="12" md="6">
-                  <v-text-field label="Leader name" density="compact" hide-details v-model="player.LeaderName" />
+                  <v-text-field :label="$t('players.leaderName')" density="compact" hide-details v-model="player.LeaderName" />
                 </v-col>
                 <v-col cols="12" md="6">
-                  <v-text-field label="Civ adjective" density="compact" hide-details v-model="player.CivAdjective">
+                  <v-text-field :label="$t('players.civAdjective')" density="compact" hide-details v-model="player.CivAdjective">
                     <template v-slot:append>
                       <v-btn icon="mdi-restore" variant="text" size="small"
-                             title="Reset names, color and art style from game data"
+                             :title="$t('players.resetNames')"
                              @click="resetFromGameData(player)" />
                     </template>
                   </v-text-field>
@@ -300,64 +302,64 @@ function civTitle(p: editor.Player): string {
 
               <v-row dense class="mt-1">
                 <v-col cols="6" md="3">
-                  <v-select label="Team" density="compact" hide-details
+                  <v-select :label="$t('players.teamField')" density="compact" hide-details
                             :items="teamOptions" v-model="player.Team" />
                 </v-col>
                 <v-col cols="6" md="3">
-                  <v-select label="Handicap (AI)" density="compact" hide-details
+                  <v-select :label="$t('players.handicap')" density="compact" hide-details
                             :items="optionItems(enums.handicaps, player.Handicap, false)"
                             item-value="type" item-title="description" v-model="player.Handicap" />
                 </v-col>
                 <v-col cols="6" md="3">
-                  <v-autocomplete label="Color" density="compact" hide-details
+                  <v-autocomplete :label="$t('players.color')" density="compact" hide-details
                                   :items="optionItems(enums.colors, player.Color)"
                                   item-value="type" item-title="description" v-model="player.Color" />
                 </v-col>
                 <v-col cols="6" md="3">
-                  <v-autocomplete label="Art style" density="compact" hide-details
+                  <v-autocomplete :label="$t('players.artStyle')" density="compact" hide-details
                                   :items="optionItems(enums.artStyles, player.ArtStyle)"
                                   item-value="type" item-title="description" v-model="player.ArtStyle" />
                 </v-col>
                 <v-col cols="6" md="3">
-                  <v-select label="State religion" density="compact" hide-details
+                  <v-select :label="$t('players.stateReligion')" density="compact" hide-details
                             :items="optionItems(enums.religions, player.StateReligion)"
                             item-value="type" item-title="description"
                             :model-value="player.StateReligion || NONE"
                             @update:model-value="(v: string) => player.StateReligion = v === NONE ? '' : v" />
                 </v-col>
                 <v-col cols="6" md="3">
-                  <v-select label="Starting era" density="compact" hide-details
+                  <v-select :label="$t('players.startingEra')" density="compact" hide-details
                             :items="optionItems(enums.eras, player.StartingEra)"
                             item-value="type" item-title="description"
                             :model-value="player.StartingEra || NONE"
                             @update:model-value="(v: string) => player.StartingEra = v === NONE ? '' : v" />
                 </v-col>
                 <v-col cols="6" md="2">
-                  <v-text-field label="Starting gold" type="number" density="compact" hide-details
+                  <v-text-field :label="$t('players.startingGold')" type="number" density="compact" hide-details
                                 v-model.number="player.StartingGold" />
                 </v-col>
                 <v-col cols="3" md="2">
-                  <v-text-field label="Start X" type="number" density="compact" hide-details
+                  <v-text-field :label="$t('players.startX')" type="number" density="compact" hide-details
                                 v-model.number="player.StartingX" />
                 </v-col>
                 <v-col cols="3" md="2">
-                  <v-text-field label="Start Y" type="number" density="compact" hide-details
+                  <v-text-field :label="$t('players.startY')" type="number" density="compact" hide-details
                                 v-model.number="player.StartingY" />
                 </v-col>
                 <v-col cols="12">
-                  <v-text-field label="Flag decal" density="compact" hide-details v-model="player.FlagDecal" />
+                  <v-text-field :label="$t('players.flagDecal')" density="compact" hide-details v-model="player.FlagDecal" />
                 </v-col>
               </v-row>
 
               <div class="d-flex flex-wrap mt-2">
-                <v-checkbox v-model="player.PlayableCiv" label="Playable by human" hide-details density="compact" class="me-4" />
-                <v-checkbox v-model="player.MinorNationStatus" label="Minor nation" hide-details density="compact" class="me-4" />
-                <v-checkbox v-model="player.RandomStartLocation" label="Random start location" hide-details density="compact" class="me-4" />
-                <v-checkbox v-model="player.WhiteFlag" label="White flag background" hide-details density="compact" class="me-4" />
+                <v-checkbox v-model="player.PlayableCiv" :label="$t('players.playable')" hide-details density="compact" class="me-4" />
+                <v-checkbox v-model="player.MinorNationStatus" :label="$t('players.minor')" hide-details density="compact" class="me-4" />
+                <v-checkbox v-model="player.RandomStartLocation" :label="$t('players.randomStart')" hide-details density="compact" class="me-4" />
+                <v-checkbox v-model="player.WhiteFlag" :label="$t('players.whiteFlag')" hide-details density="compact" class="me-4" />
               </div>
 
               <template v-if="enums.civicOptions.length > 0">
-                <h4 class="mt-3 mb-1">Starting civics</h4>
+                <h4 class="mt-3 mb-1">{{ $t('players.startingCivics') }}</h4>
                 <v-row dense>
                   <v-col v-for="option in enums.civicOptions" :key="option.type" cols="6" md="4">
                     <v-select :label="option.description" density="compact" hide-details
@@ -369,7 +371,7 @@ function civTitle(p: editor.Player): string {
                 </v-row>
               </template>
 
-              <v-textarea label="City names (one per line, used for new cities)" rows="3" auto-grow
+              <v-textarea :label="$t('players.cityList')" rows="3" auto-grow
                           density="compact" hide-details class="mt-3"
                           :model-value="(player.CityList ?? []).join('\n')"
                           @update:model-value="(v: string) => player.CityList = (v ?? '').split('\n').map(s => s.trim()).filter(Boolean)" />

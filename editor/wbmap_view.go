@@ -198,7 +198,7 @@ func (a *App) SetPlot(plot *Plot) error {
 	changed := !bytes.Equal(old.ToWbFormat(), plot.ToWbFormat())
 	a.wbMap.Plots[i] = plot
 	if changed {
-		a.history.push(plotsEntry(fmt.Sprintf("edit plot %d, %d", plot.X, plot.Y),
+		a.history.push(plotsEntry(fmt.Sprintf("plot:%d,%d", plot.X, plot.Y),
 			[]int{i}, []*Plot{clonePlot(old)}, []*Plot{clonePlot(plot)}))
 	}
 	a.mu.Unlock()
@@ -238,7 +238,7 @@ func (a *App) SetPlayerStart(player, x, y int) error {
 			}
 		}
 		a.history.push(historyEntry{
-			label: fmt.Sprintf("move start of player %d", player),
+			label: fmt.Sprintf("start:%d", player),
 			undo:  setStart(oldX, oldY, oldRandom),
 			redo:  setStart(x, y, false),
 		})

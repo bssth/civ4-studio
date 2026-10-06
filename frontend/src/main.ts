@@ -5,9 +5,11 @@ import { createVuetify } from 'vuetify'
 import * as components from 'vuetify/components'
 import * as directives from 'vuetify/directives'
 import { aliases, mdi } from 'vuetify/iconsets/mdi'
+import { en, ru } from 'vuetify/locale'
 import '@mdi/font/css/materialdesignicons.css'
 
 import App from './App.vue'
+import { bindVuetifyLocale, i18n } from './i18n'
 
 const vuetify = createVuetify({
     components,
@@ -19,6 +21,13 @@ const vuetify = createVuetify({
             mdi,
         },
     },
+    locale: {
+        locale: 'en',
+        fallback: 'en',
+        messages: { en, ru },
+    },
 })
 
-createApp(App).use(vuetify).mount('#app')
+bindVuetifyLocale(vuetify.locale)
+
+createApp(App).use(vuetify).use(i18n).mount('#app')

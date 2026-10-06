@@ -40,6 +40,27 @@ import {
 } from "../mapRender";
 import PlotEditor from "./PlotEditor.vue";
 import PaintPanel from "./PaintPanel.vue";
+import {useI18n} from "vue-i18n";
+
+const {t} = useI18n();
+
+const heightNames = computed(() => [t('height.peak'), t('height.hills'), t('height.flat'), t('height.water')]);
+
+/** Text of a history label from the backend: "paint:<plots>", "plot:<x>,<y>", "start:<player>" */
+function historyLabel(label: string): string {
+  const [kind, value = ''] = label.split(':');
+  switch (kind) {
+    case 'paint':
+      return t('history.paint', {n: value});
+    case 'plot': {
+      const [x, y] = value.split(',');
+      return t('history.plot', {x, y});
+    }
+    case 'start':
+      return t('history.start', {n: value});
+  }
+  return label;
+}
 
 type Mode = 'select' | 'paint' | 'river';
 
@@ -50,12 +71,12 @@ const cell = ref(8);
 const mode = ref<Mode>('select');
 const layers = reactive<Layers>({rivers: true, resources: true, cities: true, units: true, starts: true, grid: false});
 const layerNames: { key: keyof Layers, title: string, icon: string }[] = [
-  {key: 'rivers', title: 'Rivers', icon: 'mdi-waves'},
-  {key: 'resources', title: 'Resources', icon: 'mdi-diamond-stone'},
-  {key: 'cities', title: 'Cities', icon: 'mdi-home-city'},
-  {key: 'units', title: 'Units', icon: 'mdi-chess-pawn'},
-  {key: 'starts', title: 'Start positions', icon: 'mdi-flag'},
-  {key: 'grid', title: 'Grid', icon: 'mdi-grid'},
+  {key: 'rivers', title: 'layers.rivers', icon: 'mdi-waves'},
+  {key: 'resources', title: 'layers.resources', icon: 'mdi-diamond-stone'},
+  {key: 'cities', title: 'layers.cities', icon: 'mdi-home-city'},
+  {key: 'units', title: 'layers.units', icon: 'mdi-chess-pawn'},
+  {key: 'starts', title: 'layers.starts', icon: 'mdi-flag'},
+  {key: 'grid', title: 'layers.grid', icon: 'mdi-grid'},
 ];
 const activeLayers = computed({
   get: () => layerNames.filter(l => layers[l.key]).map(l => l.key),
@@ -319,7 +340,7 @@ function onMouseDown(e: MouseEvent) {
   if (!at || e.button !== 0) return;
   if (mode.value === 'paint') {
     if (brushIsEmpty()) {
-      error.value = 'The brush paints nothing: switch on a property or pick a preset.';
+      error.value = t('world.brushEmpty');
       return;
     }
     stroke = {cells: new Map(), last: at};
@@ -432,22 +453,24 @@ const hoverText = computed(() => {
   if (!v || !h) return '';
   const i = h.y * v.width + h.x;
   const parts = [`${h.x}, ${h.y}`];
-  const t = v.terrain[i];
-  if (t >= 0) parts.push(describeType(enums.terrains, v.terrains[t]));
-  parts.push(['Peak', 'Hills', 'Flat', 'Water'][v.plot_type[i]] ?? '');
+  const terrain = v.terrain[i];
+  if (terrain >= 0) parts.push(describeType(enums.terrains, v.terrains[terrain]));
+  parts.push(heightNames.value[v.plot_type[i]] ?? '');
   if (v.feature[i] >= 0) parts.push(describeType(enums.features, v.features[v.feature[i]]));
   if (v.bonus[i] >= 0) parts.push(describeType(enums.bonuses, v.bonuses[v.bonus[i]]));
-  if (v.city_owner[i] >= 0) parts.push(`city of ${playerName(players.value, v.city_owner[i])}`);
-  if (v.unit_count[i] > 0) parts.push(`${v.unit_count[i]} unit(s) of ${playerName(players.value, v.unit_owner[i])}`);
+  if (v.city_owner[i] >= 0) parts.push(t('world.cityOf', {player: playerName(players.value, v.city_owner[i])}));
+  if (v.unit_count[i] > 0) parts.push(t('world.unitsOf', {n: v.unit_count[i], player: playerName(players.value, v.unit_owner[i])}));
   const here = starts.value.filter(s => s.x === h.x && s.y === h.y);
-  for (const s of here) parts.push(`start of #${s.player} ${playerName(players.value, s.player)}${s.random ? ' (random start)' : ''}`);
+  for (const s of here) {
+    parts.push(t('world.startOf', {n: s.player, player: playerName(players.value, s.player)}) + (s.random ? ' ' + t('world.randomStart') : ''));
+  }
   return parts.filter(Boolean).join(' · ');
 });
 
 const hints: Record<Mode, string> = {
-  select: 'Click a plot to edit it. Drag a flag to move a start position. Ctrl+wheel zooms.',
-  paint: 'Drag over the map to paint with the brush. Ctrl+Z undoes a stroke.',
-  river: 'Click near the edge of a plot to add or remove a river there.',
+  select: 'world.hintSelect',
+  paint: 'world.hintPaint',
+  river: 'world.hintRiver',
 };
 
 const canvasCursor = computed(() => {
@@ -461,29 +484,29 @@ const canvasCursor = computed(() => {
 
 <template>
   <div v-if="!view" class="pa-5 text-grey">
-    The map has no plots. Open a map, or create plots for a new map on the Map tab.
+    {{ $t('world.noPlots') }}
   </div>
 
   <div v-else class="world d-flex fill-height">
     <div class="d-flex flex-column flex-grow-1" style="min-width: 0">
       <div class="d-flex align-center flex-wrap px-2 pt-2" style="gap: 8px">
         <v-btn-toggle v-model="mode" mandatory density="compact" divided variant="outlined" color="primary">
-          <v-btn value="select" size="small" title="Select and edit plots, move start positions">
+          <v-btn value="select" size="small" :title="$t('world.modeSelect')">
             <v-icon icon="mdi-cursor-default"/>
           </v-btn>
-          <v-btn value="paint" size="small" title="Paint terrain, height, features and resources">
+          <v-btn value="paint" size="small" :title="$t('world.modePaint')">
             <v-icon icon="mdi-brush"/>
           </v-btn>
-          <v-btn value="river" size="small" title="Add and remove rivers">
+          <v-btn value="river" size="small" :title="$t('world.modeRiver')">
             <v-icon icon="mdi-current-ac"/>
           </v-btn>
         </v-btn-toggle>
         <v-btn icon="mdi-undo" size="small" variant="text" :disabled="!history.undo"
-               :title="history.undo ? `Undo ${history.undo} (Ctrl+Z)` : 'Nothing to undo'" @click="step(true)"/>
+               :title="history.undo ? $t('world.undo', {what: historyLabel(history.undo)}) : $t('world.nothingToUndo')" @click="step(true)"/>
         <v-btn icon="mdi-redo" size="small" variant="text" :disabled="!history.redo"
-               :title="history.redo ? `Redo ${history.redo} (Ctrl+Y)` : 'Nothing to redo'" @click="step(false)"/>
+               :title="history.redo ? $t('world.redo', {what: historyLabel(history.redo)}) : $t('world.nothingToRedo')" @click="step(false)"/>
         <v-btn-toggle v-model="activeLayers" multiple density="compact" divided variant="outlined">
-          <v-btn v-for="l in layerNames" :key="l.key" :value="l.key" size="small" :title="l.title">
+          <v-btn v-for="l in layerNames" :key="l.key" :value="l.key" size="small" :title="$t(l.title)">
             <v-icon :icon="l.icon"/>
           </v-btn>
         </v-btn-toggle>
@@ -492,10 +515,10 @@ const canvasCursor = computed(() => {
         <v-slider v-model="cell" :min="2" :max="maxCell" :step="1" hide-details density="compact"
                   style="max-width: 180px; min-width: 120px"/>
         <v-icon icon="mdi-magnify-plus-outline" size="small"/>
-        <v-btn size="small" variant="text" prepend-icon="mdi-fit-to-screen-outline" @click="fitToScreen">Fit</v-btn>
+        <v-btn size="small" variant="text" prepend-icon="mdi-fit-to-screen-outline" @click="fitToScreen">{{ $t('world.fit') }}</v-btn>
       </div>
       <div class="px-3 py-1 text-caption text-medium-emphasis text-truncate hover-line">
-        {{ hoverText || hints[mode] }}
+        {{ hoverText || $t(hints[mode]) }}
       </div>
       <v-alert v-if="error" type="error" variant="tonal" density="compact" class="mx-2 mb-1" closable
                @click:close="error = ''">{{ error }}
@@ -510,19 +533,14 @@ const canvasCursor = computed(() => {
     <div class="editor-panel">
       <PaintPanel v-if="mode === 'paint'"/>
       <div v-else-if="mode === 'river'" class="pa-3">
-        <h3 class="mb-1">Rivers</h3>
-        <div class="text-body-2">
-          Click near the edge between two plots to add a river there, click it again to remove it.
-          The highlighted edge shows where the click goes.
-        </div>
-        <div class="text-caption text-medium-emphasis mt-2">
-          New rivers flow east or south; change the direction of a river in the plot editor (select mode).
-        </div>
+        <h3 class="mb-1">{{ $t('world.riversTitle') }}</h3>
+        <div class="text-body-2">{{ $t('world.riversHelp') }}</div>
+        <div class="text-caption text-medium-emphasis mt-2">{{ $t('world.riversDirection') }}</div>
       </div>
       <PlotEditor v-else-if="selectedPlot" :plot="selectedPlot" :players="players" @changed="refreshView"/>
       <div v-else class="pa-4 text-grey text-body-2">
-        <template v-if="selected">There is no plot at {{ selected.x }}, {{ selected.y }}.</template>
-        <template v-else>Select a plot on the map to see and edit its terrain, resources, cities and units.</template>
+        <template v-if="selected">{{ $t('world.noPlotAt', {x: selected.x, y: selected.y}) }}</template>
+        <template v-else>{{ $t('world.selectHint') }}</template>
       </div>
     </div>
   </div>

@@ -34,6 +34,10 @@ export function GetGame() {
   return window['go']['editor']['App']['GetGame']();
 }
 
+export function GetLanguages() {
+  return window['go']['editor']['App']['GetLanguages']();
+}
+
 export function GetMapInfo() {
   return window['go']['editor']['App']['GetMapInfo']();
 }

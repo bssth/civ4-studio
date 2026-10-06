@@ -4,12 +4,14 @@ import {SetPlot} from "../../wailsjs/go/editor/App";
 import {editor} from "../../wailsjs/go/models";
 import {batched, emptyIfNone, enums, NONE, noneIfEmpty, playerName, withCurrent, withNone} from "../store";
 import {PLOT_HILLS, PLOT_LAND, PLOT_OCEAN, PLOT_PEAK} from "../mapRender";
+import {useI18n} from "vue-i18n";
 
 const props = defineProps<{
   plot: editor.Plot,
   players: editor.Player[],
 }>();
 const emit = defineEmits<{ (e: 'changed'): void }>();
+const {t} = useI18n();
 
 // Local editable copy, sent to the backend on every change
 const plot = ref<editor.Plot>(JSON.parse(JSON.stringify(props.plot)));
@@ -39,15 +41,15 @@ watch(plot, save, {deep: true});
 
 // Flow directions of the game: 0 north, 1 east, 2 south, 3 west. Without a river the direction is not
 // written to the file, so a new river always gets the default direction.
-const westEast = [{value: 1, title: 'East'}, {value: 3, title: 'West'}];
-const northSouth = [{value: 0, title: 'North'}, {value: 2, title: 'South'}];
+const westEast = computed(() => [{value: 1, title: t('dir.east')}, {value: 3, title: t('dir.west')}]);
+const northSouth = computed(() => [{value: 0, title: t('dir.north')}, {value: 2, title: t('dir.south')}]);
 
-const plotTypes = [
-  {value: PLOT_PEAK, title: 'Peak'},
-  {value: PLOT_HILLS, title: 'Hills'},
-  {value: PLOT_LAND, title: 'Flat'},
-  {value: PLOT_OCEAN, title: 'Water'},
-];
+const plotTypes = computed(() => [
+  {value: PLOT_PEAK, title: t('height.peak')},
+  {value: PLOT_HILLS, title: t('height.hills')},
+  {value: PLOT_LAND, title: t('height.flat')},
+  {value: PLOT_OCEAN, title: t('height.water')},
+]);
 
 function optional(options: editor.EnumOption[], value: string | null | undefined) {
   return withNone(withCurrent(options, emptyIfNone(value)));
@@ -91,7 +93,7 @@ function defaultOwner(): number {
 
 function addCity() {
   plot.value.Cities = [...(plot.value.Cities ?? []), {
-    CityOwner: defaultOwner(), CityName: 'New city', CityPopulation: 1,
+    CityOwner: defaultOwner(), CityName: t('plotEditor.newCity'), CityPopulation: 1,
     ProductionUnit: '', ProductionBuilding: '', ProductionProject: '', ProductionProcess: '',
     BuildingType: [], ReligionType: [], HolyCityReligionType: [], ScriptData: '', PlayerCulture: {},
   }];
@@ -112,17 +114,18 @@ function removeAt<T>(list: T[] | null, index: number): T[] {
 }
 
 const riverText = computed(() => {
-  const parts = [];
-  if (plot.value.IsNOfRiver) parts.push('south edge');
-  if (plot.value.IsWOfRiver) parts.push('east edge');
-  return parts.length ? 'River along the ' + parts.join(' and ') : '';
+  const south = plot.value.IsNOfRiver, east = plot.value.IsWOfRiver;
+  if (south && east) return t('plotEditor.riverBoth');
+  if (south) return t('plotEditor.riverSouth');
+  if (east) return t('plotEditor.riverEast');
+  return '';
 });
 </script>
 
 <template>
   <div class="pa-3">
     <div class="d-flex align-center mb-2">
-      <h3>Plot {{ plot.X }}, {{ plot.Y }}</h3>
+      <h3>{{ $t('plotEditor.title', {x: plot.X, y: plot.Y}) }}</h3>
       <v-spacer/>
       <span v-if="riverText" class="text-caption text-medium-emphasis">{{ riverText }}</span>
     </div>
@@ -131,95 +134,95 @@ const riverText = computed(() => {
 
     <v-row dense>
       <v-col cols="7">
-        <v-select label="Terrain" density="compact" hide-details
+        <v-select :label="$t('field.terrain')" density="compact" hide-details
                   :items="withCurrent(enums.terrains, plot.TerrainType)" item-value="type" item-title="description"
                   v-model="plot.TerrainType"/>
       </v-col>
       <v-col cols="5">
-        <v-select label="Height" density="compact" hide-details :items="plotTypes" v-model="plot.PlotType"/>
+        <v-select :label="$t('field.height')" density="compact" hide-details :items="plotTypes" v-model="plot.PlotType"/>
       </v-col>
       <v-col cols="8">
-        <v-select label="Feature" density="compact" hide-details
+        <v-select :label="$t('field.feature')" density="compact" hide-details
                   :items="optional(enums.features, plot.FeatureType?.[0])" item-value="type" item-title="description"
                   v-model="feature"/>
       </v-col>
       <v-col cols="4">
-        <v-text-field label="Variety" type="number" density="compact" hide-details min="0"
+        <v-text-field :label="$t('field.variety')" type="number" density="compact" hide-details min="0"
                       :disabled="!plot.FeatureType?.length" v-model.number="variety"/>
       </v-col>
       <v-col cols="12">
-        <v-autocomplete label="Resource" density="compact" hide-details
+        <v-autocomplete :label="$t('field.resource')" density="compact" hide-details
                         :items="optional(enums.bonuses, plot.BonusType)" item-value="type" item-title="description"
                         :model-value="noneIfEmpty(plot.BonusType)"
                         @update:model-value="(v: string) => plot.BonusType = emptyIfNone(v)"/>
       </v-col>
       <v-col cols="7">
-        <v-autocomplete label="Improvement" density="compact" hide-details
+        <v-autocomplete :label="$t('field.improvement')" density="compact" hide-details
                         :items="optional(enums.improvements, plot.ImprovementType)" item-value="type"
                         item-title="description"
                         :model-value="noneIfEmpty(plot.ImprovementType)"
                         @update:model-value="(v: string) => plot.ImprovementType = emptyIfNone(v)"/>
       </v-col>
       <v-col cols="5">
-        <v-select label="Route" density="compact" hide-details
+        <v-select :label="$t('field.route')" density="compact" hide-details
                   :items="optional(enums.routes, plot.RouteType)" item-value="type" item-title="description"
                   :model-value="noneIfEmpty(plot.RouteType)"
                   @update:model-value="(v: string) => plot.RouteType = emptyIfNone(v)"/>
       </v-col>
       <v-col cols="12">
-        <v-text-field label="Landmark text" density="compact" hide-details v-model="plot.Landmark"/>
+        <v-text-field :label="$t('plotEditor.landmark')" density="compact" hide-details v-model="plot.Landmark"/>
       </v-col>
     </v-row>
     <v-checkbox v-model="plot.StartingPlot" density="compact" hide-details
-                label="Starting plot for a random civilization"/>
+                :label="$t('plotEditor.randomStart')"/>
 
     <v-divider class="my-2"/>
-    <h4 class="mb-1">Rivers</h4>
+    <h4 class="mb-1">{{ $t('plotEditor.rivers') }}</h4>
     <div class="d-flex align-center" style="gap: 8px">
-      <v-checkbox v-model="plot.IsNOfRiver" density="compact" hide-details label="South edge"
+      <v-checkbox v-model="plot.IsNOfRiver" density="compact" hide-details :label="$t('plotEditor.southEdge')"
                   @update:model-value="(on: boolean | null) => on && (plot.RiverWEDirection = 1)"/>
-      <v-select v-if="plot.IsNOfRiver" label="Flows" density="compact" hide-details style="max-width: 140px"
+      <v-select v-if="plot.IsNOfRiver" :label="$t('plotEditor.flows')" density="compact" hide-details style="max-width: 140px"
                 :items="westEast" v-model="plot.RiverWEDirection"/>
     </div>
     <div class="d-flex align-center" style="gap: 8px">
-      <v-checkbox v-model="plot.IsWOfRiver" density="compact" hide-details label="East edge"
+      <v-checkbox v-model="plot.IsWOfRiver" density="compact" hide-details :label="$t('plotEditor.eastEdge')"
                   @update:model-value="(on: boolean | null) => on && (plot.RiverNSDirection = 2)"/>
-      <v-select v-if="plot.IsWOfRiver" label="Flows" density="compact" hide-details style="max-width: 140px"
+      <v-select v-if="plot.IsWOfRiver" :label="$t('plotEditor.flows')" density="compact" hide-details style="max-width: 140px"
                 :items="northSouth" v-model="plot.RiverNSDirection"/>
     </div>
 
     <v-divider class="my-2"/>
     <div class="d-flex align-center">
-      <h4>Cities</h4>
+      <h4>{{ $t('plotEditor.cities') }}</h4>
       <v-spacer/>
-      <v-btn size="small" variant="text" prepend-icon="mdi-plus" @click="addCity">Add city</v-btn>
+      <v-btn size="small" variant="text" prepend-icon="mdi-plus" @click="addCity">{{ $t('plotEditor.addCity') }}</v-btn>
     </div>
     <v-card v-for="(city, idx) in plot.Cities ?? []" :key="'c' + idx" variant="outlined" class="pa-2 mb-2">
       <v-row dense>
         <v-col cols="12" class="d-flex align-center">
-          <v-text-field label="Name" density="compact" hide-details v-model="city.CityName"/>
-          <v-btn icon="mdi-delete" variant="text" size="small" title="Remove city"
+          <v-text-field :label="$t('plotEditor.name')" density="compact" hide-details v-model="city.CityName"/>
+          <v-btn icon="mdi-delete" variant="text" size="small" :title="$t('plotEditor.removeCity')"
                  @click="plot.Cities = removeAt(plot.Cities, idx)"/>
         </v-col>
         <v-col cols="8">
-          <v-select label="Owner" density="compact" hide-details :items="ownerItems" v-model="city.CityOwner"/>
+          <v-select :label="$t('plotEditor.owner')" density="compact" hide-details :items="ownerItems" v-model="city.CityOwner"/>
         </v-col>
         <v-col cols="4">
-          <v-text-field label="Population" type="number" min="1" density="compact" hide-details
+          <v-text-field :label="$t('plotEditor.population')" type="number" min="1" density="compact" hide-details
                         v-model.number="city.CityPopulation"/>
         </v-col>
         <v-col cols="12">
-          <v-autocomplete label="Buildings" multiple chips closable-chips density="compact" hide-details
+          <v-autocomplete :label="$t('plotEditor.buildings')" multiple chips closable-chips density="compact" hide-details
                           :items="withCurrent(enums.buildings, ...(city.BuildingType ?? []))"
                           item-value="type" item-title="description" v-model="city.BuildingType"/>
         </v-col>
         <v-col cols="6">
-          <v-select label="Religions" multiple chips density="compact" hide-details
+          <v-select :label="$t('plotEditor.religions')" multiple chips density="compact" hide-details
                     :items="withCurrent(enums.religions, ...(city.ReligionType ?? []))"
                     item-value="type" item-title="description" v-model="city.ReligionType"/>
         </v-col>
         <v-col cols="6">
-          <v-select label="Holy city of" multiple chips density="compact" hide-details
+          <v-select :label="$t('plotEditor.holyCity')" multiple chips density="compact" hide-details
                     :items="withCurrent(enums.religions, ...(city.HolyCityReligionType ?? []))"
                     item-value="type" item-title="description" v-model="city.HolyCityReligionType"/>
         </v-col>
@@ -228,37 +231,37 @@ const riverText = computed(() => {
 
     <v-divider class="my-2"/>
     <div class="d-flex align-center">
-      <h4>Units</h4>
+      <h4>{{ $t('plotEditor.units') }}</h4>
       <v-spacer/>
-      <v-btn size="small" variant="text" prepend-icon="mdi-plus" @click="addUnit">Add unit</v-btn>
+      <v-btn size="small" variant="text" prepend-icon="mdi-plus" @click="addUnit">{{ $t('plotEditor.addUnit') }}</v-btn>
     </div>
     <v-card v-for="(unit, idx) in plot.Units ?? []" :key="'u' + idx" variant="outlined" class="pa-2 mb-2">
       <v-row dense>
         <v-col cols="12" class="d-flex align-center">
-          <v-autocomplete label="Unit" density="compact" hide-details
+          <v-autocomplete :label="$t('plotEditor.unit')" density="compact" hide-details
                           :items="withCurrent(enums.units, unit.UnitType)" item-value="type" item-title="description"
                           v-model="unit.UnitType"/>
-          <v-btn icon="mdi-delete" variant="text" size="small" title="Remove unit"
+          <v-btn icon="mdi-delete" variant="text" size="small" :title="$t('plotEditor.removeUnit')"
                  @click="plot.Units = removeAt(plot.Units, idx)"/>
         </v-col>
         <v-col cols="6">
-          <v-select label="Owner" density="compact" hide-details :items="ownerItems" v-model="unit.UnitOwner"/>
+          <v-select :label="$t('plotEditor.owner')" density="compact" hide-details :items="ownerItems" v-model="unit.UnitOwner"/>
         </v-col>
         <v-col cols="3">
-          <v-text-field label="Level" type="number" min="0" density="compact" hide-details
+          <v-text-field :label="$t('plotEditor.level')" type="number" min="0" density="compact" hide-details
                         v-model.number="unit.Level"/>
         </v-col>
         <v-col cols="3">
-          <v-text-field label="XP" type="number" min="0" density="compact" hide-details
+          <v-text-field :label="$t('plotEditor.xp')" type="number" min="0" density="compact" hide-details
                         v-model.number="unit.Experience"/>
         </v-col>
         <v-col cols="12">
-          <v-autocomplete label="Promotions" multiple chips closable-chips density="compact" hide-details
+          <v-autocomplete :label="$t('plotEditor.promotions')" multiple chips closable-chips density="compact" hide-details
                           :items="withCurrent(enums.promotions, ...(unit.PromotionType ?? []))"
                           item-value="type" item-title="description" v-model="unit.PromotionType"/>
         </v-col>
         <v-col cols="12">
-          <v-autocomplete label="AI role" density="compact" hide-details
+          <v-autocomplete :label="$t('plotEditor.aiRole')" density="compact" hide-details
                           :items="optional(enums.unitAIs, unit.UnitAIType)" item-value="type" item-title="description"
                           :model-value="noneIfEmpty(unit.UnitAIType)"
                           @update:model-value="(v: string) => unit.UnitAIType = emptyIfNone(v)"/>

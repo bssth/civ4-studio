@@ -81,13 +81,16 @@ type MapStats struct {
 	StartingPlots int         `json:"starting_plots"`
 	Bonuses       int         `json:"bonuses"`
 	Terrains      []CountStat `json:"terrains"`
-	// Problems are human-readable inconsistencies found in the map
-	Problems []string `json:"problems"`
+	// Problems are inconsistencies found in the map
+	Problems []Problem `json:"problems"`
 }
 
 // Stats calculates map statistics and checks plots for basic consistency
 func (m *WbMap) Stats() *MapStats {
-	stats := &MapStats{Signs: len(m.Signs), Plots: len(m.Plots), Problems: []string{}}
+	stats := &MapStats{Signs: len(m.Signs), Plots: len(m.Plots), Problems: []Problem{}}
+	mapProblem := func(code string, args map[string]string, message string) {
+		stats.Problems = append(stats.Problems, newProblem(SeverityError, "map", code, args, message, -1, -1, -1, -1))
+	}
 	if m.Map != nil {
 		stats.ExpectedPlots = int(m.Map.GridWidth * m.Map.GridHeight)
 	}
@@ -132,16 +135,16 @@ func (m *WbMap) Stats() *MapStats {
 	})
 
 	if m.Map == nil {
-		stats.Problems = append(stats.Problems, "the map has no BeginMap section")
+		mapProblem("map.noSection", nil, "the map has no BeginMap section")
 	} else if stats.Plots != stats.ExpectedPlots {
-		stats.Problems = append(stats.Problems, fmt.Sprintf(
-			"the map has %d plots, but %dx%d = %d are expected", stats.Plots, m.Map.GridWidth, m.Map.GridHeight, stats.ExpectedPlots))
+		mapProblem("map.plotCount", args("plots", stats.Plots, "width", m.Map.GridWidth, "height", m.Map.GridHeight, "expected", stats.ExpectedPlots),
+			fmt.Sprintf("the map has %d plots, but %dx%d = %d are expected", stats.Plots, m.Map.GridWidth, m.Map.GridHeight, stats.ExpectedPlots))
 	}
 	if outside > 0 {
-		stats.Problems = append(stats.Problems, fmt.Sprintf("%d plots are outside of the map grid", outside))
+		mapProblem("map.outside", args("n", outside), fmt.Sprintf("%d plots are outside of the map grid", outside))
 	}
 	if m.Map != nil && m.Map.TopLatitude <= m.Map.BottomLatitude {
-		stats.Problems = append(stats.Problems, "top latitude must be greater than bottom latitude")
+		mapProblem("map.latitudes", nil, "top latitude must be greater than bottom latitude")
 	}
 
 	return stats
