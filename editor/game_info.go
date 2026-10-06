@@ -70,6 +70,8 @@ type TypeInfo struct {
 	ColorTypePrimary string
 	// Color value-only field: "#rrggbb", empty if the entry has no color
 	RGB string
+	// Terrain-only field: the terrain is water (ocean, coast, lake)
+	Water bool
 }
 
 // InfoTable keeps entries of one category in the order they are defined in XML files

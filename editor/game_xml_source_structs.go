@@ -66,6 +66,7 @@ type civ4InfoEntry struct {
 	GridWidth          int      `xml:"iGridWidth"`
 	GridHeight         int      `xml:"iGridHeight"`
 	ColorTypePrimary   string   `xml:"ColorTypePrimary"`
+	Water              string   `xml:"bWater"`
 	Red                string   `xml:"fRed"`
 	Green              string   `xml:"fGreen"`
 	Blue               string   `xml:"fBlue"`

@@ -1,14 +1,53 @@
 <script setup lang="ts">
-import {computed, nextTick, onMounted, onUnmounted, reactive, ref, watch} from "vue";
-import {GetMapView, GetPlayers, GetPlot, SetPlayerStart} from "../../wailsjs/go/editor/App";
+import {computed, nextTick, onMounted, onUnmounted, reactive, ref, shallowRef, watch} from "vue";
+import {
+  GetMapView,
+  GetPlayers,
+  GetPlot,
+  HistoryState,
+  PaintPlots,
+  Redo,
+  SetPlayerStart,
+  SetPlot,
+  Undo
+} from "../../wailsjs/go/editor/App";
 import {editor} from "../../wailsjs/go/models";
-import {batched, describeType, enums, focusPlot, mapVersion, NONE, playerColor, playerName} from "../store";
-import {drawMap, Layers, StartMarker} from "../mapRender";
+import {
+  batched,
+  brush,
+  brushIsEmpty,
+  brushOperation,
+  describeType,
+  enums,
+  focusPlot,
+  mapVersion,
+  NONE,
+  playerColor,
+  playerName
+} from "../store";
+import {
+  brushCells,
+  drawMap,
+  FLAG_IMPROVEMENT,
+  FLAG_ROUTE,
+  Layers,
+  lineCells,
+  nearestEdge,
+  PLOT_LAND,
+  PLOT_OCEAN,
+  RiverEdge,
+  StartMarker
+} from "../mapRender";
 import PlotEditor from "./PlotEditor.vue";
+import PaintPanel from "./PaintPanel.vue";
 
-const view = ref<editor.MapView | null>(null);
+type Mode = 'select' | 'paint' | 'river';
+
+// The view holds big arrays, it is replaced or redrawn explicitly instead of being deeply reactive
+const view = shallowRef<editor.MapView | null>(null);
 const players = ref<editor.Player[]>([]);
 const cell = ref(8);
+const mode = ref<Mode>('select');
 const layers = reactive<Layers>({rivers: true, resources: true, cities: true, units: true, starts: true, grid: false});
 const layerNames: { key: keyof Layers, title: string, icon: string }[] = [
   {key: 'rivers', title: 'Rivers', icon: 'mdi-waves'},
@@ -26,16 +65,27 @@ const activeLayers = computed({
 const selected = ref<{ x: number, y: number } | null>(null);
 const selectedPlot = ref<editor.Plot | null>(null);
 const hover = ref<{ x: number, y: number } | null>(null);
+const hoverEdge = ref<RiverEdge | null>(null);
 const error = ref('');
+const history = ref<editor.HistoryState>(editor.HistoryState.createFrom({undo: '', redo: ''}));
 
 const canvas = ref<HTMLCanvasElement | null>(null);
 const scroller = ref<HTMLElement | null>(null);
 const dpr = window.devicePixelRatio || 1;
 
+function setView(v: editor.MapView | null) {
+  view.value = v && v.width > 0 && v.height > 0 ? v : null;
+}
+
+async function refreshHistory() {
+  history.value = await HistoryState();
+}
+
 async function load(fit = false) {
   const [v, p] = await Promise.all([GetMapView(), GetPlayers()]);
-  view.value = v && v.width > 0 && v.height > 0 ? v : null;
+  setView(v);
   players.value = p ?? [];
+  await refreshHistory();
   if (fit) {
     await nextTick();
     fitToScreen();
@@ -44,13 +94,19 @@ async function load(fit = false) {
 }
 
 const refreshView = batched(async () => {
-  const v = await GetMapView();
-  view.value = v && v.width > 0 && v.height > 0 ? v : null;
+  setView(await GetMapView());
+  await refreshHistory();
 });
 
 onMounted(async () => {
   await load(true);
   await consumeFocus();
+  window.addEventListener('keydown', onKeyDown);
+});
+
+onUnmounted(() => {
+  cancelAnimationFrame(frame);
+  window.removeEventListener('keydown', onKeyDown);
 });
 
 // A plot requested from another tab (e.g. the problem list): zoom in, center it and open its editor
@@ -58,6 +114,7 @@ async function consumeFocus() {
   const target = focusPlot.value;
   if (!target || !view.value) return;
   focusPlot.value = null;
+  mode.value = 'select';
   cell.value = Math.max(cell.value, Math.min(12, maxCell.value));
   await select(target.x, target.y);
   await nextTick();
@@ -116,10 +173,12 @@ function draw() {
   const c = canvas.value, v = view.value;
   if (!c || !v) return;
   const size = cell.value;
-  c.width = v.width * size * dpr;
-  c.height = v.height * size * dpr;
-  c.style.width = `${v.width * size}px`;
-  c.style.height = `${v.height * size}px`;
+  if (c.width !== v.width * size * dpr || c.height !== v.height * size * dpr) {
+    c.width = v.width * size * dpr;
+    c.height = v.height * size * dpr;
+    c.style.width = `${v.width * size}px`;
+    c.style.height = `${v.height * size}px`;
+  }
   const ctx = c.getContext('2d');
   if (!ctx) return;
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
@@ -128,12 +187,14 @@ function draw() {
     layers,
     ownerColor: owner => playerColor(players.value, owner),
     starts: starts.value,
-    selected: selected.value,
+    selected: mode.value === 'select' ? selected.value : null,
+    brush: mode.value === 'paint' && hover.value ? {...hover.value, size: brush.size} : null,
+    edge: mode.value === 'river' ? hoverEdge.value : null,
   });
 }
 
-watch([view, cell, layers, selected, starts, () => enums.colors], scheduleDraw, {deep: true});
-onUnmounted(() => cancelAnimationFrame(frame));
+watch([view, cell, selected, hover, hoverEdge, mode, () => brush.size], scheduleDraw);
+watch([layers, starts, () => enums.colors], scheduleDraw, {deep: true});
 
 function cellAt(e: MouseEvent): { x: number, y: number } | null {
   const v = view.value;
@@ -144,9 +205,132 @@ function cellAt(e: MouseEvent): { x: number, y: number } | null {
   return {x, y: v.height - 1 - row};
 }
 
+// --- Painting -------------------------------------------------------------
+
+// Cells of the current stroke, sent to the backend as one undoable step when the mouse is released
+let stroke: { cells: Map<string, { x: number, y: number }>, last: { x: number, y: number } } | null = null;
+
+function isWaterName(terrain: string): boolean {
+  return /OCEAN|COAST|LAKE/.test(terrain);
+}
+
+/** Shows the stroke immediately; the backend result replaces it after the stroke */
+function preview(cells: { x: number, y: number }[]) {
+  const v = view.value;
+  if (!v) return;
+  const op = brushOperation();
+  const dictionary = (list: string[], value: string) => {
+    let i = list.indexOf(value);
+    if (i < 0) {
+      list.push(value);
+      i = list.length - 1;
+    }
+    return i;
+  };
+  for (const c of cells) {
+    const i = c.y * v.width + c.x;
+    if (op.terrain !== undefined) {
+      v.terrain[i] = dictionary(v.terrains, op.terrain);
+      if (op.plot_type === undefined) {
+        const water = isWaterName(op.terrain);
+        if (water) v.plot_type[i] = PLOT_OCEAN;
+        else if (v.plot_type[i] === PLOT_OCEAN) v.plot_type[i] = PLOT_LAND;
+      }
+    }
+    if (op.plot_type !== undefined) v.plot_type[i] = op.plot_type;
+    if (op.feature !== undefined) v.feature[i] = op.feature ? dictionary(v.features, op.feature) : -1;
+    if (op.bonus !== undefined) v.bonus[i] = op.bonus ? dictionary(v.bonuses, op.bonus) : -1;
+    if (op.improvement !== undefined) v.flags[i] = op.improvement ? v.flags[i] | FLAG_IMPROVEMENT : v.flags[i] & ~FLAG_IMPROVEMENT;
+    if (op.route !== undefined) v.flags[i] = op.route ? v.flags[i] | FLAG_ROUTE : v.flags[i] & ~FLAG_ROUTE;
+  }
+  scheduleDraw();
+}
+
+function paintAt(from: { x: number, y: number }, to: { x: number, y: number }) {
+  const v = view.value;
+  if (!v || !stroke) return;
+  const added = [];
+  for (const point of lineCells(from.x, from.y, to.x, to.y)) {
+    for (const c of brushCells(v, point.x, point.y, brush.size)) {
+      const key = `${c.x},${c.y}`;
+      if (!stroke.cells.has(key)) {
+        stroke.cells.set(key, c);
+        added.push(c);
+      }
+    }
+  }
+  stroke.last = to;
+  preview(added);
+}
+
+async function finishStroke() {
+  const s = stroke;
+  stroke = null;
+  if (!s || s.cells.size === 0) return;
+  try {
+    await PaintPlots(editor.PaintOp.createFrom({...brushOperation(), cells: [...s.cells.values()]}));
+    error.value = '';
+  } catch (err: any) {
+    error.value = String(err);
+  }
+  setView(await GetMapView());
+  await refreshHistory();
+  if (selected.value) selectedPlot.value = await GetPlot(selected.value.x, selected.value.y);
+}
+
+// --- Rivers ---------------------------------------------------------------
+
+function edgeAt(e: MouseEvent): RiverEdge | null {
+  const v = view.value, at = cellAt(e);
+  if (!v || !at) return null;
+  const fx = e.offsetX / cell.value - at.x;
+  const fy = e.offsetY / cell.value - (v.height - 1 - at.y);
+  return nearestEdge(v, at.x, at.y, fx, fy);
+}
+
+// Flow directions of the game: 0 north, 1 east, 2 south, 3 west. Without a river the direction is not
+// written to the file, so a new river always gets the default direction.
+async function toggleRiver(edge: RiverEdge) {
+  const plot = await GetPlot(edge.x, edge.y);
+  if (!plot) return;
+  const p = editor.Plot.createFrom(plot);
+  if (edge.side === 'south') {
+    p.IsNOfRiver = !p.IsNOfRiver;
+    if (p.IsNOfRiver) p.RiverWEDirection = 1;
+  } else {
+    p.IsWOfRiver = !p.IsWOfRiver;
+    if (p.IsWOfRiver) p.RiverNSDirection = 2;
+  }
+  try {
+    await SetPlot(p);
+    error.value = '';
+  } catch (err: any) {
+    error.value = String(err);
+  }
+  setView(await GetMapView());
+  await refreshHistory();
+  if (selected.value) selectedPlot.value = await GetPlot(selected.value.x, selected.value.y);
+}
+
+// --- Mouse ----------------------------------------------------------------
+
 function onMouseDown(e: MouseEvent) {
   const at = cellAt(e);
   if (!at || e.button !== 0) return;
+  if (mode.value === 'paint') {
+    if (brushIsEmpty()) {
+      error.value = 'The brush paints nothing: switch on a property or pick a preset.';
+      return;
+    }
+    stroke = {cells: new Map(), last: at};
+    paintAt(at, at);
+    return;
+  }
+  if (mode.value === 'river') {
+    const edge = edgeAt(e);
+    if (edge) toggleRiver(edge);
+    return;
+  }
   const marker = layers.starts ? starts.value.find(s => s.x === at.x && s.y === at.y) : undefined;
   drag.value = marker ? {player: marker.player, x: at.x, y: at.y, moved: false} : null;
 }
@@ -154,12 +338,25 @@ function onMouseDown(e: MouseEvent) {
 function onMouseMove(e: MouseEvent) {
   const at = cellAt(e);
   hover.value = at;
+  if (mode.value === 'river') {
+    hoverEdge.value = edgeAt(e);
+    return;
+  }
+  if (stroke && at && (e.buttons & 1) && (at.x !== stroke.last.x || at.y !== stroke.last.y)) {
+    paintAt(stroke.last, at);
+    return;
+  }
   if (drag.value && at && (drag.value.x !== at.x || drag.value.y !== at.y)) {
     drag.value = {...drag.value, x: at.x, y: at.y, moved: true};
   }
 }
 
 async function onMouseUp(e: MouseEvent) {
+  if (stroke) {
+    await finishStroke();
+    return;
+  }
+  if (mode.value !== 'select') return;
   const at = cellAt(e);
   const d = drag.value;
   drag.value = null;
@@ -174,6 +371,7 @@ async function onMouseUp(e: MouseEvent) {
     } catch (err: any) {
       error.value = String(err);
     }
+    await refreshHistory();
     return;
   }
   if (at) await select(at.x, at.y);
@@ -181,7 +379,9 @@ async function onMouseUp(e: MouseEvent) {
 
 function onMouseLeave() {
   hover.value = null;
+  hoverEdge.value = null;
   drag.value = null;
+  if (stroke) finishStroke();
 }
 
 async function select(x: number, y: number) {
@@ -193,6 +393,38 @@ function onWheel(e: WheelEvent) {
   if (!e.ctrlKey) return;
   e.preventDefault();
   cell.value = Math.max(2, Math.min(maxCell.value, cell.value + (e.deltaY < 0 ? 1 : -1)));
+}
+
+// --- Undo -----------------------------------------------------------------
+
+async function step(undo: boolean) {
+  try {
+    history.value = undo ? await Undo() : await Redo();
+    error.value = '';
+  } catch (err: any) {
+    error.value = String(err);
+    return;
+  }
+  // Undo may change plots and start positions
+  const [v, p] = await Promise.all([GetMapView(), GetPlayers()]);
+  setView(v);
+  players.value = p ?? [];
+  if (selected.value) selectedPlot.value = await GetPlot(selected.value.x, selected.value.y);
+}
+
+function onKeyDown(e: KeyboardEvent) {
+  if (!(e.ctrlKey || e.metaKey)) return;
+  // Text fields keep their own undo
+  const target = e.target as HTMLElement | null;
+  if (target && (target.isContentEditable || ['INPUT', 'TEXTAREA', 'SELECT'].includes(target.tagName))) return;
+  const key = e.key.toLowerCase();
+  if (key === 'z' && !e.shiftKey && history.value.undo) {
+    e.preventDefault();
+    step(true);
+  } else if ((key === 'y' || (key === 'z' && e.shiftKey)) && history.value.redo) {
+    e.preventDefault();
+    step(false);
+  }
 }
 
 const hoverText = computed(() => {
@@ -212,7 +444,14 @@ const hoverText = computed(() => {
   return parts.filter(Boolean).join(' · ');
 });
 
+const hints: Record<Mode, string> = {
+  select: 'Click a plot to edit it. Drag a flag to move a start position. Ctrl+wheel zooms.',
+  paint: 'Drag over the map to paint with the brush. Ctrl+Z undoes a stroke.',
+  river: 'Click near the edge of a plot to add or remove a river there.',
+};
+
 const canvasCursor = computed(() => {
+  if (mode.value !== 'select') return 'crosshair';
   if (drag.value) return 'grabbing';
   const h = hover.value;
   if (h && layers.starts && starts.value.some(s => s.x === h.x && s.y === h.y)) return 'grab';
@@ -228,6 +467,21 @@ const canvasCursor = computed(() => {
   <div v-else class="world d-flex fill-height">
     <div class="d-flex flex-column flex-grow-1" style="min-width: 0">
       <div class="d-flex align-center flex-wrap px-2 pt-2" style="gap: 8px">
+        <v-btn-toggle v-model="mode" mandatory density="compact" divided variant="outlined" color="primary">
+          <v-btn value="select" size="small" title="Select and edit plots, move start positions">
+            <v-icon icon="mdi-cursor-default"/>
+          </v-btn>
+          <v-btn value="paint" size="small" title="Paint terrain, height, features and resources">
+            <v-icon icon="mdi-brush"/>
+          </v-btn>
+          <v-btn value="river" size="small" title="Add and remove rivers">
+            <v-icon icon="mdi-current-ac"/>
+          </v-btn>
+        </v-btn-toggle>
+        <v-btn icon="mdi-undo" size="small" variant="text" :disabled="!history.undo"
+               :title="history.undo ? `Undo ${history.undo} (Ctrl+Z)` : 'Nothing to undo'" @click="step(true)"/>
+        <v-btn icon="mdi-redo" size="small" variant="text" :disabled="!history.redo"
+               :title="history.redo ? `Redo ${history.redo} (Ctrl+Y)` : 'Nothing to redo'" @click="step(false)"/>
         <v-btn-toggle v-model="activeLayers" multiple density="compact" divided variant="outlined">
           <v-btn v-for="l in layerNames" :key="l.key" :value="l.key" size="small" :title="l.title">
             <v-icon :icon="l.icon"/>
@@ -241,7 +495,7 @@ const canvasCursor = computed(() => {
         <v-btn size="small" variant="text" prepend-icon="mdi-fit-to-screen-outline" @click="fitToScreen">Fit</v-btn>
       </div>
       <div class="px-3 py-1 text-caption text-medium-emphasis text-truncate hover-line">
-        {{ hoverText || 'Click a plot to edit it. Drag a flag to move a start position. Ctrl+wheel zooms.' }}
+        {{ hoverText || hints[mode] }}
       </div>
       <v-alert v-if="error" type="error" variant="tonal" density="compact" class="mx-2 mb-1" closable
                @click:close="error = ''">{{ error }}
@@ -254,7 +508,18 @@ const canvasCursor = computed(() => {
     </div>
 
     <div class="editor-panel">
-      <PlotEditor v-if="selectedPlot" :plot="selectedPlot" :players="players" @changed="refreshView"/>
+      <PaintPanel v-if="mode === 'paint'"/>
+      <div v-else-if="mode === 'river'" class="pa-3">
+        <h3 class="mb-1">Rivers</h3>
+        <div class="text-body-2">
+          Click near the edge between two plots to add a river there, click it again to remove it.
+          The highlighted edge shows where the click goes.
+        </div>
+        <div class="text-caption text-medium-emphasis mt-2">
+          New rivers flow east or south; change the direction of a river in the plot editor (select mode).
+        </div>
+      </div>
+      <PlotEditor v-else-if="selectedPlot" :plot="selectedPlot" :players="players" @changed="refreshView"/>
       <div v-else class="pa-4 text-grey text-body-2">
         <template v-if="selected">There is no plot at {{ selected.x }}, {{ selected.y }}.</template>
         <template v-else>Select a plot on the map to see and edit its terrain, resources, cities and units.</template>

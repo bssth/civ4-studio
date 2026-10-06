@@ -82,6 +82,10 @@ export function HasMap() {
   return window['go']['editor']['App']['HasMap']();
 }
 
+export function HistoryState() {
+  return window['go']['editor']['App']['HistoryState']();
+}
+
 export function LaunchGame() {
   return window['go']['editor']['App']['LaunchGame']();
 }
@@ -100,6 +104,14 @@ export function OpenMap(arg1) {
 
 export function OpenMapDialog() {
   return window['go']['editor']['App']['OpenMapDialog']();
+}
+
+export function PaintPlots(arg1) {
+  return window['go']['editor']['App']['PaintPlots'](arg1);
+}
+
+export function Redo() {
+  return window['go']['editor']['App']['Redo']();
 }
 
 export function ResetGameXML() {
@@ -148,6 +160,10 @@ export function SwapPlayers(arg1, arg2) {
 
 export function TranslateKey(arg1) {
   return window['go']['editor']['App']['TranslateKey'](arg1);
+}
+
+export function Undo() {
+  return window['go']['editor']['App']['Undo']();
 }
 
 export function ValidateMap() {

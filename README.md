@@ -4,9 +4,9 @@ Welcome to the **Civilization 4 Map Studio**! This tool is designed to help you 
 and scenarios for [Civilization 4: Beyond the Sword](https://en.wikipedia.org/wiki/Civilization_IV), turn-based
 strategy game.
 
-The editor opens WorldBuilder saves (`*.CivBeyondSwordWBSave`), shows the map and lets you set up players, teams,
-diplomacy, cities, units and start positions with the names from the game and your mod instead of raw identifiers.
-Terrain painting is still done in the game's WorldBuilder; everything around it is easier here.
+The editor opens WorldBuilder saves (`*.CivBeyondSwordWBSave`), shows the map and lets you paint terrain, draw rivers
+and set up players, teams, diplomacy, cities, units and start positions with the names from the game and your mod
+instead of raw identifiers.
 
 ![World map with the plot editor](docs/screenshots/world.png)
 
@@ -15,6 +15,10 @@ Terrain painting is still done in the game's WorldBuilder; everything around it 
 - **World map.** Terrain, hills and peaks, forests and other features, rivers, resources, cities, units and start
   positions in player colors, with zoom and layers. Click a plot to change its terrain, feature, resource, improvement
   and route, or to add and edit cities and units. Drag a start flag to move a player.
+- **Painting.** A brush of size 1–9 paints terrain, height, features, resources, improvements and routes, with presets
+  like Ocean, Grassland, Hills or Forest; painting water or land terrain fixes the height. Rivers are added and removed
+  by clicking the edge between two plots. Every stroke and plot edit can be undone with `Ctrl+Z` and redone with
+  `Ctrl+Y`.
 - **Players.** Pick a civilization and a leader from the game or mod data: names, color and art style are filled in
   automatically. Handicap, state religion, starting era, starting civics and city names are editable too. Swap two
   player slots or clear one — units, cities, culture, attitudes and signs follow their players.
@@ -32,13 +36,16 @@ Terrain painting is still done in the game's WorldBuilder; everything around it 
 Game data is read from the base game, Warlords, Beyond the Sword and the selected mod, the same way the game does it:
 a mod file replaces the base file with the same path.
 
-Shortcuts: `Ctrl+N` new map, `Ctrl+O` open, `Ctrl+S` save, `Ctrl+Shift+S` save as, `Ctrl+wheel` zooms the map.
+Shortcuts: `Ctrl+N` new map, `Ctrl+O` open, `Ctrl+S` save, `Ctrl+Shift+S` save as, `Ctrl+Z` / `Ctrl+Y` undo and
+redo map edits, `Ctrl+wheel` zooms the map.
 
 | Players | Teams and diplomacy |
 |---|---|
 | ![Players](docs/screenshots/players.png) | ![Teams](docs/screenshots/teams.png) |
 | **Map properties** | **Scenario check** |
 | ![Map properties](docs/screenshots/map.png) | ![Scenario check](docs/screenshots/check.png) |
+
+![Painting with the brush](docs/screenshots/paint.png)
 
 ## Getting Started
 
@@ -121,7 +128,8 @@ comfortable with.
 ### Cautions and known problems
 
 1. The first `wails dev` / `wails build` may take a while as Go and npm dependencies are downloaded and compiled.
-2. Rivers are shown on the map but can not be edited yet, and the map view does not wrap around its edges.
+2. The map view does not wrap around its edges, and undo covers map edits on the World tab only (painting, plots,
+   rivers, start positions), not players, teams or game settings.
 3. You may encounter "@todo" markings in the code. You can implement and contribute what is marked, unless otherwise
    explicitly stated in the comment.
 4. I love French hot dogs 😋

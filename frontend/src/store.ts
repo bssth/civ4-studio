@@ -139,3 +139,75 @@ export function showPlot(x: number, y: number) {
     focusPlot.value = {x, y};
     requestedTab.value = 'world';
 }
+
+// Brush of the World tab. Each property is painted only when it is switched on;
+// an empty value removes a feature, resource, improvement or route.
+export interface BrushProperty<T> {
+    on: boolean;
+    value: T;
+}
+
+export const brush = reactive({
+    size: 1,
+    terrain: {on: true, value: 'TERRAIN_GRASS'} as BrushProperty<string>,
+    height: {on: false, value: 2} as BrushProperty<number>,
+    feature: {on: false, value: ''} as BrushProperty<string>,
+    variety: 0,
+    bonus: {on: false, value: ''} as BrushProperty<string>,
+    improvement: {on: false, value: ''} as BrushProperty<string>,
+    route: {on: false, value: ''} as BrushProperty<string>,
+});
+
+export interface BrushPreset {
+    title: string;
+    icon: string;
+    terrain?: string;
+    height?: number;
+    feature?: string;
+}
+
+// Presets switch on only what they set
+export const brushPresets: BrushPreset[] = [
+    {title: 'Ocean', icon: 'mdi-waves', terrain: 'TERRAIN_OCEAN', height: 3, feature: ''},
+    {title: 'Coast', icon: 'mdi-wave', terrain: 'TERRAIN_COAST', height: 3, feature: ''},
+    {title: 'Grassland', icon: 'mdi-grass', terrain: 'TERRAIN_GRASS'},
+    {title: 'Plains', icon: 'mdi-barley', terrain: 'TERRAIN_PLAINS'},
+    {title: 'Desert', icon: 'mdi-weather-sunny', terrain: 'TERRAIN_DESERT'},
+    {title: 'Tundra', icon: 'mdi-snowflake-variant', terrain: 'TERRAIN_TUNDRA'},
+    {title: 'Snow', icon: 'mdi-snowflake', terrain: 'TERRAIN_SNOW'},
+    {title: 'Flat', icon: 'mdi-minus', height: 2},
+    {title: 'Hills', icon: 'mdi-image-filter-hdr', height: 1},
+    {title: 'Peak', icon: 'mdi-triangle', height: 0},
+    {title: 'Forest', icon: 'mdi-pine-tree', feature: 'FEATURE_FOREST'},
+    {title: 'Jungle', icon: 'mdi-palm-tree', feature: 'FEATURE_JUNGLE'},
+    {title: 'No feature', icon: 'mdi-eraser', feature: ''},
+];
+
+export function applyBrushPreset(preset: BrushPreset) {
+    brush.terrain.on = preset.terrain !== undefined;
+    if (preset.terrain !== undefined) brush.terrain.value = preset.terrain;
+    brush.height.on = preset.height !== undefined;
+    if (preset.height !== undefined) brush.height.value = preset.height;
+    brush.feature.on = preset.feature !== undefined;
+    if (preset.feature !== undefined) brush.feature.value = preset.feature;
+    brush.bonus.on = false;
+    brush.improvement.on = false;
+    brush.route.on = false;
+}
+
+/** The paint operation for the current brush, without cells */
+export function brushOperation(): Omit<editor.PaintOp, 'cells' | 'convertValues'> {
+    return {
+        terrain: brush.terrain.on ? brush.terrain.value : undefined,
+        plot_type: brush.height.on ? brush.height.value : undefined,
+        feature: brush.feature.on ? brush.feature.value : undefined,
+        feature_variety: brush.variety || 0,
+        bonus: brush.bonus.on ? brush.bonus.value : undefined,
+        improvement: brush.improvement.on ? brush.improvement.value : undefined,
+        route: brush.route.on ? brush.route.value : undefined,
+    };
+}
+
+export function brushIsEmpty(): boolean {
+    return !(brush.terrain.on || brush.height.on || brush.feature.on || brush.bonus.on || brush.improvement.on || brush.route.on);
+}

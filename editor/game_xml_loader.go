@@ -195,6 +195,7 @@ func addInfoEntries(table *InfoTable, entries []civ4InfoEntry) {
 			GridHeight:         e.GridHeight,
 			ColorTypePrimary:   e.ColorTypePrimary,
 			RGB:                e.rgb(),
+			Water:              e.Water == "1",
 		})
 	}
 }

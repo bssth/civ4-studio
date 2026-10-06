@@ -55,6 +55,8 @@ type App struct {
 	dirty bool
 	// backedUp keeps files that were already copied to .bak in this session
 	backedUp map[string]bool
+	// history of map edits for undo/redo
+	history History
 }
 
 func NewApp() *App {
@@ -328,6 +330,7 @@ func (a *App) OpenMap(path string) error {
 	a.mu.Lock()
 	a.wbMap = wb
 	a.filePath = path
+	a.history.reset()
 	a.mu.Unlock()
 	a.setDirty(false)
 
@@ -345,6 +348,7 @@ func (a *App) NewMap() bool {
 	a.mu.Lock()
 	a.wbMap = NewWbMap()
 	a.filePath = ""
+	a.history.reset()
 	a.mu.Unlock()
 	// A new map is not saved anywhere yet
 	a.setDirty(true)

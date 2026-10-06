@@ -70,12 +70,77 @@ export interface StartMarker {
     random: boolean;
 }
 
+/** Edge of a plot where a river can be: south is isNOfRiver, east is isWOfRiver */
+export interface RiverEdge {
+    x: number;
+    y: number;
+    side: 'south' | 'east';
+}
+
 export interface RenderOptions {
     cell: number;
     layers: Layers;
     ownerColor: (owner: number) => string;
     starts: StartMarker[];
     selected: { x: number, y: number } | null;
+    // Square of plots the brush covers under the cursor
+    brush?: { x: number, y: number, size: number } | null;
+    // River edge under the cursor in river mode
+    edge?: RiverEdge | null;
+}
+
+/** Plots covered by a square brush of the given size centered at x, y, clipped to the map */
+export function brushCells(view: editor.MapView, x: number, y: number, size: number): { x: number, y: number }[] {
+    const r = Math.floor((size - 1) / 2);
+    const cells = [];
+    for (let dy = -r; dy <= r; dy++) {
+        for (let dx = -r; dx <= r; dx++) {
+            const cx = x + dx, cy = y + dy;
+            if (cx >= 0 && cy >= 0 && cx < view.width && cy < view.height) cells.push({x: cx, y: cy});
+        }
+    }
+    return cells;
+}
+
+/** Plots on the line between two plots, so fast mouse moves do not leave gaps */
+export function lineCells(x0: number, y0: number, x1: number, y1: number): { x: number, y: number }[] {
+    const cells = [];
+    const dx = Math.abs(x1 - x0), dy = -Math.abs(y1 - y0);
+    const sx = x0 < x1 ? 1 : -1, sy = y0 < y1 ? 1 : -1;
+    let err = dx + dy, x = x0, y = y0;
+    for (; ;) {
+        cells.push({x, y});
+        if (x === x1 && y === y1) break;
+        const e2 = 2 * err;
+        if (e2 >= dy) {
+            err += dy;
+            x += sx;
+        }
+        if (e2 <= dx) {
+            err += dx;
+            y += sy;
+        }
+    }
+    return cells;
+}
+
+/**
+ * River edge nearest to a point inside a plot. Edges of the neighbour plots are stored there:
+ * the north edge is the south edge of the plot above, the west edge is the east edge of the plot on the left.
+ */
+export function nearestEdge(view: editor.MapView, x: number, y: number, fx: number, fy: number): RiverEdge | null {
+    // fx, fy are 0..1 inside the plot, fy grows downwards on the screen
+    const distances: [number, RiverEdge][] = [
+        [1 - fy, {x, y, side: 'south'}],
+        [fy, {x, y: y + 1, side: 'south'}],
+        [1 - fx, {x, y, side: 'east'}],
+        [fx, {x: x - 1, y, side: 'east'}],
+    ];
+    distances.sort((a, b) => a[0] - b[0]);
+    for (const [, edge] of distances) {
+        if (edge.x >= 0 && edge.y >= 0 && edge.x < view.width && edge.y < view.height) return edge;
+    }
+    return null;
 }
 
 /** Canvas row of a map row: the game counts rows from the bottom */
@@ -253,6 +318,32 @@ export function drawMap(ctx: CanvasRenderingContext2D, view: editor.MapView, o: 
             }
             ctx.globalAlpha = 1;
         }
+    }
+
+    if (o.brush) {
+        const r = Math.floor((o.brush.size - 1) / 2);
+        const left = Math.max(0, o.brush.x - r), right = Math.min(w - 1, o.brush.x + r);
+        const top = Math.min(h - 1, o.brush.y + r), bottom = Math.max(0, o.brush.y - r);
+        ctx.strokeStyle = '#ffffff';
+        ctx.lineWidth = 2;
+        ctx.setLineDash([4, 3]);
+        ctx.strokeRect(left * cell, rowOf(view, top) * cell, (right - left + 1) * cell, (top - bottom + 1) * cell);
+        ctx.setLineDash([]);
+    }
+
+    if (o.edge) {
+        const px = o.edge.x * cell, py = rowOf(view, o.edge.y) * cell;
+        ctx.strokeStyle = '#ffeb3b';
+        ctx.lineWidth = Math.max(3, cell / 4);
+        ctx.beginPath();
+        if (o.edge.side === 'south') {
+            ctx.moveTo(px, py + cell);
+            ctx.lineTo(px + cell, py + cell);
+        } else {
+            ctx.moveTo(px + cell, py);
+            ctx.lineTo(px + cell, py + cell);
+        }
+        ctx.stroke();
     }
 
     if (o.selected) {

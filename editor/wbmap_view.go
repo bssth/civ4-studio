@@ -197,6 +197,10 @@ func (a *App) SetPlot(plot *Plot) error {
 	plot.teamRevealAsList = old.teamRevealAsList
 	changed := !bytes.Equal(old.ToWbFormat(), plot.ToWbFormat())
 	a.wbMap.Plots[i] = plot
+	if changed {
+		a.history.push(plotsEntry(fmt.Sprintf("edit plot %d, %d", plot.X, plot.Y),
+			[]int{i}, []*Plot{clonePlot(old)}, []*Plot{clonePlot(plot)}))
+	}
 	a.mu.Unlock()
 
 	if changed {
@@ -222,7 +226,23 @@ func (a *App) SetPlayerStart(player, x, y int) error {
 	}
 	p := a.wbMap.Players[player]
 	changed := p.StartingX != x || p.StartingY != y || p.RandomStartLocation
+	oldX, oldY, oldRandom := p.StartingX, p.StartingY, p.RandomStartLocation
 	p.StartingX, p.StartingY, p.RandomStartLocation = x, y, false
+	if changed {
+		setStart := func(sx, sy int, random bool) func(m *WbMap) {
+			return func(m *WbMap) {
+				if player < len(m.Players) {
+					q := m.Players[player]
+					q.StartingX, q.StartingY, q.RandomStartLocation = sx, sy, random
+				}
+			}
+		}
+		a.history.push(historyEntry{
+			label: fmt.Sprintf("move start of player %d", player),
+			undo:  setStart(oldX, oldY, oldRandom),
+			redo:  setStart(x, y, false),
+		})
+	}
 	a.mu.Unlock()
 
 	if changed {

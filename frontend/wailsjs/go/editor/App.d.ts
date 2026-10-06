@@ -42,6 +42,8 @@ export function GetWorldSizes():Promise<Array<editor.WorldSizeOption>>;
 
 export function HasMap():Promise<boolean>;
 
+export function HistoryState():Promise<editor.HistoryState>;
+
 export function LaunchGame():Promise<void>;
 
 export function LoadGameXML():Promise<void>;
@@ -51,6 +53,10 @@ export function NewMap():Promise<boolean>;
 export function OpenMap(arg1:string):Promise<void>;
 
 export function OpenMapDialog():Promise<string>;
+
+export function PaintPlots(arg1:editor.PaintOp):Promise<number>;
+
+export function Redo():Promise<editor.HistoryState>;
 
 export function ResetGameXML():Promise<void>;
 
@@ -75,6 +81,8 @@ export function SetTeams(arg1:Array<editor.Team>):Promise<void>;
 export function SwapPlayers(arg1:number,arg2:number):Promise<void>;
 
 export function TranslateKey(arg1:string):Promise<string>;
+
+export function Undo():Promise<editor.HistoryState>;
 
 export function ValidateMap():Promise<Array<editor.Problem>>;
 

@@ -37,6 +37,11 @@ const save = batched(async () => {
 });
 watch(plot, save, {deep: true});
 
+// Flow directions of the game: 0 north, 1 east, 2 south, 3 west. Without a river the direction is not
+// written to the file, so a new river always gets the default direction.
+const westEast = [{value: 1, title: 'East'}, {value: 3, title: 'West'}];
+const northSouth = [{value: 0, title: 'North'}, {value: 2, title: 'South'}];
+
 const plotTypes = [
   {value: PLOT_PEAK, title: 'Peak'},
   {value: PLOT_HILLS, title: 'Hills'},
@@ -167,6 +172,21 @@ const riverText = computed(() => {
     </v-row>
     <v-checkbox v-model="plot.StartingPlot" density="compact" hide-details
                 label="Starting plot for a random civilization"/>
+
+    <v-divider class="my-2"/>
+    <h4 class="mb-1">Rivers</h4>
+    <div class="d-flex align-center" style="gap: 8px">
+      <v-checkbox v-model="plot.IsNOfRiver" density="compact" hide-details label="South edge"
+                  @update:model-value="(on: boolean | null) => on && (plot.RiverWEDirection = 1)"/>
+      <v-select v-if="plot.IsNOfRiver" label="Flows" density="compact" hide-details style="max-width: 140px"
+                :items="westEast" v-model="plot.RiverWEDirection"/>
+    </div>
+    <div class="d-flex align-center" style="gap: 8px">
+      <v-checkbox v-model="plot.IsWOfRiver" density="compact" hide-details label="East edge"
+                  @update:model-value="(on: boolean | null) => on && (plot.RiverNSDirection = 2)"/>
+      <v-select v-if="plot.IsWOfRiver" label="Flows" density="compact" hide-details style="max-width: 140px"
+                :items="northSouth" v-model="plot.RiverNSDirection"/>
+    </div>
 
     <v-divider class="my-2"/>
     <div class="d-flex align-center">
