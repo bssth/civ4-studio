@@ -1,5 +1,26 @@
 // Generated from the translation catalog; keep keys in sync with the other language.
 const en = {
+    "area": {
+        "cleared": "Removed: units {units}, cities {cities}.",
+        "clipboard": "Copied: {width}×{height} plots (cities {cities}, units {units}).",
+        "clipboardEmpty": "Nothing is copied yet. Select an area and press Ctrl+C to copy it, also into another map.",
+        "copied": "Copied {width}×{height} plots.",
+        "copy": "Copy",
+        "deselect": "Deselect",
+        "fill": "Fill with the brush",
+        "fillHint": "The brush of the Paint mode is used for filling.",
+        "filled": "Changed plots: {n}.",
+        "help": "Drag over the map to select a rectangle. It can cross the seam of a wrapping map.",
+        "nothingSelected": "No area is selected.",
+        "paste": "Paste",
+        "pasteHint": "Click on the map to place the north-western corner of the copied area; Esc cancels.",
+        "pasted": "Changed plots: {n}.",
+        "removeCities": "Remove cities",
+        "removeUnits": "Remove units",
+        "selected": "Selected {width}×{height} plots from {x}, {y}.",
+        "title": "Area",
+        "withAssets": "With cities and units"
+    },
     "app": {
         "gameDirNotConfigured": "Game directory not configured: {reason}. Open Settings to fix.",
         "newMapNotSaved": "New map (not saved)",
@@ -93,6 +114,8 @@ const en = {
         "water": "Water"
     },
     "history": {
+        "clearArea": "clearing of an area ({n} plots)",
+        "paste": "pasting of an area ({n} plots)",
         "resize": "resizing of the map to {width}×{height}",
         "signs": "signs of plot {x}, {y}",
         "clear": "clearing of player {n}",
@@ -416,9 +439,13 @@ const en = {
         "worldSize": "world size"
     },
     "world": {
+        "export": "Export the map as a PNG image",
+        "exported": "The image is saved to {path}",
+        "hintArea": "Drag to select an area; Ctrl+C copies it, Ctrl+V pastes, Esc deselects.",
+        "modeArea": "Select, copy and paste areas",
         "brushEmpty": "The brush paints nothing: switch on a property or pick a preset.",
         "cityOf": "city of {player}",
-        "fit": "Fit",
+        "fit": "Fit the map to the screen",
         "hintPaint": "Drag over the map to paint with the brush. Ctrl+Z undoes a stroke.",
         "hintRiver": "Click near the edge of a plot to add or remove a river there.",
         "hintSelect": "Click a plot to edit it. Drag a flag to move a start position. Ctrl+wheel zooms.",

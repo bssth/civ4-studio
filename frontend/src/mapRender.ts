@@ -93,6 +93,65 @@ export interface RenderOptions {
     offset?: number;
     // The map wraps east-west: the brush continues on the other side of the seam
     wrapX?: boolean;
+    // Selected area and the place where the copied area would be pasted
+    area?: MapRegion | null;
+    paste?: MapRegion | null;
+}
+
+/** Rectangle of plots: x is the western column, y the southern row; it may cross the seam of a wrapping map */
+export interface MapRegion {
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+}
+
+/** Plots of a region inside of the map, columns wrap on a map wrapping east-west */
+export function regionCells(view: editor.MapView, r: MapRegion, wrapX: boolean): { x: number, y: number }[] {
+    const cells = [];
+    for (let dx = 0; dx < r.width; dx++) {
+        const x = wrapX ? mod(r.x + dx, view.width) : r.x + dx;
+        if (x < 0 || x >= view.width) continue;
+        for (let dy = 0; dy < r.height; dy++) {
+            const y = r.y + dy;
+            if (y >= 0 && y < view.height) cells.push({x, y});
+        }
+    }
+    return cells;
+}
+
+/**
+ * Outlines plots in rows bottom..top of the given screen columns; columns that are not next to each other
+ * (a shape crossing the edge of the screen) are drawn as separate parts
+ */
+function outlineColumns(ctx: CanvasRenderingContext2D, view: editor.MapView, cell: number, columns: number[],
+                        top: number, bottom: number, fill?: string) {
+    columns = [...new Set(columns)].sort((a, b) => a - b);
+    let start = 0;
+    for (let i = 1; i <= columns.length; i++) {
+        if (i === columns.length || columns[i] !== columns[i - 1] + 1) {
+            const x = columns[start] * cell, y = rowOf(view, top) * cell;
+            const w = (columns[i - 1] - columns[start] + 1) * cell, h = (top - bottom + 1) * cell;
+            if (fill) {
+                ctx.fillStyle = fill;
+                ctx.fillRect(x, y, w, h);
+            }
+            ctx.strokeRect(x, y, w, h);
+            start = i;
+        }
+    }
+}
+
+function drawRegion(ctx: CanvasRenderingContext2D, view: editor.MapView, o: RenderOptions, r: MapRegion,
+                    color: string, fill: string) {
+    const cells = regionCells(view, r, !!o.wrapX);
+    if (cells.length === 0) return;
+    const top = Math.max(...cells.map(c => c.y)), bottom = Math.min(...cells.map(c => c.y));
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 2;
+    ctx.setLineDash([6, 3]);
+    outlineColumns(ctx, view, o.cell, cells.map(c => screenColumn(c.x, view.width, o.offset ?? 0)), top, bottom, fill);
+    ctx.setLineDash([]);
 }
 
 /** Remainder that is never negative, e.g. mod(-1, 10) = 9 */
@@ -383,21 +442,19 @@ export function drawMap(ctx: CanvasRenderingContext2D, view: editor.MapView, o: 
         const cells = brushCells(view, o.brush.x, o.brush.y, o.brush.size, o.wrapX);
         if (cells.length > 0) {
             const top = Math.max(...cells.map(c => c.y)), bottom = Math.min(...cells.map(c => c.y));
-            // A brush crossing the edge of the screen is drawn as two parts
-            const columns = [...new Set(cells.map(c => screenColumn(c.x, w, offset)))].sort((a, b) => a - b);
             ctx.strokeStyle = '#ffffff';
             ctx.lineWidth = 2;
             ctx.setLineDash([4, 3]);
-            let start = 0;
-            for (let i = 1; i <= columns.length; i++) {
-                if (i === columns.length || columns[i] !== columns[i - 1] + 1) {
-                    ctx.strokeRect(columns[start] * cell, rowOf(view, top) * cell,
-                        (columns[i - 1] - columns[start] + 1) * cell, (top - bottom + 1) * cell);
-                    start = i;
-                }
-            }
+            outlineColumns(ctx, view, cell, cells.map(c => screenColumn(c.x, w, offset)), top, bottom);
             ctx.setLineDash([]);
         }
+    }
+
+    if (o.area) {
+        drawRegion(ctx, view, o, o.area, '#00e5ff', 'rgba(0, 229, 255, 0.12)');
+    }
+    if (o.paste) {
+        drawRegion(ctx, view, o, o.paste, '#ffeb3b', 'rgba(255, 235, 59, 0.2)');
     }
 
     if (o.edge) {

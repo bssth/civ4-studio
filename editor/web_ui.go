@@ -60,6 +60,8 @@ type App struct {
 	backedUp map[string]bool
 	// history of map edits for undo/redo
 	history History
+	// clipboard keeps the region copied on the World tab, it survives opening another map
+	clipboard *regionClip
 }
 
 func NewApp() *App {

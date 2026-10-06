@@ -60,6 +60,24 @@ export namespace editor {
 	        this.playable = source["playable"];
 	    }
 	}
+	export class ClipboardInfo {
+	    width: number;
+	    height: number;
+	    cities: number;
+	    units: number;
+	
+	    static createFrom(source: any = {}) {
+	        return new ClipboardInfo(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.width = source["width"];
+	        this.height = source["height"];
+	        this.cities = source["cities"];
+	        this.units = source["units"];
+	    }
+	}
 	export class Config {
 	    game_dir: string;
 	    mod: string;
@@ -600,6 +618,24 @@ export namespace editor {
 	}
 	
 	
+	export class Region {
+	    x: number;
+	    y: number;
+	    width: number;
+	    height: number;
+	
+	    static createFrom(source: any = {}) {
+	        return new Region(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.x = source["x"];
+	        this.y = source["y"];
+	        this.width = source["width"];
+	        this.height = source["height"];
+	    }
+	}
 	export class ResizeResult {
 	    units: number;
 	    cities: number;
