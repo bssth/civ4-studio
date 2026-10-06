@@ -800,6 +800,7 @@ var optionKeys = map[string]string{
 	"unitAIs":       InfoUnitAIs,
 	"buildings":     InfoBuildings,
 	"promotions":    InfoPromotions,
+	"processes":     InfoProcesses,
 }
 
 func describe(data *GameData, info *TypeInfo) string {

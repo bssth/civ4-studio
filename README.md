@@ -31,6 +31,10 @@ instead of raw identifiers.
 - **Undo.** Every change can be undone with `Ctrl+Z` or the toolbar and redone with `Ctrl+Y`, on any tab: strokes and
   plot edits, pasted and filled areas, signs, players, teams, game settings, map properties and size, swapping and clearing of player slots. Typing a name is
   undone at once, not letter by letter.
+- **Cities and units.** A city has its name, owner, population, buildings, religions and holy city, production
+  (a unit, building, project or process), culture of each player and script data; a unit has its type, owner, level,
+  experience, promotions, AI, damage and facing, and can be duplicated. The *Cities and units* tab lists all of them
+  with search, an owner filter and sorting; a click opens the plot.
 - **Players.** Pick a civilization and a leader from the game or mod data: names, color and art style are filled in
   automatically. Handicap, state religion, starting era, starting civics and city names are editable too. Swap two
   player slots or clear one — units, cities, culture, attitudes and signs follow their players.
@@ -40,7 +44,7 @@ instead of raw identifiers.
   and can be filled with ocean plots of the chosen size, ready for the game's WorldBuilder. An existing map can be
   resized: columns and rows are added (as ocean) or cut on any side, while plots, cities, units, start positions and
   signs keep their places.
-- **Scenario check.** Unknown types (e.g. from a mod that is not selected), start positions in water or outside of the
+- **Scenario check.** Unknown types (e.g. from a mod that is not selected, including city production), start positions in water or outside of the
   map, cities and units of empty slots, missing teams and more. Click a problem to go to its place; errors are shown
   before saving.
 - **Game settings.** Era, speed, calendar, victory conditions, game and multiplayer options, locked options.

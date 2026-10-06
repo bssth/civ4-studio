@@ -18,6 +18,8 @@ export function CurrentMapPath():Promise<string>;
 
 export function ExportImage(arg1:string):Promise<string>;
 
+export function GetCities():Promise<Array<editor.CityEntry>>;
+
 export function GetCivilizations():Promise<Array<editor.CivilizationOption>>;
 
 export function GetClipboard():Promise<editor.ClipboardInfo>;
@@ -47,6 +49,8 @@ export function GetPlot(arg1:number,arg2:number):Promise<editor.Plot>;
 export function GetSigns():Promise<Array<editor.Sign>>;
 
 export function GetTeams():Promise<Array<editor.Team>>;
+
+export function GetUnits():Promise<Array<editor.UnitEntry>>;
 
 export function GetVersion():Promise<string>;
 

@@ -34,6 +34,10 @@ export function ExportImage(arg1) {
   return window['go']['editor']['App']['ExportImage'](arg1);
 }
 
+export function GetCities() {
+  return window['go']['editor']['App']['GetCities']();
+}
+
 export function GetCivilizations() {
   return window['go']['editor']['App']['GetCivilizations']();
 }
@@ -92,6 +96,10 @@ export function GetSigns() {
 
 export function GetTeams() {
   return window['go']['editor']['App']['GetTeams']();
+}
+
+export function GetUnits() {
+  return window['go']['editor']['App']['GetUnits']();
 }
 
 export function GetVersion() {

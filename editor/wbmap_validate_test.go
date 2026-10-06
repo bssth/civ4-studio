@@ -117,3 +117,22 @@ func TestValidateSigns(t *testing.T) {
 		t.Errorf("signPlayer = %+v", p)
 	}
 }
+
+func TestValidateCityProduction(t *testing.T) {
+	wb := opsTestMap()
+	wb.Plots[0].Cities[0].ProductionProcess = "PROCESS_MAGIC"
+	wb.Plots[1].Cities[0].ProductionUnit = "UNIT_WARRIOR"
+	data := NewGameData()
+	data.Table(InfoProcesses).Set(&TypeInfo{Type: "PROCESS_WEALTH"})
+	data.Table(InfoUnits).Set(&TypeInfo{Type: "UNIT_WARRIOR"})
+	data.Table(InfoUnits).Set(&TypeInfo{Type: "UNIT_ARCHER"})
+	var found []string
+	for _, p := range wb.Validate(data) {
+		if p.Code == "unknownType" {
+			found = append(found, p.Args["what"]+"="+p.Args["value"])
+		}
+	}
+	if len(found) != 1 || found[0] != "process=PROCESS_MAGIC" {
+		t.Errorf("unknown production types = %v", found)
+	}
+}

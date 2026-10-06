@@ -107,6 +107,72 @@ function addUnit() {
   }];
 }
 
+// --- City production: one of a unit, building, project or process -------------
+
+type ProductionKind = 'unit' | 'building' | 'project' | 'process';
+const productionFields: Record<ProductionKind, 'ProductionUnit' | 'ProductionBuilding' | 'ProductionProject' | 'ProductionProcess'> = {
+  unit: 'ProductionUnit', building: 'ProductionBuilding', project: 'ProductionProject', process: 'ProductionProcess',
+};
+
+/** The production of a city as "kind:TYPE", NONE when it builds nothing; the game uses the first one set */
+function production(city: editor.City): string {
+  for (const kind of Object.keys(productionFields) as ProductionKind[]) {
+    const value = city[productionFields[kind]];
+    if (value && value !== NONE) return `${kind}:${value}`;
+  }
+  return NONE;
+}
+
+function setProduction(city: editor.City, value: string) {
+  for (const field of Object.values(productionFields)) city[field] = '';
+  if (!value || value === NONE) return;
+  const [kind, type] = value.split(':') as [ProductionKind, string];
+  city[productionFields[kind]] = type;
+}
+
+function productionItems(city: editor.City) {
+  const groups: [ProductionKind, editor.EnumOption[]][] = [
+    ['unit', enums.units], ['building', enums.buildings], ['project', enums.projects], ['process', enums.processes],
+  ];
+  const items: { value: string, title: string }[] = [{value: NONE, title: t('plotEditor.nothing')}];
+  for (const [kind, options] of groups) {
+    for (const o of options) items.push({value: `${kind}:${o.type}`, title: `${o.description} · ${t('what.' + kind)}`});
+  }
+  // Keep a production unknown to the game data (e.g. from another mod) selectable
+  const current = production(city);
+  if (!items.some(i => i.value === current)) items.push({value: current, title: current.split(':')[1] ?? current});
+  return items;
+}
+
+// --- City culture of each player ------------------------------------------------
+
+function cultureRows(city: editor.City) {
+  return Object.entries(city.PlayerCulture ?? {})
+      .map(([player, value]) => ({player: Number(player), value: Number(value)}))
+      .sort((a, b) => a.player - b.player);
+}
+
+function setCulture(city: editor.City, player: number, value: number | null) {
+  const culture = {...(city.PlayerCulture ?? {})} as Record<number, number>;
+  if (value === null) delete culture[player];
+  else culture[player] = Math.max(0, Math.round(Number(value) || 0));
+  city.PlayerCulture = culture;
+}
+
+function cultureCandidates(city: editor.City) {
+  const used = new Set(cultureRows(city).map(r => r.player));
+  return ownerItems.value.filter(i => !used.has(i.value));
+}
+
+// Facing directions of the game, 0 is north and they go clockwise
+const facings = computed(() => ['n', 'ne', 'e', 'se', 's', 'sw', 'w', 'nw'].map((d, i) => ({value: i, title: t('facing.' + d)})));
+
+function duplicateUnit(idx: number) {
+  const units = [...(plot.value.Units ?? [])];
+  units.splice(idx + 1, 0, JSON.parse(JSON.stringify(units[idx])));
+  plot.value.Units = units;
+}
+
 function removeAt<T>(list: T[] | null, index: number): T[] {
   const copy = [...(list ?? [])];
   copy.splice(index, 1);
@@ -226,6 +292,33 @@ const riverText = computed(() => {
                     :items="withCurrent(enums.religions, ...(city.HolyCityReligionType ?? []))"
                     item-value="type" item-title="description" v-model="city.HolyCityReligionType"/>
         </v-col>
+        <v-col cols="12">
+          <v-autocomplete :label="$t('plotEditor.production')" density="compact" hide-details
+                          :items="productionItems(city)" :model-value="production(city)"
+                          @update:model-value="(v: string) => setProduction(city, v)"/>
+        </v-col>
+        <v-col cols="12">
+          <v-expansion-panels variant="accordion">
+            <v-expansion-panel :title="$t('plotEditor.cultureAndScript')">
+              <v-expansion-panel-text>
+                <div class="text-caption text-medium-emphasis mb-1">{{ $t('plotEditor.cultureHint') }}</div>
+                <div v-for="row in cultureRows(city)" :key="row.player" class="d-flex align-center mb-1" style="gap: 8px">
+                  <span class="text-body-2 flex-grow-1">#{{ row.player }} {{ playerName(players, row.player) }}</span>
+                  <v-text-field type="number" min="0" density="compact" hide-details style="max-width: 120px"
+                                :model-value="row.value"
+                                @update:model-value="(v: string) => setCulture(city, row.player, Number(v))"/>
+                  <v-btn icon="mdi-close" size="x-small" variant="text" :title="$t('plotEditor.removeCulture')"
+                         @click="setCulture(city, row.player, null)"/>
+                </div>
+                <v-select v-if="cultureCandidates(city).length" :label="$t('plotEditor.addCulture')" density="compact"
+                          hide-details :items="cultureCandidates(city)" :model-value="null" class="mb-2"
+                          @update:model-value="(p: number) => setCulture(city, p, 0)"/>
+                <v-text-field :label="$t('plotEditor.scriptData')" density="compact" hide-details
+                              v-model="city.ScriptData"/>
+              </v-expansion-panel-text>
+            </v-expansion-panel>
+          </v-expansion-panels>
+        </v-col>
       </v-row>
     </v-card>
 
@@ -241,6 +334,8 @@ const riverText = computed(() => {
           <v-autocomplete :label="$t('plotEditor.unit')" density="compact" hide-details
                           :items="withCurrent(enums.units, unit.UnitType)" item-value="type" item-title="description"
                           v-model="unit.UnitType"/>
+          <v-btn icon="mdi-content-duplicate" variant="text" size="small" :title="$t('plotEditor.duplicateUnit')"
+                 @click="duplicateUnit(idx)"/>
           <v-btn icon="mdi-delete" variant="text" size="small" :title="$t('plotEditor.removeUnit')"
                  @click="plot.Units = removeAt(plot.Units, idx)"/>
         </v-col>
@@ -259,6 +354,15 @@ const riverText = computed(() => {
           <v-autocomplete :label="$t('plotEditor.promotions')" multiple chips closable-chips density="compact" hide-details
                           :items="withCurrent(enums.promotions, ...(unit.PromotionType ?? []))"
                           item-value="type" item-title="description" v-model="unit.PromotionType"/>
+        </v-col>
+        <v-col cols="6">
+          <v-text-field :label="$t('plotEditor.damage')" type="number" min="0" max="100" density="compact" hide-details
+                        suffix="%" :model-value="unit.Damage"
+                        @update:model-value="(v: string) => unit.Damage = Math.min(100, Math.max(0, Math.round(Number(v) || 0)))"/>
+        </v-col>
+        <v-col cols="6">
+          <v-select :label="$t('plotEditor.facing')" density="compact" hide-details :items="facings"
+                    v-model="unit.FacingDirection"/>
         </v-col>
         <v-col cols="12">
           <v-autocomplete :label="$t('plotEditor.aiRole')" density="compact" hide-details

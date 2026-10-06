@@ -59,6 +59,11 @@ func fakeGameInstall(t *testing.T) (btsDir string) {
 		<CivicInfo><CivicOptionType>CIVICOPTION_GOVERNMENT</CivicOptionType><Type>CIVIC_DESPOTISM</Type><Description>TXT_KEY_CIVIC_DESPOTISM</Description></CivicInfo>
 	</CivicInfos>
 </Civ4CivicInfos>`)
+	writeTestFile(t, filepath.Join(btsDir, XmlDir, "GameInfo", "CIV4ProcessInfo.xml"), `<Civ4ProcessInfo>
+	<ProcessInfos>
+		<ProcessInfo><Type>PROCESS_WEALTH</Type><Description>TXT_KEY_PROCESS_WEALTH</Description></ProcessInfo>
+	</ProcessInfos>
+</Civ4ProcessInfo>`)
 	writeTestFile(t, filepath.Join(btsDir, XmlDir, "GameInfo", "CIV4WorldInfo.xml"), `<Civ4WorldInfo>
 	<WorldInfos>
 		<WorldInfo><Type>WORLDSIZE_STANDARD</Type><Description>TXT_KEY_WORLDSIZE_STANDARD</Description><iGridWidth>21</iGridWidth><iGridHeight>13</iGridHeight></WorldInfo>
@@ -131,6 +136,9 @@ func TestLoadAllXML(t *testing.T) {
 
 	if civic := data.Table(InfoCivics).Get("CIVIC_DESPOTISM"); civic == nil || civic.Group != "CIVICOPTION_GOVERNMENT" {
 		t.Errorf("civic parsed incorrectly: %+v", civic)
+	}
+	if process := data.Table(InfoProcesses).Get("PROCESS_WEALTH"); process == nil {
+		t.Error("processes must be loaded")
 	}
 }
 

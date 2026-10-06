@@ -85,6 +85,16 @@ const ru: typeof en = {
         "south": "Юг",
         "west": "Запад"
     },
+    "facing": {
+        "e": "Восток",
+        "n": "Север",
+        "ne": "Северо-восток",
+        "nw": "Северо-запад",
+        "s": "Юг",
+        "se": "Юго-восток",
+        "sw": "Юго-запад",
+        "w": "Запад"
+    },
     "field": {
         "feature": "Фича",
         "height": "Высота",
@@ -196,6 +206,32 @@ const ru: typeof en = {
         "wrapTorus": "Тор (в обе стороны)",
         "wrapping": "Зацикливание"
     },
+    "objects": {
+        "ai": "ИИ",
+        "barbarians": "Варвары",
+        "buildings": "Здания",
+        "cities": "Города ({n})",
+        "culture": "Культура",
+        "damage": "Повреждения",
+        "emptySlot": "(пустой слот)",
+        "everyone": "Все игроки",
+        "experience": "Опыт",
+        "hint": "Щёлкните по строке, чтобы открыть клетку на вкладке «Мир».",
+        "holyCity": "Священный город",
+        "level": "Уровень",
+        "name": "Название",
+        "noCities": "Городов нет",
+        "noUnits": "Юнитов нет",
+        "owner": "Владелец",
+        "place": "Клетка",
+        "population": "Население",
+        "production": "Производство",
+        "promotions": "Повышения",
+        "religions": "Религии",
+        "search": "Поиск",
+        "unit": "Юнит",
+        "units": "Юниты ({n})"
+    },
     "players": {
         "aiOnly": "только ИИ",
         "anyLeader": "Разрешить любого лидера для цивилизации",
@@ -239,6 +275,16 @@ const ru: typeof en = {
         "whiteFlag": "Белый фон флага"
     },
     "plotEditor": {
+        "addCulture": "Добавить культуру игрока",
+        "cultureAndScript": "Культура и данные скриптов",
+        "cultureHint": "Очки культуры каждого игрока в городе; у кого культуры больше, тот и владеет клетками вокруг.",
+        "damage": "Повреждения",
+        "duplicateUnit": "Дублировать юнита",
+        "facing": "Направление",
+        "nothing": "Ничего",
+        "production": "Производство",
+        "removeCulture": "Убрать",
+        "scriptData": "Данные скриптов (для модов)",
         "addCity": "Добавить город",
         "addUnit": "Добавить юнит",
         "aiRole": "Роль ИИ",
@@ -367,6 +413,7 @@ const ru: typeof en = {
         "version": "Civ4 Studio {version}"
     },
     "tabs": {
+        "objects": "Города и юниты",
         "check": "Проверка",
         "game": "Игра",
         "map": "Карта",
@@ -428,6 +475,7 @@ const ru: typeof en = {
         "settings": "Настройки"
     },
     "what": {
+        "process": "процесс",
         "artStyle": "стиль",
         "building": "здание",
         "calendar": "календарь",

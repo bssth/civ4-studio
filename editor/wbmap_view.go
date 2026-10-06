@@ -187,6 +187,9 @@ func (a *App) SetPlot(plot *Plot) error {
 		if unit == nil {
 			return errors.New("unit is nil")
 		}
+		if unit.Damage > 100 {
+			return errors.New("unit damage must be within 0..100")
+		}
 	}
 
 	a.mu.Lock()
