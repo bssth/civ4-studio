@@ -222,6 +222,10 @@ export function SetTeams(arg1) {
   return window['go']['editor']['App']['SetTeams'](arg1);
 }
 
+export function StartBalance() {
+  return window['go']['editor']['App']['StartBalance']();
+}
+
 export function SwapPlayers(arg1, arg2) {
   return window['go']['editor']['App']['SwapPlayers'](arg1, arg2);
 }

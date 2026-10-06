@@ -172,11 +172,13 @@ onMounted(async () => {
   await consumeFocus();
   clipboard.value = await GetClipboard();
   window.addEventListener('keydown', onKeyDown);
+  window.addEventListener('resize', updateViewport);
 });
 
 onUnmounted(() => {
   cancelAnimationFrame(frame);
   window.removeEventListener('keydown', onKeyDown);
+  window.removeEventListener('resize', updateViewport);
 });
 
 // A plot requested from another tab (e.g. the problem list): zoom in, center it and open its editor
@@ -278,6 +280,69 @@ function draw() {
 }
 
 watch([view, cell, selected, hover, hoverEdge, mode, offset, area, pasting, revealed, () => brush.size], scheduleDraw);
+
+// --- Minimap ----------------------------------------------------------------
+
+const minimap = ref<HTMLCanvasElement | null>(null);
+const minimapOpen = ref(true);
+// The visible part of the map on the minimap, in minimap pixels; scrolls is false when the whole map is seen
+const viewport = reactive({left: 0, top: 0, width: 0, height: 0, scrolls: false});
+
+const minimapSize = computed(() => {
+  const v = view.value;
+  if (!v) return {width: 0, height: 0, scale: 1};
+  const scale = Math.min(240 / v.width, 150 / v.height);
+  return {width: Math.round(v.width * scale), height: Math.round(v.height * scale), scale};
+});
+
+let minimapFrame = 0;
+
+function drawMinimap() {
+  cancelAnimationFrame(minimapFrame);
+  minimapFrame = requestAnimationFrame(() => {
+    const c = minimap.value, v = view.value;
+    if (!c || !v) return;
+    c.width = v.width;
+    c.height = v.height;
+    const ctx = c.getContext('2d');
+    if (!ctx) return;
+    drawMap(ctx, v, {
+      cell: 1,
+      layers: {rivers: false, resources: false, cities: true, units: false, starts: false, signs: false, fog: false, grid: false},
+      ownerColor: owner => playerColor(players.value, owner),
+      starts: [],
+      selected: null,
+      offset: offset.value,
+      wrapX: wrapX.value,
+    });
+    updateViewport();
+  });
+}
+
+function updateViewport() {
+  const el = scroller.value, v = view.value;
+  if (!el || !v) return;
+  const mapWidth = v.width * cell.value, mapHeight = v.height * cell.value;
+  const {width, height} = minimapSize.value;
+  viewport.scrolls = mapWidth > el.clientWidth + 1 || mapHeight > el.clientHeight + 1;
+  viewport.left = el.scrollLeft / mapWidth * width;
+  viewport.top = el.scrollTop / mapHeight * height;
+  viewport.width = Math.min(width, el.clientWidth / mapWidth * width);
+  viewport.height = Math.min(height, el.clientHeight / mapHeight * height);
+}
+
+/** Centers the map on the clicked point of the minimap */
+function onMinimap(e: MouseEvent) {
+  const el = scroller.value, v = view.value;
+  if (!el || !v) return;
+  const {width, height} = minimapSize.value;
+  el.scrollLeft = e.offsetX / width * v.width * cell.value - el.clientWidth / 2;
+  el.scrollTop = e.offsetY / height * v.height * cell.value - el.clientHeight / 2;
+  updateViewport();
+}
+
+watch([view, offset, players], drawMinimap);
+watch(cell, () => nextTick(updateViewport));
 watch([layers, starts, () => enums.colors], scheduleDraw, {deep: true});
 
 /** Screen column of a map column, see offset */
@@ -855,10 +920,22 @@ const canvasCursor = computed(() => {
       <v-alert v-if="error" type="error" variant="tonal" density="compact" class="mx-2 mb-1" closable
                @click:close="error = ''">{{ error }}
       </v-alert>
-      <div ref="scroller" class="scroller flex-grow-1" @wheel="onWheel">
-        <canvas ref="canvas" :style="{cursor: canvasCursor}"
-                @mousedown="onMouseDown" @mousemove="onMouseMove" @mouseup="onMouseUp"
-                @mouseleave="onMouseLeave"/>
+      <div class="map-area flex-grow-1">
+        <div ref="scroller" class="scroller" @wheel="onWheel" @scroll="updateViewport">
+          <canvas ref="canvas" :style="{cursor: canvasCursor}"
+                  @mousedown="onMouseDown" @mousemove="onMouseMove" @mouseup="onMouseUp"
+                  @mouseleave="onMouseLeave"/>
+        </div>
+        <div v-show="minimapOpen && viewport.scrolls" class="minimap" :title="$t('world.minimap')">
+          <canvas ref="minimap" :style="{width: minimapSize.width + 'px', height: minimapSize.height + 'px'}"
+                  @mousedown="onMinimap" @mousemove="(e: MouseEvent) => (e.buttons & 1) && onMinimap(e)"/>
+          <div class="minimap-viewport" :style="{left: viewport.left + 'px', top: viewport.top + 'px',
+               width: viewport.width + 'px', height: viewport.height + 'px'}"/>
+          <v-btn class="minimap-close" icon="mdi-close" size="x-small" variant="flat" density="compact"
+                 :title="$t('world.minimapHide')" @click="minimapOpen = false"/>
+        </div>
+        <v-btn v-if="!minimapOpen && viewport.scrolls" class="minimap-open" icon="mdi-map-outline" size="small"
+               :title="$t('world.minimapShow')" @click="minimapOpen = true"/>
       </div>
     </div>
 
@@ -925,12 +1002,53 @@ const canvasCursor = computed(() => {
   height: 100%;
 }
 
+.map-area {
+  position: relative;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
 .scroller {
+  flex-grow: 1;
   overflow: auto;
   min-height: 0;
   background: #0b1e36;
   margin: 0 8px 8px;
   border-radius: 4px;
+}
+
+.minimap {
+  position: absolute;
+  right: 22px;
+  bottom: 22px;
+  border: 1px solid rgba(255, 255, 255, 0.7);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
+  background: #0b1e36;
+  line-height: 0;
+}
+
+.minimap canvas {
+  image-rendering: pixelated;
+  cursor: pointer;
+}
+
+.minimap-viewport {
+  position: absolute;
+  border: 2px solid #ffeb3b;
+  pointer-events: none;
+}
+
+.minimap-close {
+  position: absolute;
+  top: -10px;
+  right: -10px;
+}
+
+.minimap-open {
+  position: absolute;
+  right: 22px;
+  bottom: 22px;
 }
 
 .scroller canvas {
