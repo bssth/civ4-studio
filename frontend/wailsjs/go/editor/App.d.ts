@@ -36,6 +36,8 @@ export function GetPlayers():Promise<Array<editor.Player>>;
 
 export function GetPlot(arg1:number,arg2:number):Promise<editor.Plot>;
 
+export function GetSigns():Promise<Array<editor.Sign>>;
+
 export function GetTeams():Promise<Array<editor.Team>>;
 
 export function GetVersion():Promise<string>;
@@ -62,6 +64,8 @@ export function Redo():Promise<editor.HistoryState>;
 
 export function ResetGameXML():Promise<void>;
 
+export function ResizeMap(arg1:number,arg2:number,arg3:number,arg4:number):Promise<editor.ResizeResult>;
+
 export function SaveMap(arg1:string):Promise<string>;
 
 export function SaveMapAs():Promise<string>;
@@ -77,6 +81,8 @@ export function SetPlayerStart(arg1:number,arg2:number,arg3:number):Promise<void
 export function SetPlayers(arg1:Array<editor.Player>):Promise<void>;
 
 export function SetPlot(arg1:editor.Plot):Promise<void>;
+
+export function SetPlotSigns(arg1:number,arg2:number,arg3:Array<editor.Sign>):Promise<void>;
 
 export function SetTeams(arg1:Array<editor.Team>):Promise<void>;
 

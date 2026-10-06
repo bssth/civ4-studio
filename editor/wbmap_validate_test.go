@@ -98,3 +98,22 @@ func TestProblemsHaveCodesAndArgs(t *testing.T) {
 		t.Errorf("unknown type must have what, value and count: %+v", p)
 	}
 }
+
+func TestValidateSigns(t *testing.T) {
+	wb := opsTestMap()
+	wb.Signs = []*Sign{
+		{PlotX: 1, PlotY: 0, PlayerType: 1, Caption: "Greek sign"},
+		{PlotX: 0, PlotY: 0, PlayerType: 5, Caption: "Nobody"},
+		{PlotX: 7, PlotY: 0, PlayerType: -1, Caption: "Lost"},
+	}
+	byCode := make(map[string][]Problem)
+	for _, p := range wb.Validate(nil) {
+		byCode[p.Code] = append(byCode[p.Code], p)
+	}
+	if p := byCode["plots.signOutside"]; len(p) != 1 || p[0].Args["caption"] != "Lost" || p[0].Severity != SeverityError {
+		t.Errorf("signOutside = %+v", p)
+	}
+	if p := byCode["plots.signPlayer"]; len(p) != 1 || p[0].Args["player"] != "5" || p[0].X != 0 || p[0].Y != 0 {
+		t.Errorf("signPlayer = %+v", p)
+	}
+}

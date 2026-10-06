@@ -12,6 +12,7 @@ export const FLAG_START = 4;
 export const FLAG_IMPROVEMENT = 8;
 export const FLAG_ROUTE = 16;
 export const FLAG_LANDMARK = 32;
+export const FLAG_SIGN = 64;
 
 const terrainColors: Record<string, string> = {
     TERRAIN_GRASS: '#4e8b2e',
@@ -58,6 +59,7 @@ export interface Layers {
     cities: boolean;
     units: boolean;
     starts: boolean;
+    signs: boolean;
     grid: boolean;
 }
 
@@ -326,6 +328,20 @@ export function drawMap(ctx: CanvasRenderingContext2D, view: editor.MapView, o: 
             ctx.strokeStyle = '#ffffff';
             ctx.lineWidth = Math.max(1, cell / 8);
             ctx.strokeRect(px + m, py + m, cell - 2 * m, cell - 2 * m);
+        }
+
+        if (layers.signs && (flags & FLAG_SIGN) && cell >= 4) {
+            // A small flag on a pole in the top left corner
+            const s = Math.max(3, cell * 0.45);
+            ctx.strokeStyle = '#000000';
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.moveTo(px + 1.5, py + 1);
+            ctx.lineTo(px + 1.5, py + s * 1.4);
+            ctx.stroke();
+            ctx.fillStyle = '#ffffff';
+            ctx.fillRect(px + 2, py + 1, s, s * 0.7);
+            if (cell >= 8) ctx.strokeRect(px + 2, py + 1, s, s * 0.7);
         }
 
         if (layers.starts && (flags & FLAG_START) && cell >= 4) {

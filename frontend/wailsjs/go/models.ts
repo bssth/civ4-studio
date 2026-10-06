@@ -600,6 +600,42 @@ export namespace editor {
 	}
 	
 	
+	export class ResizeResult {
+	    units: number;
+	    cities: number;
+	    signs: number;
+	    starts: number[];
+	
+	    static createFrom(source: any = {}) {
+	        return new ResizeResult(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.units = source["units"];
+	        this.cities = source["cities"];
+	        this.signs = source["signs"];
+	        this.starts = source["starts"];
+	    }
+	}
+	export class Sign {
+	    PlotX: number;
+	    PlotY: number;
+	    PlayerType: number;
+	    Caption: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new Sign(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.PlotX = source["PlotX"];
+	        this.PlotY = source["PlotY"];
+	        this.PlayerType = source["PlayerType"];
+	        this.Caption = source["Caption"];
+	    }
+	}
 	export class Team {
 	    TeamID: number;
 	    Tech: string[];

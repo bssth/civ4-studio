@@ -106,6 +106,7 @@ func (m *WbMap) Validate(data *GameData) []Problem {
 	v.teams()
 	v.players()
 	v.plots()
+	v.signs()
 
 	for _, key := range v.unknownOrder {
 		u := v.unknown[key]
@@ -333,6 +334,22 @@ func (v *validator) plots() {
 				v.checkType("plots", InfoPromotions, "promotion", promotion, x, y, unit.UnitOwner, -1)
 			}
 			v.checkType("plots", InfoUnitAIs, "unitAI", unit.UnitAIType, x, y, unit.UnitOwner, -1)
+		}
+	}
+}
+
+func (v *validator) signs() {
+	players := v.m.Players
+	for _, sign := range v.m.Signs {
+		x, y := sign.PlotX, sign.PlotY
+		if !v.m.inGrid(x, y) {
+			v.add(SeverityError, "plots", "plots.signOutside", args("caption", sign.Caption, "x", x, "y", y),
+				fmt.Sprintf("sign %q at %d,%d is outside of the map", sign.Caption, x, y), -1, -1, -1, -1)
+			continue
+		}
+		if p := sign.PlayerType; p >= 0 && (p >= len(players) || isEmptySlot(players[p])) {
+			v.add(SeverityWarning, "plots", "plots.signPlayer", args("caption", sign.Caption, "player", p),
+				fmt.Sprintf("sign %q is shown only to player %d, which is an empty slot", sign.Caption, p), x, y, p, -1)
 		}
 	}
 }

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import {computed, onMounted, ref, watch} from "vue";
-import {CreatePlots, GetMapProps, GetMapStats, SetMapProps} from "../../wailsjs/go/editor/App";
+import {CreatePlots, GetMapProps, GetMapStats, ResizeMap, SetMapProps} from "../../wailsjs/go/editor/App";
 import {editor} from "../../wailsjs/go/models";
 import {useI18n} from "vue-i18n";
 import {problemText} from "../problems";
@@ -86,6 +86,76 @@ function onWorldSizeChange(type: string) {
   }
 }
 
+// --- Resize -------------------------------------------------------------------
+
+type Side = 'west' | 'east' | 'north' | 'south';
+const sides: Side[] = ['west', 'east', 'north', 'south'];
+// Columns or rows to add (positive) or remove (negative) on each side
+const resize = ref<Record<Side, number>>({west: 0, east: 0, north: 0, south: 0});
+const resizing = ref(false);
+const resizeResult = ref<editor.ResizeResult | null>(null);
+
+function sideValue(side: Side): number {
+  const v = Number(resize.value[side]);
+  return Number.isFinite(v) ? Math.trunc(v) : 0;
+}
+
+const newSize = computed(() => ({
+  width: (props.value?.GridWidth ?? 0) + sideValue('west') + sideValue('east'),
+  height: (props.value?.GridHeight ?? 0) + sideValue('north') + sideValue('south'),
+}));
+const newSizeValid = computed(() => [newSize.value.width, newSize.value.height].every(n => n >= 4 && n <= 512));
+const resizeChanged = computed(() => sides.some(s => sideValue(s) !== 0));
+
+// Default size of the chosen world size, if the map differs from it
+const worldSizeTarget = computed(() => {
+  const p = props.value;
+  const size = worldSizes.value.find(s => s.type === p?.WorldSize);
+  if (!p || !size || size.width <= 0 || size.height <= 0) return null;
+  return size.width === p.GridWidth && size.height === p.GridHeight ? null : size;
+});
+
+function fitWorldSize() {
+  const p = props.value, size = worldSizeTarget.value;
+  if (!p || !size) return;
+  // Split the difference between both sides, so the map stays in the middle
+  const dw = size.width - p.GridWidth, dh = size.height - p.GridHeight;
+  resize.value = {west: Math.trunc(dw / 2), east: dw - Math.trunc(dw / 2), north: dh - Math.trunc(dh / 2), south: Math.trunc(dh / 2)};
+}
+
+function clearResize() {
+  resize.value = {west: 0, east: 0, north: 0, south: 0};
+}
+
+watch(mapVersion, () => {
+  clearResize();
+  resizeResult.value = null;
+});
+
+async function applyResize() {
+  resizing.value = true;
+  try {
+    resizeResult.value = await ResizeMap(sideValue('west'), sideValue('east'), sideValue('north'), sideValue('south'));
+    error.value = '';
+    clearResize();
+    await load();
+  } catch (err: any) {
+    error.value = String(err);
+  } finally {
+    resizing.value = false;
+  }
+}
+
+const resizeResultText = computed(() => {
+  const r = resizeResult.value;
+  if (!r) return '';
+  const parts = [t('resize.done', {width: props.value?.GridWidth ?? 0, height: props.value?.GridHeight ?? 0})];
+  if (r.units || r.cities || r.signs) parts.push(t('resize.lost', {units: r.units, cities: r.cities, signs: r.signs}));
+  if (r.starts?.length) parts.push(t('resize.startsOutside', {players: r.starts.join(', ')}));
+  parts.push(t('resize.undoHint'));
+  return parts.join(' ');
+});
+
 async function createPlots() {
   creating.value = true;
   try {
@@ -139,8 +209,28 @@ const statRows = computed(() => {
     <template v-if="hasPlots">
       <div class="text-body-2 mb-2">
         {{ $t('mapProps.sizeIs') }} <b>{{ props.GridWidth }}×{{ props.GridHeight }}</b> {{ $t('mapProps.plots') }}
-        <span class="text-medium-emphasis">{{ $t('mapProps.sizeFixed') }}</span>
       </div>
+      <div class="text-caption text-medium-emphasis mb-2">{{ $t('resize.hint') }}</div>
+      <v-row dense class="align-center">
+        <v-col v-for="side in sides" :key="side" cols="6" md="2">
+          <v-text-field :label="$t(`resize.${side}`)" type="number" density="compact" hide-details
+                        v-model.number="resize[side]" />
+        </v-col>
+        <v-col cols="12" md="4" class="d-flex align-center ga-2">
+          <span class="text-body-2 text-no-wrap">→ <b>{{ newSize.width }}×{{ newSize.height }}</b></span>
+          <v-btn color="primary" prepend-icon="mdi-resize" :disabled="!resizeChanged || !newSizeValid"
+                 :loading="resizing" @click="applyResize">{{ $t('resize.apply') }}</v-btn>
+        </v-col>
+      </v-row>
+      <div class="d-flex align-center flex-wrap ga-2 mt-1">
+        <v-btn v-if="worldSizeTarget" size="small" variant="text" prepend-icon="mdi-arrow-expand"
+               @click="fitWorldSize">{{ $t('resize.fitWorldSize', {size: worldSizeTarget.description, width: worldSizeTarget.width, height: worldSizeTarget.height}) }}</v-btn>
+        <v-btn v-if="resizeChanged" size="small" variant="text" prepend-icon="mdi-close" @click="clearResize">{{ $t('common.cancel') }}</v-btn>
+        <span v-if="resizeChanged && !newSizeValid" class="text-caption text-error">{{ $t('resize.invalid', {min: 4, max: 512}) }}</span>
+      </div>
+      <v-alert v-if="resizeResult" type="info" variant="tonal" density="compact" class="mt-2" closable
+               @click:close="resizeResult = null">{{ resizeResultText }}
+      </v-alert>
     </template>
     <template v-else>
       <div class="text-body-2 text-medium-emphasis mb-2">

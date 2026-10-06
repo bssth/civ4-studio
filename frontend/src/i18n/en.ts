@@ -93,6 +93,8 @@ const en = {
         "water": "Water"
     },
     "history": {
+        "resize": "resizing of the map to {width}×{height}",
+        "signs": "signs of plot {x}, {y}",
         "clear": "clearing of player {n}",
         "game": "game settings",
         "map": "map properties",
@@ -123,6 +125,7 @@ const en = {
         "Ukrainian": "Ukrainian"
     },
     "layers": {
+        "signs": "Signs",
         "cities": "Cities",
         "grid": "Grid",
         "resources": "Resources",
@@ -144,7 +147,6 @@ const en = {
         "randomizeResources": "Randomize resources at game start",
         "seaLevel": "Sea level",
         "size": "Size",
-        "sizeFixed": "The size of a map with plots can not be changed.",
         "sizeIs": "The map is",
         "statCities": "Cities",
         "statHills": "Hills / peaks",
@@ -259,6 +261,8 @@ const en = {
             "startWater": "player {player} starts in water"
         },
         "plots": {
+            "signOutside": "sign \"{caption}\" at {x}, {y} is outside of the map",
+            "signPlayer": "sign \"{caption}\" is shown only to player {player}, which is an empty slot",
             "cityEmptyOwner": "city {city} belongs to player {player}, which is an empty slot",
             "cityNoPopulation": "city {city} has no population",
             "cityWater": "city {city} is in water",
@@ -347,6 +351,30 @@ const en = {
         "techCount": "{n} techs",
         "techsHint": "Gives every tech of the chosen era and earlier eras; techs the teams already have are kept.",
         "upToEra": "Up to era"
+    },
+    "resize": {
+        "apply": "Resize",
+        "done": "The map is now {width}×{height}.",
+        "east": "East, columns",
+        "fitWorldSize": "Size of {size} ({width}×{height})",
+        "hint": "Add (positive numbers) or remove (negative) columns and rows on each side. Everything on the map keeps its place, new plots are ocean.",
+        "invalid": "The size must be within {min}..{max}.",
+        "lost": "Removed: units {units}, cities {cities}, signs {signs}.",
+        "north": "North, rows",
+        "south": "South, rows",
+        "startsOutside": "Start positions outside of the map: players {players}.",
+        "undoHint": "Ctrl+Z undoes it.",
+        "west": "West, columns"
+    },
+    "signs": {
+        "add": "Add sign",
+        "caption": "Sign text",
+        "everyone": "Everyone",
+        "newCaption": "New sign",
+        "none": "No signs on this plot. Signs are texts shown on the map in the game.",
+        "remove": "Remove the sign",
+        "title": "Signs",
+        "visibleTo": "Visible to"
     },
     "toolbar": {
         "launch": "Launch the game",

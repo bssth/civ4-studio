@@ -14,6 +14,7 @@ const (
 	PlotFlagImprovement             // has an improvement
 	PlotFlagRoute                   // has a route
 	PlotFlagLandmark                // has a landmark text
+	PlotFlagSign                    // has a sign
 )
 
 // MapView is a compact, columnar form of the plots for drawing the map.
@@ -123,6 +124,12 @@ func (m *WbMap) View() *MapView {
 		view.UnitCount[i] = len(p.Units)
 		if len(p.Units) > 0 {
 			view.UnitOwner[i] = p.Units[0].UnitOwner
+		}
+	}
+
+	for _, sign := range m.Signs {
+		if sign.PlotX >= 0 && sign.PlotY >= 0 && sign.PlotX < view.Width && sign.PlotY < view.Height {
+			view.Flags[sign.PlotY*view.Width+sign.PlotX] |= PlotFlagSign
 		}
 	}
 
