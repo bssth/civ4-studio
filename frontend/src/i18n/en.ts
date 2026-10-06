@@ -1,6 +1,8 @@
 // Generated from the translation catalog; keep keys in sync with the other language.
 const en = {
     "area": {
+        "flipX": "Mirror west–east",
+        "flipY": "Mirror north–south",
         "cleared": "Removed: units {units}, cities {cities}.",
         "clipboard": "Copied: {width}×{height} plots (cities {cities}, units {units}).",
         "clipboardEmpty": "Nothing is copied yet. Select an area and press Ctrl+C to copy it, also into another map.",
@@ -28,6 +30,8 @@ const en = {
         "openMapHint": "To start editing, open a map from the toolbar."
     },
     "brush": {
+        "fillHint": "A click fills the connected area of the same terrain and height, e.g. a lake or a desert.",
+        "fillTitle": "Fill a connected area",
         "autoHeight": "Water terrain makes plots water and land terrain makes water plots flat, unless the height is painted too.",
         "empty": "Switch on at least one property or pick a preset.",
         "help": "Drag over the map to paint. Only the properties switched on are changed; Ctrl+Z undoes a stroke.",
@@ -325,6 +329,20 @@ const en = {
         "plots": "Plots",
         "teams": "Teams"
     },
+    "search": {
+        "hint": "Cities, civilizations and leaders (their start positions), signs, landmarks or coordinates like 12, 30. Ctrl+F opens the search.",
+        "kind": {
+            "city": "city",
+            "landmark": "landmark",
+            "plot": "plot",
+            "sign": "sign",
+            "start": "start position"
+        },
+        "nothing": "Nothing found.",
+        "placeholder": "Name or x, y",
+        "plot": "Plot {x}, {y}",
+        "title": "Find on the map (Ctrl+F)"
+    },
     "settings": {
         "autosave": "Autosave map every 5 minutes",
         "autosaveHint": "Only maps that were saved at least once. The original file is kept as .bak",
@@ -439,6 +457,7 @@ const en = {
         "worldSize": "world size"
     },
     "world": {
+        "zoom": "Zoom (Ctrl+wheel)",
         "export": "Export the map as a PNG image",
         "exported": "The image is saved to {path}",
         "hintArea": "Drag to select an area; Ctrl+C copies it, Ctrl+V pastes, Esc deselects.",

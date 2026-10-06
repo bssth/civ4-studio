@@ -12,6 +12,7 @@ import {
   GetSigns,
   PaintPlots,
   PasteRegion,
+  SearchMap,
   SetPlayerStart,
   SetPlot
 } from "../../wailsjs/go/editor/App";
@@ -19,6 +20,7 @@ import {editor} from "../../wailsjs/go/models";
 import {
   batched,
   brush,
+  BRUSH_FILL,
   brushIsEmpty,
   brushOperation,
   describeType,
@@ -26,6 +28,7 @@ import {
   focusPlot,
   history,
   historyLabel,
+  isTextField,
   mapRevision,
   mapVersion,
   NONE,
@@ -38,6 +41,7 @@ import {
   brushCells,
   drawMap,
   FLAG_IMPROVEMENT,
+  floodCells,
   FLAG_ROUTE,
   FLAG_SIGN,
   Layers,
@@ -383,6 +387,9 @@ async function toggleRiver(edge: RiverEdge) {
 // --- Area -----------------------------------------------------------------
 
 const pasteAssets = ref(false);
+// Mirror the copied area west-east and north-south when pasting, e.g. for symmetric multiplayer maps
+const pasteFlipX = ref(false);
+const pasteFlipY = ref(false);
 const areaMessage = ref('');
 
 function screenCell(e: MouseEvent): { col: number, row: number } | null {
@@ -444,7 +451,7 @@ function startPaste() {
 function pasteAt(r: MapRegion) {
   pasting.value = false;
   return areaAction(async () => {
-    const n = await PasteRegion(r.x, r.y, pasteAssets.value);
+    const n = await PasteRegion(r.x, r.y, pasteAssets.value, pasteFlipX.value, pasteFlipY.value);
     await reloadAfterEdit();
     // The pasted area becomes the selection, e.g. to copy it again or fill it
     area.value = r;
@@ -477,8 +484,7 @@ function clearArea(units: boolean, cities: boolean) {
 }
 
 function onKeyDown(e: KeyboardEvent) {
-  const target = e.target as HTMLElement | null;
-  if (target && (target.isContentEditable || ['INPUT', 'TEXTAREA', 'SELECT'].includes(target.tagName))) return;
+  if (isTextField(e.target)) return;
   const key = e.key.toLowerCase();
   if (key === 'escape') {
     if (pasting.value) pasting.value = false;
@@ -486,6 +492,11 @@ function onKeyDown(e: KeyboardEvent) {
     return;
   }
   if (!(e.ctrlKey || e.metaKey)) return;
+  if (key === 'f') {
+    e.preventDefault();
+    searchOpen.value = true;
+    return;
+  }
   if (key === 'c' && mode.value === 'area' && area.value) {
     e.preventDefault();
     copyArea();
@@ -493,6 +504,47 @@ function onKeyDown(e: KeyboardEvent) {
     e.preventDefault();
     startPaste();
   }
+}
+
+// --- Search ---------------------------------------------------------------
+
+const searchOpen = ref(false);
+const searchQuery = ref('');
+const searchResults = ref<editor.SearchResult[]>([]);
+let searchToken = 0;
+
+watch(searchQuery, async q => {
+  const token = ++searchToken;
+  const text = (q ?? '').trim();
+  // "12, 30" or "12 30" are coordinates
+  const coords = text.match(/^(\d+)\s*[,;\s]\s*(\d+)$/);
+  const found = text ? await SearchMap(text) : [];
+  if (token !== searchToken) return;
+  const results = found ?? [];
+  const v = view.value;
+  if (coords && v) {
+    const x = Number(coords[1]), y = Number(coords[2]);
+    if (x < v.width && y < v.height) {
+      results.unshift(editor.SearchResult.createFrom({kind: 'plot', label: t('search.plot', {x, y}), x, y, player: -1}));
+    }
+  }
+  searchResults.value = results;
+});
+
+const searchIcons: Record<string, string> = {
+  plot: 'mdi-crosshairs-gps', city: 'mdi-home-city', start: 'mdi-flag', sign: 'mdi-sign-text', landmark: 'mdi-map-marker',
+};
+
+function searchSubtitle(r: editor.SearchResult): string {
+  const parts = [t(`search.kind.${r.kind}`), `${r.x}, ${r.y}`];
+  if (r.kind === 'city' && r.player >= 0) parts.push(playerName(players.value, r.player));
+  if (r.kind === 'start') parts.push(t('common.player', {n: r.player}));
+  return parts.join(' · ');
+}
+
+function goTo(r: editor.SearchResult) {
+  searchOpen.value = false;
+  focusPlot.value = {x: r.x, y: r.y};
 }
 
 // --- Export ---------------------------------------------------------------
@@ -547,6 +599,14 @@ function onMouseDown(e: MouseEvent) {
   if (mode.value === 'paint') {
     if (brushIsEmpty()) {
       error.value = t('world.brushEmpty');
+      return;
+    }
+    if (brush.size === BRUSH_FILL && view.value) {
+      // One click fills the whole connected area as one step
+      const cells = floodCells(view.value, at.x, at.y, wrapX.value);
+      stroke = {cells: new Map(cells.map(c => [`${c.x},${c.y}`, c])), last: at};
+      preview(cells);
+      finishStroke();
       return;
     }
     stroke = {cells: new Map(), last: at};
@@ -713,6 +773,22 @@ const canvasCursor = computed(() => {
             <v-icon :icon="l.icon"/>
           </v-btn>
         </v-btn-toggle>
+        <v-menu v-model="searchOpen" :close-on-content-click="false" location="bottom start">
+          <template v-slot:activator="{ props: menu }">
+            <v-btn v-bind="menu" icon="mdi-magnify" size="small" variant="text" :title="$t('search.title')"/>
+          </template>
+          <v-card width="380" class="pa-2">
+            <v-text-field v-model="searchQuery" autofocus clearable density="compact" hide-details
+                          prepend-inner-icon="mdi-magnify" :placeholder="$t('search.placeholder')"
+                          @keydown.enter="searchResults[0] && goTo(searchResults[0])"/>
+            <v-list v-if="searchResults.length" density="compact" max-height="360" class="overflow-y-auto search-results">
+              <v-list-item v-for="(r, i) in searchResults" :key="i" :prepend-icon="searchIcons[r.kind]"
+                           :title="r.label" :subtitle="searchSubtitle(r)" @click="goTo(r)"/>
+            </v-list>
+            <div v-else-if="searchQuery" class="text-caption text-medium-emphasis pa-2">{{ $t('search.nothing') }}</div>
+            <div v-else class="text-caption text-medium-emphasis pa-2">{{ $t('search.hint') }}</div>
+          </v-card>
+        </v-menu>
         <template v-if="wrapX && view">
           <v-btn icon="mdi-arrow-left-bold" size="small" variant="text" :title="$t('world.seamLeft')"
                  @click="shift(Math.max(1, Math.round(view.width / 8)))"/>
@@ -724,10 +800,9 @@ const canvasCursor = computed(() => {
                  @click="offset = 0"/>
         </template>
         <v-spacer/>
-        <v-icon icon="mdi-magnify-minus-outline" size="small"/>
         <v-slider v-model="cell" :min="2" :max="maxCell" :step="1" hide-details density="compact"
+                  prepend-icon="mdi-magnify-minus-outline" :title="$t('world.zoom')"
                   style="max-width: 150px; min-width: 100px"/>
-        <v-icon icon="mdi-magnify-plus-outline" size="small"/>
         <v-btn icon="mdi-fit-to-screen-outline" size="small" variant="text" :title="$t('world.fit')" @click="fitToScreen"/>
         <v-btn icon="mdi-file-image-outline" size="small" variant="text" :title="$t('world.export')" :loading="exporting"
                @click="exportImage"/>
@@ -774,6 +849,8 @@ const canvasCursor = computed(() => {
             {{ $t('area.clipboard', {width: clipboard.width, height: clipboard.height, cities: clipboard.cities, units: clipboard.units}) }}
           </div>
           <v-checkbox v-model="pasteAssets" :label="$t('area.withAssets')" density="compact" hide-details/>
+          <v-checkbox v-model="pasteFlipX" :label="$t('area.flipX')" density="compact" hide-details/>
+          <v-checkbox v-model="pasteFlipY" :label="$t('area.flipY')" density="compact" hide-details/>
           <v-btn size="small" :color="pasting ? 'warning' : 'primary'" variant="tonal" prepend-icon="mdi-content-paste"
                  @click="pasting ? (pasting = false) : startPaste()">
             {{ pasting ? $t('common.cancel') : $t('area.paste') }}

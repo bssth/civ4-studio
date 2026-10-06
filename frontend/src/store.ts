@@ -122,6 +122,17 @@ export function historyLabel(label: string): string {
 
 export const NONE = 'NONE';
 
+// Inputs that are not for text: shortcuts keep working after one of them is clicked
+const nonTextInputs = ['checkbox', 'radio', 'button', 'submit', 'reset', 'range', 'color', 'file', 'image'];
+
+/** The event target edits text, so it keeps its own Ctrl+Z, Ctrl+C, Ctrl+V... */
+export function isTextField(target: EventTarget | null): boolean {
+    const el = target as HTMLElement | null;
+    if (!el || !el.tagName) return false;
+    if (el.isContentEditable || el.tagName === 'TEXTAREA' || el.tagName === 'SELECT') return true;
+    return el.tagName === 'INPUT' && !nonTextInputs.includes((el as HTMLInputElement).type);
+}
+
 /**
  * Returns options with the current value appended if it is unknown (e.g. it comes from another mod),
  * so selects never hide values stored in the map.
@@ -208,6 +219,9 @@ export interface BrushProperty<T> {
     on: boolean;
     value: T;
 }
+
+// Brush size that fills the connected area of the same terrain and height instead of a square
+export const BRUSH_FILL = 0;
 
 export const brush = reactive({
     size: 1,
