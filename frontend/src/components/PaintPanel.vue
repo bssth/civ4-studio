@@ -7,6 +7,7 @@ import {
   brushPresets,
   emptyIfNone,
   enums,
+  fogTeam,
   noneIfEmpty,
   withCurrent,
   withNone
@@ -14,6 +15,9 @@ import {
 import {PLOT_HILLS, PLOT_LAND, PLOT_OCEAN, PLOT_PEAK} from "../mapRender";
 import {computed} from "vue";
 import {useI18n} from "vue-i18n";
+
+// Teams of the players for the reveal brush
+defineProps<{ teamItems: { value: number, title: string }[] }>();
 
 const {t} = useI18n();
 
@@ -100,6 +104,17 @@ function optional(options: any[], value: string) {
                 :items="optional(enums.routes, brush.route.value)" item-value="type" item-title="description"
                 :model-value="noneIfEmpty(brush.route.value)"
                 @update:model-value="(v: string) => brush.route.value = emptyIfNone(v)"/>
+    </div>
+
+    <div class="brush-row">
+      <v-checkbox-btn class="flex-grow-0" v-model="brush.reveal.on" density="compact"/>
+      <v-select :label="$t('brush.revealFor')" density="compact" hide-details :disabled="!brush.reveal.on"
+                :items="teamItems" v-model="fogTeam"/>
+      <v-btn-toggle v-model="brush.reveal.value" mandatory density="compact" divided variant="outlined"
+                    :disabled="!brush.reveal.on">
+        <v-btn :value="true" size="small" :title="$t('brush.reveal')"><v-icon icon="mdi-eye"/></v-btn>
+        <v-btn :value="false" size="small" :title="$t('brush.hide')"><v-icon icon="mdi-eye-off"/></v-btn>
+      </v-btn-toggle>
     </div>
 
     <v-alert v-if="brushIsEmpty()" type="info" variant="tonal" density="compact" class="mt-3">

@@ -50,6 +50,8 @@ export function GetPlayers():Promise<Array<editor.Player>>;
 
 export function GetPlot(arg1:number,arg2:number):Promise<editor.Plot>;
 
+export function GetRevealed(arg1:number):Promise<string>;
+
 export function GetSigns():Promise<Array<editor.Sign>>;
 
 export function GetTeams():Promise<Array<editor.Team>>;

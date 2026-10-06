@@ -60,6 +60,8 @@ export interface Layers {
     units: boolean;
     starts: boolean;
     signs: boolean;
+    // Plots not revealed to the chosen team are darkened
+    fog: boolean;
     grid: boolean;
 }
 
@@ -93,6 +95,8 @@ export interface RenderOptions {
     offset?: number;
     // The map wraps east-west: the brush continues on the other side of the seam
     wrapX?: boolean;
+    // "1" for every plot (y*width+x) revealed to the team of the fog layer
+    revealed?: string;
     // Selected area and the place where the copied area would be pasted
     area?: MapRegion | null;
     paste?: MapRegion | null;
@@ -366,6 +370,13 @@ export function drawMap(ctx: CanvasRenderingContext2D, view: editor.MapView, o: 
             }
         }
         ctx.stroke();
+    }
+
+    if (layers.fog && o.revealed && o.revealed.length === w * h) {
+        ctx.fillStyle = 'rgba(10, 10, 20, 0.6)';
+        for (let i = 0; i < o.revealed.length; i++) {
+            if (o.revealed[i] !== '1') ctx.fillRect(left(i % w), rowOf(view, Math.floor(i / w)) * cell, cell, cell);
+        }
     }
 
     if (offset !== 0) {

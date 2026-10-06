@@ -3,6 +3,7 @@ package editor
 import (
 	"errors"
 	"fmt"
+	"slices"
 	"strconv"
 	"strings"
 )
@@ -24,11 +25,14 @@ type PaintOp struct {
 	Bonus          *string  `json:"bonus,omitempty"`
 	Improvement    *string  `json:"improvement,omitempty"`
 	Route          *string  `json:"route,omitempty"`
+	// RevealTeam reveals the plots to a team (Reveal) or hides them from it (TeamReveal)
+	RevealTeam *int `json:"reveal_team,omitempty"`
+	Reveal     bool `json:"reveal"`
 }
 
 func (op *PaintOp) empty() bool {
 	return op.Terrain == nil && op.PlotType == nil && op.Feature == nil &&
-		op.Bonus == nil && op.Improvement == nil && op.Route == nil
+		op.Bonus == nil && op.Improvement == nil && op.Route == nil && op.RevealTeam == nil
 }
 
 // isWaterTerrain uses game data when it is loaded and the usual names otherwise
@@ -81,6 +85,16 @@ func (op *PaintOp) apply(p *Plot, data *GameData) bool {
 	if op.Route != nil {
 		p.RouteType = *op.Route
 	}
+	if op.RevealTeam != nil {
+		team := uint(*op.RevealTeam)
+		known := slices.Contains(p.TeamReveal, team)
+		if op.Reveal && !known {
+			p.TeamReveal = append(p.TeamReveal, team)
+			slices.Sort(p.TeamReveal)
+		} else if !op.Reveal && known {
+			p.TeamReveal = slices.DeleteFunc(p.TeamReveal, func(t uint) bool { return t == team })
+		}
+	}
 
 	return before != string(p.ToWbFormat())
 }
@@ -117,6 +131,9 @@ func (a *App) PaintPlots(op *PaintOp) (int, error) {
 	}
 	if op.PlotType != nil && (*op.PlotType < PlotPeak || *op.PlotType > PlotOcean) {
 		return 0, fmt.Errorf("invalid plot type %d", *op.PlotType)
+	}
+	if op.RevealTeam != nil && *op.RevealTeam < 0 {
+		return 0, fmt.Errorf("invalid team %d", *op.RevealTeam)
 	}
 
 	data := CurrentGameData()

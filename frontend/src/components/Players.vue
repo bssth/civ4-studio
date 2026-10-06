@@ -80,6 +80,33 @@ function clearSlot(p: editor.Player) {
   });
 }
 
+// --- Attitudes: AttitudePlayer and AttitudeExtra are parallel lists ------------
+
+function attitudeRows(p: editor.Player) {
+  const others = p.AttitudePlayer ?? [], values = p.AttitudeExtra ?? [];
+  return others.map((other, i) => ({other, value: values[i] ?? 0}));
+}
+
+function setAttitude(p: editor.Player, other: number, value: number | null) {
+  const rows = attitudeRows(p).filter(r => r.other !== other);
+  if (value !== null) rows.push({other, value: Math.round(Number(value) || 0)});
+  rows.sort((a, b) => a.other - b.other);
+  p.AttitudePlayer = rows.map(r => r.other);
+  p.AttitudeExtra = rows.map(r => r.value);
+}
+
+function attitudeCandidates(p: editor.Player, index: number) {
+  const used = new Set(attitudeRows(p).map(r => r.other));
+  return players.value
+      .map((q, i) => ({q, i}))
+      .filter(({q, i}) => i !== index && !isEmpty(q) && !used.has(i))
+      .map(({i}) => ({value: i, title: `#${i} ${playerName(players.value, i)}`}));
+}
+
+function attitudeColor(value: number): string {
+  return value > 0 ? 'success' : value < 0 ? 'error' : 'grey';
+}
+
 function onCivChange(p: editor.Player, civType: string) {
   const wasEmpty = isEmpty(p);
   p.CivType = civType;
@@ -376,6 +403,21 @@ function civTitle(p: editor.Player): string {
                           density="compact" hide-details class="mt-3"
                           :model-value="(player.CityList ?? []).join('\n')"
                           @update:model-value="(v: string) => player.CityList = (v ?? '').split('\n').map(s => s.trim()).filter(Boolean)" />
+
+              <h4 class="mt-4 mb-1">{{ $t('players.attitudes') }}</h4>
+              <div class="text-caption text-medium-emphasis mb-2">{{ $t('players.attitudesHint') }}</div>
+              <div v-for="row in attitudeRows(player)" :key="row.other" class="d-flex align-center" style="gap: 8px">
+                <span class="text-body-2" style="width: 220px">#{{ row.other }} {{ playerName(players, row.other) }}</span>
+                <v-slider :model-value="row.value" :min="-10" :max="10" :step="1" hide-details density="compact"
+                          :color="attitudeColor(row.value)" class="flex-grow-1"
+                          @update:model-value="(v: number) => setAttitude(player, row.other, v)"/>
+                <span class="text-body-2 text-end" style="width: 32px">{{ row.value > 0 ? '+' : '' }}{{ row.value }}</span>
+                <v-btn icon="mdi-close" size="x-small" variant="text" :title="$t('players.removeAttitude')"
+                       @click="setAttitude(player, row.other, null)"/>
+              </div>
+              <v-select v-if="attitudeCandidates(player, idx).length" :label="$t('players.addAttitude')"
+                        density="compact" hide-details :items="attitudeCandidates(player, idx)" :model-value="null"
+                        style="max-width: 360px" @update:model-value="(o: number) => setAttitude(player, o, 0)"/>
             </template>
           </v-expansion-panel-text>
         </v-expansion-panel>

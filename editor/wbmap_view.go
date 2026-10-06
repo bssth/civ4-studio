@@ -4,6 +4,8 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
+	"slices"
+	"strings"
 )
 
 // Plot flags in MapView.Flags
@@ -135,6 +137,38 @@ func (m *WbMap) View() *MapView {
 
 	view.Terrains, view.Features, view.Bonuses = terrains.list(), features.list(), bonuses.list()
 	return view
+}
+
+// Revealed returns which plots a team sees at the start, as a string of "0" and "1" indexed by y*width+x.
+// A team with RevealMap sees everything.
+func (m *WbMap) Revealed(team int) string {
+	if m.Map == nil {
+		return ""
+	}
+	w, h := int(m.Map.GridWidth), int(m.Map.GridHeight)
+	result := []byte(strings.Repeat("0", w*h))
+	for _, t := range m.Teams {
+		if int(t.TeamID) == team && t.RevealMap {
+			return strings.Repeat("1", w*h)
+		}
+	}
+	for _, p := range m.Plots {
+		x, y := int(p.X), int(p.Y)
+		if x < w && y < h && slices.Contains(p.TeamReveal, uint(team)) {
+			result[y*w+x] = '1'
+		}
+	}
+	return string(result)
+}
+
+// GetRevealed returns the plots revealed to a team, see WbMap.Revealed.
+func (a *App) GetRevealed(team int) string {
+	a.mu.Lock()
+	defer a.mu.Unlock()
+	if a.wbMap == nil {
+		return ""
+	}
+	return a.wbMap.Revealed(team)
 }
 
 // FindPlot returns the index of the plot with given coordinates in m.Plots, -1 if there is none

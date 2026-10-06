@@ -98,6 +98,10 @@ export function GetPlot(arg1, arg2) {
   return window['go']['editor']['App']['GetPlot'](arg1, arg2);
 }
 
+export function GetRevealed(arg1) {
+  return window['go']['editor']['App']['GetRevealed'](arg1);
+}
+
 export function GetSigns() {
   return window['go']['editor']['App']['GetSigns']();
 }

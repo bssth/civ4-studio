@@ -1,6 +1,9 @@
 package editor
 
-import "testing"
+import (
+	"strings"
+	"testing"
+)
 
 func paintTestApp(t *testing.T) *App {
 	t.Helper()
@@ -142,5 +145,37 @@ func TestHistoryIsLimitedAndResetOnNewMap(t *testing.T) {
 	app.mu.Unlock()
 	if s := app.HistoryState(); s.Undo != "" || s.Redo != "" {
 		t.Errorf("history must be empty: %+v", s)
+	}
+}
+
+func TestPaintReveal(t *testing.T) {
+	app := paintTestApp(t)
+	team := 2
+	op := &PaintOp{Cells: []PlotXY{{0, 0}, {1, 0}}, RevealTeam: &team, Reveal: true}
+	if n, err := app.PaintPlots(op); err != nil || n != 2 {
+		t.Fatalf("revealed %d: %v", n, err)
+	}
+	app.GetPlot(1, 0).TeamReveal = []uint{2, 5}
+	if got := app.GetRevealed(2); got[:4] != "1100" || len(got) != 16 {
+		t.Errorf("revealed = %q", got)
+	}
+	// Revealing again changes nothing, hiding removes only that team
+	if n, _ := app.PaintPlots(op); n != 0 {
+		t.Errorf("already revealed, changed %d", n)
+	}
+	op.Reveal = false
+	if n, _ := app.PaintPlots(op); n != 2 {
+		t.Errorf("hidden %d", n)
+	}
+	if r := app.GetPlot(1, 0).TeamReveal; len(r) != 1 || r[0] != 5 {
+		t.Errorf("team reveal = %v", r)
+	}
+	app.wbMap.Teams[2].RevealMap = true
+	if got := app.GetRevealed(2); got != strings.Repeat("1", 16) {
+		t.Errorf("a team with the revealed map sees everything: %q", got)
+	}
+	bad := -1
+	if _, err := app.PaintPlots(&PaintOp{Cells: []PlotXY{{0, 0}}, RevealTeam: &bad, Reveal: true}); err == nil {
+		t.Error("a negative team must be refused")
 	}
 }

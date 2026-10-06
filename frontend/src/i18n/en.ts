@@ -30,6 +30,9 @@ const en = {
         "openMapHint": "To start editing, open a map from the toolbar."
     },
     "brush": {
+        "hide": "Hide from the team",
+        "reveal": "Reveal to the team",
+        "revealFor": "Revealed to team",
         "fillHint": "A click fills the connected area of the same terrain and height, e.g. a lake or a desert.",
         "fillTitle": "Fill a connected area",
         "autoHeight": "Water terrain makes plots water and land terrain makes water plots flat, unless the height is painted too.",
@@ -207,6 +210,7 @@ const en = {
         "Ukrainian": "Ukrainian"
     },
     "layers": {
+        "fog": "Revealed plots of a team",
         "signs": "Signs",
         "cities": "Cities",
         "grid": "Grid",
@@ -276,6 +280,10 @@ const en = {
         "units": "Units ({n})"
     },
     "players": {
+        "addAttitude": "Add an attitude to a player",
+        "attitudes": "Attitudes",
+        "attitudesHint": "How much the AI leader likes (+) or dislikes (−) other players at the start, on top of the usual reasons.",
+        "removeAttitude": "Remove",
         "aiOnly": "AI only",
         "anyLeader": "Allow any leader for a civilization",
         "artStyle": "Art style",
@@ -550,6 +558,8 @@ const en = {
         "worldSize": "world size"
     },
     "world": {
+        "fogTeam": "Plots revealed to",
+        "teamOf": "Team {n}: {names}",
         "zoom": "Zoom (Ctrl+wheel)",
         "export": "Export the map as a PNG image",
         "exported": "The image is saved to {path}",

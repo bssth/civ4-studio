@@ -9,6 +9,7 @@ import {
   GetMapView,
   GetPlayers,
   GetPlot,
+  GetRevealed,
   GetSigns,
   PaintPlots,
   PasteRegion,
@@ -26,6 +27,7 @@ import {
   describeType,
   enums,
   focusPlot,
+  fogTeam,
   history,
   historyLabel,
   isTextField,
@@ -78,7 +80,7 @@ const wrapX = ref(false);
 // Map column shown at the left edge
 const offset = ref(0);
 const mode = ref<Mode>('select');
-const layers = reactive<Layers>({rivers: true, resources: true, cities: true, units: true, starts: true, signs: true, grid: false});
+const layers = reactive<Layers>({rivers: true, resources: true, cities: true, units: true, starts: true, signs: true, fog: false, grid: false});
 const layerNames: { key: keyof Layers, title: string, icon: string }[] = [
   {key: 'rivers', title: 'layers.rivers', icon: 'mdi-waves'},
   {key: 'resources', title: 'layers.resources', icon: 'mdi-diamond-stone'},
@@ -86,6 +88,7 @@ const layerNames: { key: keyof Layers, title: string, icon: string }[] = [
   {key: 'units', title: 'layers.units', icon: 'mdi-chess-pawn'},
   {key: 'starts', title: 'layers.starts', icon: 'mdi-flag'},
   {key: 'signs', title: 'layers.signs', icon: 'mdi-sign-text'},
+  {key: 'fog', title: 'layers.fog', icon: 'mdi-weather-fog'},
   {key: 'grid', title: 'layers.grid', icon: 'mdi-grid'},
 ];
 const activeLayers = computed({
@@ -111,7 +114,35 @@ const dpr = window.devicePixelRatio || 1;
 
 function setView(v: editor.MapView | null) {
   view.value = v && v.width > 0 && v.height > 0 ? v : null;
+  refreshFog();
 }
+
+// Plots revealed to fogTeam, loaded only while the fog layer is shown
+const revealed = ref('');
+let fogToken = 0;
+
+async function refreshFog() {
+  const token = ++fogToken;
+  const r = layers.fog ? await GetRevealed(fogTeam.value) : '';
+  if (token === fogToken) revealed.value = r ?? '';
+}
+
+watch([() => layers.fog, fogTeam], refreshFog);
+// Revealing with the brush makes sense only when the revealed plots are seen
+watch(() => brush.reveal.on, on => {
+  if (on) layers.fog = true;
+});
+
+// Teams of the players, for the fog layer and the reveal brush
+const teamItems = computed(() => {
+  const names = new Map<number, string[]>();
+  players.value.forEach((p, i) => {
+    if (!p.CivType || p.CivType === NONE) return;
+    names.set(p.Team, [...(names.get(p.Team) ?? []), playerName(players.value, i)]);
+  });
+  return [...names.entries()].sort((a, b) => a[0] - b[0])
+      .map(([team, list]) => ({value: team, title: t('world.teamOf', {n: team, names: list.join(', ')})}));
+});
 
 async function load(fit = false) {
   const [v, p, props, s] = await Promise.all([GetMapView(), GetPlayers(), GetMapProps(), GetSigns()]);
@@ -240,12 +271,13 @@ function draw() {
     edge: mode.value === 'river' ? hoverEdge.value : null,
     area: mode.value === 'area' ? area.value : null,
     paste: mode.value === 'area' ? pasteRegion.value : null,
+    revealed: revealed.value,
     offset: offset.value,
     wrapX: wrapX.value,
   });
 }
 
-watch([view, cell, selected, hover, hoverEdge, mode, offset, area, pasting, () => brush.size], scheduleDraw);
+watch([view, cell, selected, hover, hoverEdge, mode, offset, area, pasting, revealed, () => brush.size], scheduleDraw);
 watch([layers, starts, () => enums.colors], scheduleDraw, {deep: true});
 
 /** Screen column of a map column, see offset */
@@ -313,6 +345,11 @@ function preview(cells: { x: number, y: number }[]) {
     if (op.bonus !== undefined) v.bonus[i] = op.bonus ? dictionary(v.bonuses, op.bonus) : -1;
     if (op.improvement !== undefined) v.flags[i] = op.improvement ? v.flags[i] | FLAG_IMPROVEMENT : v.flags[i] & ~FLAG_IMPROVEMENT;
     if (op.route !== undefined) v.flags[i] = op.route ? v.flags[i] | FLAG_ROUTE : v.flags[i] & ~FLAG_ROUTE;
+  }
+  if (op.reveal_team !== undefined && op.reveal_team === fogTeam.value && revealed.value.length === v.width * v.height) {
+    const chars = revealed.value.split('');
+    for (const c of cells) chars[c.y * v.width + c.x] = op.reveal ? '1' : '0';
+    revealed.value = chars.join('');
   }
   scheduleDraw();
 }
@@ -807,6 +844,11 @@ const canvasCursor = computed(() => {
         <v-btn icon="mdi-file-image-outline" size="small" variant="text" :title="$t('world.export')" :loading="exporting"
                @click="exportImage"/>
       </div>
+      <div v-if="layers.fog" class="d-flex align-center px-3 pt-1" style="gap: 8px">
+        <v-icon icon="mdi-weather-fog" size="small"/>
+        <v-select v-model="fogTeam" :items="teamItems" density="compact" hide-details variant="underlined"
+                  :label="$t('world.fogTeam')" style="max-width: 420px"/>
+      </div>
       <div class="px-3 py-1 text-caption text-medium-emphasis text-truncate hover-line">
         {{ hoverText || $t(hints[mode]) }}
       </div>
@@ -821,7 +863,7 @@ const canvasCursor = computed(() => {
     </div>
 
     <div class="editor-panel">
-      <PaintPanel v-if="mode === 'paint'"/>
+      <PaintPanel v-if="mode === 'paint'" :team-items="teamItems"/>
       <div v-else-if="mode === 'area'" class="pa-3">
         <h3 class="mb-1">{{ $t('area.title') }}</h3>
         <div class="text-body-2 mb-3">{{ $t('area.help') }}</div>
