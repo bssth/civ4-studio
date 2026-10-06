@@ -51,7 +51,11 @@ instead of raw identifiers.
 - **Terrain generator.** Fills a map with continents, mountain chains, climate zones by latitude (snow and tundra
   near the poles, deserts in the subtropics, jungle at the equator), forests, rivers running to the sea and
   resources of the game or mod, by a seed and a few sliders; the same seed gives the same map. Start positions of
-  all players can be placed on good land as far from each other as possible. An existing map can be
+  all players can be placed on good land as far from each other as possible.
+- **Import from a picture.** A height map (bright is high) becomes land, hills and peaks with climate, forests,
+  rivers and resources like in the generator; an ordinary map picture is read by its colors (blue water, green
+  grassland, dark green forest, yellow plains and desert, brown hills, gray peaks, white snow). Any PNG, JPEG or GIF
+  is scaled to the map, so real-world maps can be recreated quickly. An existing map can be
   resized: columns and rows are added (as ocean) or cut on any side, while plots, cities, units, start positions and
   signs keep their places.
 - **Scenario check.** Unknown types (e.g. from a mod that is not selected, including city production), start positions in water or outside of the

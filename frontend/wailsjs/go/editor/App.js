@@ -130,6 +130,10 @@ export function HistoryState() {
   return window['go']['editor']['App']['HistoryState']();
 }
 
+export function ImportImage(arg1, arg2) {
+  return window['go']['editor']['App']['ImportImage'](arg1, arg2);
+}
+
 export function LaunchGame() {
   return window['go']['editor']['App']['LaunchGame']();
 }

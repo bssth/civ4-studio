@@ -119,6 +119,8 @@ export function historyLabel(label: string): string {
             return t('history.resize', {width: first, height: second});
         case 'generate':
             return t('history.generate', {seed: value});
+        case 'import':
+            return t('history.import');
         case 'fix':
             return t('history.fix', {n: value});
         case 'replace':

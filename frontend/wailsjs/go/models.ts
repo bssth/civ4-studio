@@ -222,6 +222,34 @@ export namespace editor {
 	        this.redo = source["redo"];
 	    }
 	}
+	export class ImageImportOptions {
+	    mode: string;
+	    invert: boolean;
+	    seed: number;
+	    land: number;
+	    hills: number;
+	    peaks: number;
+	    forests: number;
+	    rivers: number;
+	    resources: boolean;
+	
+	    static createFrom(source: any = {}) {
+	        return new ImageImportOptions(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.mode = source["mode"];
+	        this.invert = source["invert"];
+	        this.seed = source["seed"];
+	        this.land = source["land"];
+	        this.hills = source["hills"];
+	        this.peaks = source["peaks"];
+	        this.forests = source["forests"];
+	        this.rivers = source["rivers"];
+	        this.resources = source["resources"];
+	    }
+	}
 	export class LanguageOption {
 	    name: string;
 	    texts: number;

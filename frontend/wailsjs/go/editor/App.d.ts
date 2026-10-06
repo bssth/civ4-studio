@@ -66,6 +66,8 @@ export function HasMap():Promise<boolean>;
 
 export function HistoryState():Promise<editor.HistoryState>;
 
+export function ImportImage(arg1:string,arg2:editor.ImageImportOptions):Promise<editor.TerrainResult>;
+
 export function LaunchGame():Promise<void>;
 
 export function LoadGameXML():Promise<void>;
