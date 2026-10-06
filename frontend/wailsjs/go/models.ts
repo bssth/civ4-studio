@@ -467,6 +467,8 @@ export namespace editor {
 	    bonus?: string;
 	    improvement?: string;
 	    route?: string;
+	    reveal_team?: number;
+	    reveal: boolean;
 	
 	    static createFrom(source: any = {}) {
 	        return new PaintOp(source);
@@ -482,6 +484,8 @@ export namespace editor {
 	        this.bonus = source["bonus"];
 	        this.improvement = source["improvement"];
 	        this.route = source["route"];
+	        this.reveal_team = source["reveal_team"];
+	        this.reveal = source["reveal"];
 	    }
 	
 		convertValues(a: any, classs: any, asMap: boolean = false): any {

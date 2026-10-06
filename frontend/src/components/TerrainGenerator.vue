@@ -49,7 +49,7 @@ async function drawPreview() {
       .map(({p, i}) => ({player: i, x: p.StartingX, y: p.StartingY, color: playerColor(list, i), random: p.RandomStartLocation}));
   drawMap(ctx, view, {
     cell,
-    layers: {rivers: cell >= 3, resources: false, cities: true, units: false, starts: true, signs: false, grid: false},
+    layers: {rivers: cell >= 3, resources: false, cities: true, units: false, starts: true, signs: false, fog: false, grid: false},
     ownerColor: owner => playerColor(list, owner),
     starts,
     selected: null,

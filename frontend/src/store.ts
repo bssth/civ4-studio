@@ -245,7 +245,12 @@ export const brush = reactive({
     bonus: {on: false, value: ''} as BrushProperty<string>,
     improvement: {on: false, value: ''} as BrushProperty<string>,
     route: {on: false, value: ''} as BrushProperty<string>,
+    // Reveal the plots to fogTeam (true) or hide them from it (false)
+    reveal: {on: false, value: true} as BrushProperty<boolean>,
 });
+
+// Team whose revealed plots the World tab shows and the brush reveals or hides
+export const fogTeam = ref(0);
 
 export interface BrushPreset {
     // Translation key in brush.presets
@@ -283,6 +288,7 @@ export function applyBrushPreset(preset: BrushPreset) {
     brush.bonus.on = false;
     brush.improvement.on = false;
     brush.route.on = false;
+    brush.reveal.on = false;
 }
 
 /** The paint operation for the current brush, without cells */
@@ -295,9 +301,12 @@ export function brushOperation(): Omit<editor.PaintOp, 'cells' | 'convertValues'
         bonus: brush.bonus.on ? brush.bonus.value : undefined,
         improvement: brush.improvement.on ? brush.improvement.value : undefined,
         route: brush.route.on ? brush.route.value : undefined,
+        reveal_team: brush.reveal.on ? fogTeam.value : undefined,
+        reveal: brush.reveal.value,
     };
 }
 
 export function brushIsEmpty(): boolean {
-    return !(brush.terrain.on || brush.height.on || brush.feature.on || brush.bonus.on || brush.improvement.on || brush.route.on);
+    return !(brush.terrain.on || brush.height.on || brush.feature.on || brush.bonus.on || brush.improvement.on ||
+        brush.route.on || brush.reveal.on);
 }

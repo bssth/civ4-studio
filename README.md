@@ -27,6 +27,8 @@ instead of raw identifiers.
   A selection can be filled with the brush or cleared of units or cities.
 - **Search.** `Ctrl+F` finds cities, civilizations and leaders (their start positions), signs, landmarks and
   coordinates and jumps to the plot.
+- **Revealed plots.** A layer darkens the plots a team does not know at the start, and the brush (or an area
+  fill) reveals plots to a team or hides them, e.g. to give every civilization its own known world.
 - **Map image.** The map can be exported as a PNG picture with the current layers.
 - **Undo.** Every change can be undone with `Ctrl+Z` or the toolbar and redone with `Ctrl+Y`, on any tab: strokes and
   plot edits, pasted and filled areas, signs, players, teams, game settings, map properties and size, swapping and clearing of player slots. Typing a name is
@@ -36,7 +38,8 @@ instead of raw identifiers.
   experience, promotions, AI, damage and facing, and can be duplicated. The *Cities and units* tab lists all of them
   with search, an owner filter and sorting; a click opens the plot.
 - **Players.** Pick a civilization and a leader from the game or mod data: names, color and art style are filled in
-  automatically. Handicap, state religion, starting era, starting civics and city names are editable too. Swap two
+  automatically. Handicap, state religion, starting era, starting civics, city names and the attitude of the AI
+  leader to other players are editable too. Swap two
   player slots or clear one — units, cities, culture, attitudes and signs follow their players.
 - **Teams.** Starting techs and projects, every tech up to an era for all teams at once, and a diplomacy matrix for
   contact, war, open borders, defensive pacts and permanent war/peace.
