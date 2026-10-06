@@ -756,6 +756,48 @@ export namespace editor {
 	        this.RevealMap = source["RevealMap"];
 	    }
 	}
+	export class TerrainOptions {
+	    seed: number;
+	    land: number;
+	    continents: number;
+	    hills: number;
+	    peaks: number;
+	    forests: number;
+	    rivers: number;
+	    resources: boolean;
+	
+	    static createFrom(source: any = {}) {
+	        return new TerrainOptions(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.seed = source["seed"];
+	        this.land = source["land"];
+	        this.continents = source["continents"];
+	        this.hills = source["hills"];
+	        this.peaks = source["peaks"];
+	        this.forests = source["forests"];
+	        this.rivers = source["rivers"];
+	        this.resources = source["resources"];
+	    }
+	}
+	export class TerrainResult {
+	    land: number;
+	    rivers: number;
+	    resources: number;
+	
+	    static createFrom(source: any = {}) {
+	        return new TerrainResult(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.land = source["land"];
+	        this.rivers = source["rivers"];
+	        this.resources = source["resources"];
+	    }
+	}
 	
 	export class UnitEntry {
 	    x: number;

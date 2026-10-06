@@ -3,6 +3,7 @@ import {computed, onMounted, ref, watch} from "vue";
 import {CreatePlots, GetMapProps, GetMapStats, ResizeMap, SetMapProps} from "../../wailsjs/go/editor/App";
 import {editor} from "../../wailsjs/go/models";
 import {useI18n} from "vue-i18n";
+import TerrainGenerator from "./TerrainGenerator.vue";
 import {problemText} from "../problems";
 import {batched, describeType, enums, mapRevision, mapVersion, withCurrent, withNone, worldSizes} from "../store";
 
@@ -256,6 +257,11 @@ const statRows = computed(() => {
           </v-btn>
         </v-col>
       </v-row>
+    </template>
+
+    <template v-if="hasPlots">
+      <v-divider class="my-4" />
+      <TerrainGenerator @changed="refreshStats" />
     </template>
 
     <v-divider class="my-4" />
