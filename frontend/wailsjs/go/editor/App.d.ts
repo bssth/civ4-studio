@@ -112,6 +112,8 @@ export function SetPlotSigns(arg1:number,arg2:number,arg3:Array<editor.Sign>):Pr
 
 export function SetTeams(arg1:Array<editor.Team>):Promise<void>;
 
+export function StartBalance():Promise<Array<editor.StartInfo>>;
+
 export function SwapPlayers(arg1:number,arg2:number):Promise<void>;
 
 export function TranslateKey(arg1:string):Promise<string>;

@@ -15,8 +15,9 @@ instead of raw identifiers.
 - **World map.** Terrain, hills and peaks, forests and other features, rivers, resources, cities, units and start
   positions in player colors, with zoom and layers. Click a plot to change its terrain, feature, resource, improvement
   and route, or to add and edit cities, units and signs (texts on the map, for everyone or one player). Drag a start
-  flag to move a player. A map that wraps east-west can
-  be shifted to move the seam out of the way, e.g. to see the Pacific in one piece.
+  flag to move a player. A map that wraps east-west can be shifted to move the seam out of the way, e.g. to see the
+  Pacific in one piece. An overview of the whole map in the corner shows the visible part and goes anywhere on a
+  click.
 - **Painting.** A brush of size 1–9 paints terrain, height, features, resources, improvements and routes, with presets
   like Ocean, Grassland, Hills or Forest; painting water or land terrain fixes the height. On a wrapping map the brush
   continues across the seam. The fill brush paints a whole connected area of the same terrain and height at once,
@@ -39,7 +40,9 @@ instead of raw identifiers.
   with search, an owner filter and sorting; a click opens the plot.
 - **Players.** Pick a civilization and a leader from the game or mod data: names, color and art style are filled in
   automatically. Handicap, state religion, starting era, starting civics, city names and the attitude of the AI
-  leader to other players are editable too. Swap two
+  leader to other players are editable too. *Start balance* compares the 21 plots around every start: land, good
+  land, hills, forests, water, food, strategic and luxury resources, coast, river and the distance to the nearest
+  neighbour, with the best and worst values highlighted — handy for fair multiplayer maps. Swap two
   player slots or clear one — units, cities, culture, attitudes and signs follow their players.
 - **Teams.** Starting techs and projects, every tech up to an era for all teams at once, and a diplomacy matrix for
   contact, war, open borders, defensive pacts and permanent war/peace.
@@ -68,7 +71,7 @@ a mod file replaces the base file with the same path.
 
 Shortcuts: `Ctrl+N` new map, `Ctrl+O` open, `Ctrl+S` save, `Ctrl+Shift+S` save as, `Ctrl+Z` / `Ctrl+Y` (or
 `Ctrl+Shift+Z`) undo and redo changes outside of text fields, `Ctrl+C` / `Ctrl+V` copy and paste areas and `Ctrl+F`
-searches on the World tab, `Esc` cancels pasting or the selection, `Ctrl+wheel` zooms the map.
+searches on the World tab, `Esc` cancels pasting or the selection, `Ctrl+wheel` zooms the map. `F1` (or the keyboard icon) lists them all.
 
 | Players | Teams and diplomacy |
 |---|---|

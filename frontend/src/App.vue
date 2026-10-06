@@ -13,6 +13,7 @@
               @click="undo(false)" />
       <v-icon class="me-4 no-drag" icon="mdi-rocket-launch" :title="$t('toolbar.launch')" @click="launch" />
       <v-icon class="me-4 no-drag" icon="mdi-cog" :title="$t('toolbar.settings')" @click="tab = 'settings'" />
+      <v-icon class="me-4 no-drag" icon="mdi-keyboard-outline" :title="$t('toolbar.shortcuts')" @click="shortcutsOpen = true" />
 
       <span class="text-caption text-medium-emphasis ms-4 text-truncate" style="max-width: 50%;"
             :title="mapInfo?.path ?? ''">
@@ -109,6 +110,28 @@
         </v-row>
       </v-container>
     </v-main>
+
+    <v-dialog v-model="shortcutsOpen" max-width="620">
+      <v-card :title="$t('shortcuts.title')">
+        <v-card-text>
+          <template v-for="group in shortcutGroups" :key="group.title">
+            <h4 class="mt-2 mb-1">{{ $t(group.title) }}</h4>
+            <v-table density="compact">
+              <tbody>
+              <tr v-for="s in group.items" :key="s.text">
+                <td style="width: 40%"><kbd v-for="(k, i) in s.keys" :key="i" class="me-1">{{ $te(k) ? $t(k) : k }}</kbd></td>
+                <td>{{ $t(s.text) }}</td>
+              </tr>
+              </tbody>
+            </v-table>
+          </template>
+        </v-card-text>
+        <v-card-actions>
+          <v-spacer/>
+          <v-btn variant="text" @click="shortcutsOpen = false">{{ $t('common.close') }}</v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
 
     <v-dialog v-model="saveCheck.open" max-width="640">
       <v-card>
@@ -330,7 +353,32 @@ async function undo(back: boolean) {
   }
 }
 
+// Shortcuts of the whole editor, shown by F1 and the keyboard icon
+const shortcutsOpen = ref(false);
+const shortcutGroups = [
+  {
+    title: 'shortcuts.general', items: [
+      {keys: ['Ctrl+N'], text: 'shortcuts.new'}, {keys: ['Ctrl+O'], text: 'shortcuts.open'},
+      {keys: ['Ctrl+S'], text: 'shortcuts.save'}, {keys: ['Ctrl+Shift+S'], text: 'shortcuts.saveAs'},
+      {keys: ['Ctrl+Z'], text: 'shortcuts.undo'}, {keys: ['Ctrl+Y', 'Ctrl+Shift+Z'], text: 'shortcuts.redo'},
+      {keys: ['F1'], text: 'shortcuts.help'},
+    ],
+  },
+  {
+    title: 'shortcuts.world', items: [
+      {keys: ['Ctrl+F'], text: 'shortcuts.search'}, {keys: ['Ctrl+C'], text: 'shortcuts.copy'},
+      {keys: ['Ctrl+V'], text: 'shortcuts.paste'}, {keys: ['Esc'], text: 'shortcuts.escape'},
+      {keys: ['shortcuts.keyWheel'], text: 'shortcuts.zoom'}, {keys: ['shortcuts.keyDrag'], text: 'shortcuts.dragStart'},
+    ],
+  },
+];
+
 function onKeyDown(e: KeyboardEvent) {
+  if (e.key === 'F1') {
+    e.preventDefault();
+    shortcutsOpen.value = true;
+    return;
+  }
   if (!(e.ctrlKey || e.metaKey)) return;
   const key = e.key.toLowerCase();
   if (key === 'z' || key === 'y') {
@@ -390,6 +438,16 @@ onUnmounted(() => {
 </script>
 
 <style>
+kbd {
+  font-family: monospace;
+  font-size: 0.85em;
+  padding: 1px 6px;
+  border: 1px solid rgba(0, 0, 0, 0.25);
+  border-radius: 4px;
+  background: rgba(0, 0, 0, 0.05);
+  white-space: nowrap;
+}
+
 .no-drag {
   --wails-draggable: no-drag;
 }

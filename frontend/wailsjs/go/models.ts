@@ -734,6 +734,48 @@ export namespace editor {
 	        this.Caption = source["Caption"];
 	    }
 	}
+	export class StartInfo {
+	    player: number;
+	    x: number;
+	    y: number;
+	    land: number;
+	    good: number;
+	    hills: number;
+	    peaks: number;
+	    forests: number;
+	    water: number;
+	    coastal: boolean;
+	    river: boolean;
+	    food: number;
+	    strategic: number;
+	    luxury: number;
+	    resources: string[];
+	    nearest: number;
+	
+	    static createFrom(source: any = {}) {
+	        return new StartInfo(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.player = source["player"];
+	        this.x = source["x"];
+	        this.y = source["y"];
+	        this.land = source["land"];
+	        this.good = source["good"];
+	        this.hills = source["hills"];
+	        this.peaks = source["peaks"];
+	        this.forests = source["forests"];
+	        this.water = source["water"];
+	        this.coastal = source["coastal"];
+	        this.river = source["river"];
+	        this.food = source["food"];
+	        this.strategic = source["strategic"];
+	        this.luxury = source["luxury"];
+	        this.resources = source["resources"];
+	        this.nearest = source["nearest"];
+	    }
+	}
 	export class Team {
 	    TeamID: number;
 	    Tech: string[];

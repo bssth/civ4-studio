@@ -29,6 +29,24 @@ const en = {
         "noMap": "No map loaded",
         "openMapHint": "To start editing, open a map from the toolbar."
     },
+    "balance": {
+        "coastal": "Coast",
+        "food": "Food",
+        "forests": "Forests",
+        "good": "Good land",
+        "hills": "Hills",
+        "hint": "The 21 plots a city on the start works. Green is the best value, red the worst; resources are listed on hover. Click a row to see the start.",
+        "land": "Land",
+        "luxury": "Luxury",
+        "nearest": "Nearest start",
+        "none": "No player has a fixed start position.",
+        "player": "Player",
+        "plot": "Plot",
+        "river": "River",
+        "strategic": "Strategic",
+        "title": "Start balance",
+        "water": "Water"
+    },
     "brush": {
         "hide": "Hide from the team",
         "reveal": "Reveal to the team",
@@ -80,6 +98,7 @@ const en = {
         "withoutData": "Game data is not loaded, so types (civilizations, techs, units...) are not checked."
     },
     "common": {
+        "close": "Close",
         "cancel": "Cancel",
         "noMapHint": "No map loaded. Open one from the toolbar to start editing.",
         "none": "(none)",
@@ -507,6 +526,26 @@ const en = {
         "undoHint": "Ctrl+Z undoes it.",
         "west": "West, columns"
     },
+    "shortcuts": {
+        "keyDrag": "Drag a flag",
+        "keyWheel": "Ctrl+wheel",
+        "copy": "Copy the selected area (Area mode)",
+        "dragStart": "Move a start position (Select mode)",
+        "escape": "Cancel pasting or deselect the area",
+        "general": "Everywhere",
+        "help": "This list",
+        "new": "New map",
+        "open": "Open a map",
+        "paste": "Paste the copied area",
+        "redo": "Redo",
+        "save": "Save",
+        "saveAs": "Save as",
+        "search": "Find a city, civilization, sign or plot",
+        "title": "Keyboard shortcuts",
+        "undo": "Undo the last change (outside of text fields)",
+        "world": "World tab",
+        "zoom": "Zoom the map"
+    },
     "signs": {
         "add": "Add sign",
         "caption": "Sign text",
@@ -518,6 +557,7 @@ const en = {
         "visibleTo": "Visible to"
     },
     "toolbar": {
+        "shortcuts": "Keyboard shortcuts (F1)",
         "launch": "Launch the game",
         "new": "New map (Ctrl+N)",
         "open": "Open (Ctrl+O)",
@@ -558,6 +598,9 @@ const en = {
         "worldSize": "world size"
     },
     "world": {
+        "minimap": "The whole map; click to go there",
+        "minimapHide": "Hide the overview",
+        "minimapShow": "Show the overview of the map",
         "fogTeam": "Plots revealed to",
         "teamOf": "Team {n}: {names}",
         "zoom": "Zoom (Ctrl+wheel)",

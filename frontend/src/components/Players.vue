@@ -17,6 +17,7 @@ import {
   withNone
 } from "../store";
 import {useI18n} from "vue-i18n";
+import StartBalance from "./StartBalance.vue";
 
 const {t} = useI18n();
 
@@ -235,6 +236,8 @@ function civTitle(p: editor.Player): string {
       <v-checkbox v-model="showEmpty" :label="$t('players.showEmpty')" hide-details density="compact" class="me-6" />
       <v-checkbox v-model="anyLeader" :label="$t('players.anyLeader')" hide-details density="compact" />
     </div>
+
+    <StartBalance/>
 
     <v-alert v-if="actionError" type="error" variant="tonal" density="compact" class="mx-3 mb-2" closable
              @click:close="actionError = ''">{{ actionError }}
