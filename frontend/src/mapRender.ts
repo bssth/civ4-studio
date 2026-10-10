@@ -93,8 +93,11 @@ export interface RenderOptions {
     edge?: RiverEdge | null;
     // Map column shown at the left edge of a map wrapping east-west (0 shows the map as it is stored)
     offset?: number;
-    // The map wraps east-west: the brush continues on the other side of the seam
+    // Map row shown at the bottom edge of a map wrapping north-south
+    offsetY?: number;
+    // The map wraps east-west and/or north-south: the brush continues on the other side of the seam
     wrapX?: boolean;
+    wrapY?: boolean;
     // "1" for every plot (y*width+x) revealed to the team of the fog layer
     revealed?: string;
     // Selected area and the place where the copied area would be pasted
@@ -102,7 +105,7 @@ export interface RenderOptions {
     paste?: MapRegion | null;
 }
 
-/** Rectangle of plots: x is the western column, y the southern row; it may cross the seam of a wrapping map */
+/** Rectangle of plots: x is the western column, y the southern row; it may cross the seams of a wrapping map */
 export interface MapRegion {
     x: number;
     y: number;
@@ -110,51 +113,62 @@ export interface MapRegion {
     height: number;
 }
 
-/** Plots of a region inside of the map, columns wrap on a map wrapping east-west */
-export function regionCells(view: editor.MapView, r: MapRegion, wrapX: boolean): { x: number, y: number }[] {
+/** Plots of a region inside of the map, columns wrap on a map wrapping east-west, rows on a map wrapping north-south */
+export function regionCells(view: editor.MapView, r: MapRegion, wrapX: boolean, wrapY = false): { x: number, y: number }[] {
     const cells = [];
     for (let dx = 0; dx < r.width; dx++) {
         const x = wrapX ? mod(r.x + dx, view.width) : r.x + dx;
         if (x < 0 || x >= view.width) continue;
         for (let dy = 0; dy < r.height; dy++) {
-            const y = r.y + dy;
+            const y = wrapY ? mod(r.y + dy, view.height) : r.y + dy;
             if (y >= 0 && y < view.height) cells.push({x, y});
         }
     }
     return cells;
 }
 
+/** Runs of numbers that follow each other, e.g. [0, 1, 2, 5, 6] gives [0, 2] and [5, 6] */
+function runs(values: number[]): [number, number][] {
+    const sorted = [...new Set(values)].sort((a, b) => a - b);
+    const result: [number, number][] = [];
+    for (const v of sorted) {
+        const last = result[result.length - 1];
+        if (last && v === last[1] + 1) last[1] = v;
+        else result.push([v, v]);
+    }
+    return result;
+}
+
 /**
- * Outlines plots in rows bottom..top of the given screen columns; columns that are not next to each other
- * (a shape crossing the edge of the screen) are drawn as separate parts
+ * Outlines a rectangle of plots given by its screen columns and canvas rows; a rectangle crossing the edge
+ * of the screen (the seam of a shifted map) is drawn as separate parts
  */
-function outlineColumns(ctx: CanvasRenderingContext2D, view: editor.MapView, cell: number, columns: number[],
-                        top: number, bottom: number, fill?: string) {
-    columns = [...new Set(columns)].sort((a, b) => a - b);
-    let start = 0;
-    for (let i = 1; i <= columns.length; i++) {
-        if (i === columns.length || columns[i] !== columns[i - 1] + 1) {
-            const x = columns[start] * cell, y = rowOf(view, top) * cell;
-            const w = (columns[i - 1] - columns[start] + 1) * cell, h = (top - bottom + 1) * cell;
+function outlineCells(ctx: CanvasRenderingContext2D, cell: number, columns: number[], rows: number[], fill?: string) {
+    for (const [left, right] of runs(columns)) {
+        for (const [top, bottom] of runs(rows)) {
+            const x = left * cell, y = top * cell, w = (right - left + 1) * cell, h = (bottom - top + 1) * cell;
             if (fill) {
                 ctx.fillStyle = fill;
                 ctx.fillRect(x, y, w, h);
             }
             ctx.strokeRect(x, y, w, h);
-            start = i;
         }
     }
 }
 
+function drawCells(ctx: CanvasRenderingContext2D, view: editor.MapView, o: RenderOptions, cells: { x: number, y: number }[], fill?: string) {
+    outlineCells(ctx, o.cell, cells.map(c => screenColumn(c.x, view.width, o.offset ?? 0)),
+        cells.map(c => screenRow(c.y, view.height, o.offsetY ?? 0)), fill);
+}
+
 function drawRegion(ctx: CanvasRenderingContext2D, view: editor.MapView, o: RenderOptions, r: MapRegion,
                     color: string, fill: string) {
-    const cells = regionCells(view, r, !!o.wrapX);
+    const cells = regionCells(view, r, !!o.wrapX, !!o.wrapY);
     if (cells.length === 0) return;
-    const top = Math.max(...cells.map(c => c.y)), bottom = Math.min(...cells.map(c => c.y));
     ctx.strokeStyle = color;
     ctx.lineWidth = 2;
     ctx.setLineDash([6, 3]);
-    outlineColumns(ctx, view, o.cell, cells.map(c => screenColumn(c.x, view.width, o.offset ?? 0)), top, bottom, fill);
+    drawCells(ctx, view, o, cells, fill);
     ctx.setLineDash([]);
 }
 
@@ -174,18 +188,31 @@ export function mapColumn(column: number, width: number, offset: number): number
 }
 
 /**
- * Plots covered by a square brush of the given size centered at x, y, clipped to the map.
- * On a map wrapping east-west the brush continues on the other side of the seam.
+ * Canvas row of a map row when the map is shifted by offset rows. The game counts rows from the bottom,
+ * the canvas from the top.
  */
-export function brushCells(view: editor.MapView, x: number, y: number, size: number, wrapX = false): { x: number, y: number }[] {
+export function screenRow(y: number, height: number, offset: number): number {
+    return height - 1 - mod(y - offset, height);
+}
+
+/** Map row shown in a canvas row, inverse of screenRow */
+export function mapRow(row: number, height: number, offset: number): number {
+    return mod(height - 1 - row + offset, height);
+}
+
+/**
+ * Plots covered by a square brush of the given size centered at x, y, clipped to the map.
+ * On a wrapping map the brush continues on the other side of the seam.
+ */
+export function brushCells(view: editor.MapView, x: number, y: number, size: number, wrapX = false, wrapY = false): { x: number, y: number }[] {
     const r = Math.floor((size - 1) / 2);
     const cells = [];
     const seen = new Set<number>();
     for (let dy = -r; dy <= r; dy++) {
         for (let dx = -r; dx <= r; dx++) {
-            const cx = wrapX ? mod(x + dx, view.width) : x + dx, cy = y + dy;
+            const cx = wrapX ? mod(x + dx, view.width) : x + dx, cy = wrapY ? mod(y + dy, view.height) : y + dy;
             if (cx >= 0 && cy >= 0 && cx < view.width && cy < view.height && !seen.has(cy * view.width + cx)) {
-                // A brush wider than a narrow map must not cover a plot twice
+                // A brush bigger than a small map must not cover a plot twice
                 seen.add(cy * view.width + cx);
                 cells.push({x: cx, y: cy});
             }
@@ -196,9 +223,9 @@ export function brushCells(view: editor.MapView, x: number, y: number, size: num
 
 /**
  * Plots connected to x, y (through their sides) with the same terrain and height, like a lake or a desert.
- * On a map wrapping east-west the area continues across the seam.
+ * On a wrapping map the area continues across the seam.
  */
-export function floodCells(view: editor.MapView, x: number, y: number, wrapX = false): { x: number, y: number }[] {
+export function floodCells(view: editor.MapView, x: number, y: number, wrapX = false, wrapY = false): { x: number, y: number }[] {
     const w = view.width, h = view.height;
     const start = y * w + x;
     const terrain = view.terrain[start], plotType = view.plot_type[start];
@@ -213,6 +240,7 @@ export function floodCells(view: editor.MapView, x: number, y: number, wrapX = f
         const neighbours = [[cx - 1, cy], [cx + 1, cy], [cx, cy - 1], [cx, cy + 1]];
         for (let [nx, ny] of neighbours) {
             if (wrapX) nx = mod(nx, w);
+            if (wrapY) ny = mod(ny, h);
             if (nx < 0 || ny < 0 || nx >= w || ny >= h) continue;
             const j = ny * w + nx;
             if (!seen[j] && view.terrain[j] === terrain && view.plot_type[j] === plotType) {
@@ -250,11 +278,12 @@ export function lineCells(x0: number, y0: number, x1: number, y1: number): { x: 
  * River edge nearest to a point inside a plot. Edges of the neighbour plots are stored there:
  * the north edge is the south edge of the plot above, the west edge is the east edge of the plot on the left.
  */
-export function nearestEdge(view: editor.MapView, x: number, y: number, fx: number, fy: number, wrapX = false): RiverEdge | null {
+export function nearestEdge(view: editor.MapView, x: number, y: number, fx: number, fy: number, wrapX = false, wrapY = false): RiverEdge | null {
     // fx, fy are 0..1 inside the plot, fy grows downwards on the screen
     const distances: [number, RiverEdge][] = [
         [1 - fy, {x, y, side: 'south'}],
-        [fy, {x, y: y + 1, side: 'south'}],
+        // On a map wrapping north-south the north edge of the last row is the south edge of the first one
+        [fy, {x, y: wrapY ? mod(y + 1, view.height) : y + 1, side: 'south'}],
         [1 - fx, {x, y, side: 'east'}],
         // On a wrapping map the west edge of the first column is the east edge of the last one
         [fx, {x: wrapX ? mod(x - 1, view.width) : x - 1, y, side: 'east'}],
@@ -266,24 +295,20 @@ export function nearestEdge(view: editor.MapView, x: number, y: number, fx: numb
     return null;
 }
 
-/** Canvas row of a map row: the game counts rows from the bottom */
-export function rowOf(view: editor.MapView, y: number): number {
-    return view.height - 1 - y;
-}
-
 export function drawMap(ctx: CanvasRenderingContext2D, view: editor.MapView, o: RenderOptions) {
     const {cell, layers} = o;
     const w = view.width, h = view.height;
-    const offset = o.offset ?? 0;
-    // Left pixel of a map column
+    const offset = o.offset ?? 0, offsetY = o.offsetY ?? 0;
+    // Left pixel of a map column and top pixel of a map row
     const left = (x: number) => screenColumn(x, w, offset) * cell;
+    const top = (y: number) => screenRow(y, h, offsetY) * cell;
     ctx.clearRect(0, 0, w * cell, h * cell);
 
     const terrainFill = view.terrains.map(terrainColor);
     const featureFill = view.features.map(featureColor);
 
     for (let y = 0; y < h; y++) {
-        const py = rowOf(view, y) * cell;
+        const py = top(y);
         for (let x = 0; x < w; x++) {
             const i = y * w + x;
             const px = left(x);
@@ -357,7 +382,7 @@ export function drawMap(ctx: CanvasRenderingContext2D, view: editor.MapView, o: 
             const flags = view.flags[i];
             if (!(flags & (FLAG_N_OF_RIVER | FLAG_W_OF_RIVER))) continue;
             const x = i % w, y = Math.floor(i / w);
-            const px = left(x), py = rowOf(view, y) * cell;
+            const px = left(x), py = top(y);
             if (flags & FLAG_N_OF_RIVER) {
                 // The river runs along the southern edge of the plot
                 ctx.moveTo(px, py + cell);
@@ -375,25 +400,31 @@ export function drawMap(ctx: CanvasRenderingContext2D, view: editor.MapView, o: 
     if (layers.fog && o.revealed && o.revealed.length === w * h) {
         ctx.fillStyle = 'rgba(10, 10, 20, 0.6)';
         for (let i = 0; i < o.revealed.length; i++) {
-            if (o.revealed[i] !== '1') ctx.fillRect(left(i % w), rowOf(view, Math.floor(i / w)) * cell, cell, cell);
+            if (o.revealed[i] !== '1') ctx.fillRect(left(i % w), top(Math.floor(i / w)), cell, cell);
         }
     }
 
-    if (offset !== 0) {
-        // The seam: the first column of the map as it is stored
+    if (offset !== 0 || offsetY !== 0) {
+        // The seams: the first column and the first row of the map as it is stored
         ctx.strokeStyle = 'rgba(255, 255, 255, 0.6)';
         ctx.lineWidth = 1;
         ctx.setLineDash([6, 4]);
         ctx.beginPath();
-        ctx.moveTo(left(0) + 0.5, 0);
-        ctx.lineTo(left(0) + 0.5, h * cell);
+        if (offset !== 0) {
+            ctx.moveTo(left(0) + 0.5, 0);
+            ctx.lineTo(left(0) + 0.5, h * cell);
+        }
+        if (offsetY !== 0) {
+            ctx.moveTo(0, top(0) + cell - 0.5);
+            ctx.lineTo(w * cell, top(0) + cell - 0.5);
+        }
         ctx.stroke();
         ctx.setLineDash([]);
     }
 
     for (let i = 0; i < view.flags.length; i++) {
         const x = i % w, y = Math.floor(i / w);
-        const px = left(x), py = rowOf(view, y) * cell;
+        const px = left(x), py = top(y);
         const flags = view.flags[i];
 
         if (layers.resources && view.bonus[i] >= 0 && cell >= 4) {
@@ -456,7 +487,7 @@ export function drawMap(ctx: CanvasRenderingContext2D, view: editor.MapView, o: 
 
     if (layers.starts) {
         for (const s of o.starts) {
-            const cx = left(s.x) + cell / 2, cy = rowOf(view, s.y) * cell + cell / 2;
+            const cx = left(s.x) + cell / 2, cy = top(s.y) + cell / 2;
             const r = Math.max(4, cell * 0.6);
             ctx.globalAlpha = s.random ? 0.45 : 1;
             ctx.fillStyle = s.color;
@@ -480,13 +511,12 @@ export function drawMap(ctx: CanvasRenderingContext2D, view: editor.MapView, o: 
     }
 
     if (o.brush) {
-        const cells = brushCells(view, o.brush.x, o.brush.y, o.brush.size, o.wrapX);
+        const cells = brushCells(view, o.brush.x, o.brush.y, o.brush.size, o.wrapX, o.wrapY);
         if (cells.length > 0) {
-            const top = Math.max(...cells.map(c => c.y)), bottom = Math.min(...cells.map(c => c.y));
             ctx.strokeStyle = '#ffffff';
             ctx.lineWidth = 2;
             ctx.setLineDash([4, 3]);
-            outlineColumns(ctx, view, cell, cells.map(c => screenColumn(c.x, w, offset)), top, bottom);
+            drawCells(ctx, view, o, cells);
             ctx.setLineDash([]);
         }
     }
@@ -499,7 +529,7 @@ export function drawMap(ctx: CanvasRenderingContext2D, view: editor.MapView, o: 
     }
 
     if (o.edge) {
-        const px = left(o.edge.x), py = rowOf(view, o.edge.y) * cell;
+        const px = left(o.edge.x), py = top(o.edge.y);
         ctx.strokeStyle = '#ffeb3b';
         ctx.lineWidth = Math.max(3, cell / 4);
         ctx.beginPath();
@@ -514,7 +544,7 @@ export function drawMap(ctx: CanvasRenderingContext2D, view: editor.MapView, o: 
     }
 
     if (o.selected) {
-        const px = left(o.selected.x), py = rowOf(view, o.selected.y) * cell;
+        const px = left(o.selected.x), py = top(o.selected.y);
         ctx.strokeStyle = '#ffeb3b';
         ctx.lineWidth = Math.max(2, cell / 6);
         ctx.strokeRect(px, py, cell, cell);

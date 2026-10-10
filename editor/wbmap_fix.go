@@ -161,7 +161,7 @@ func (m *WbMap) nearestStart(player int) (int, int, bool) {
 	if m.Map == nil {
 		return 0, 0, false
 	}
-	g := terrainGrid{w: int(m.Map.GridWidth), h: int(m.Map.GridHeight), wrapX: m.Map.WrapX != 0}
+	g := m.grid()
 	p := m.Players[player]
 	sx, sy := min(max(p.StartingX, 0), g.w-1), min(max(p.StartingY, 0), g.h-1)
 	taken := make(map[[2]int]bool)

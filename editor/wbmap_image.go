@@ -129,7 +129,7 @@ func (m *WbMap) ImportImage(img image.Image, o ImageImportOptions, data *GameDat
 	if m.Map == nil || m.Map.GridWidth == 0 || m.Map.GridHeight == 0 {
 		return nil, errors.New("the map has no size")
 	}
-	g := terrainGrid{w: int(m.Map.GridWidth), h: int(m.Map.GridHeight), wrapX: m.Map.WrapX != 0}
+	g := m.grid()
 	plots, err := m.plotGrid(g)
 	if err != nil {
 		return nil, err
@@ -163,7 +163,7 @@ func (m *WbMap) ImportImage(img image.Image, o ImageImportOptions, data *GameDat
 			land[i] = v > seaLevel
 		}
 		// Mountains along ridges of a noise on the high parts, so the brightest spot is not one block of peaks
-		ridges := fractal(rng, g.w, g.h, math.Max(3, float64(min(g.w, g.h))/8), 3)
+		ridges := fractal(rng, g, math.Max(3, float64(min(g.w, g.h))/8), 3)
 		rough := make([]float64, n)
 		for i, v := range height {
 			r := 1 - math.Abs(ridges(i%g.w, i/g.w)-0.5)*2

@@ -48,10 +48,10 @@ func (m *WbMap) StartBalance() []StartInfo {
 	if m.Map == nil || m.Map.GridWidth == 0 {
 		return result
 	}
-	g := terrainGrid{w: int(m.Map.GridWidth), h: int(m.Map.GridHeight), wrapX: m.Map.WrapX != 0}
+	g := m.grid()
 	plots := make([]*Plot, g.w*g.h)
 	for _, p := range m.Plots {
-		if i, ok := g.index(int(p.X), int(p.Y)); ok {
+		if i, ok := g.index(int(p.X), int(p.Y)); ok && g.inside(int(p.X), int(p.Y)) {
 			plots[i] = p
 		}
 	}
@@ -63,7 +63,7 @@ func (m *WbMap) StartBalance() []StartInfo {
 	}
 
 	for i, pl := range m.Players {
-		if isEmptySlot(pl) || pl.RandomStartLocation || at(pl.StartingX, pl.StartingY) == nil {
+		if isEmptySlot(pl) || pl.RandomStartLocation || !g.inside(pl.StartingX, pl.StartingY) || at(pl.StartingX, pl.StartingY) == nil {
 			continue
 		}
 		s := StartInfo{Player: i, X: pl.StartingX, Y: pl.StartingY, Resources: []string{}}
