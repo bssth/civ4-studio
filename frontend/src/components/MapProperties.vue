@@ -4,6 +4,7 @@ import {CreatePlots, GetMapProps, GetMapStats, ResizeMap, SetMapProps} from "../
 import {editor} from "../../wailsjs/go/models";
 import {useI18n} from "vue-i18n";
 import TerrainGenerator from "./TerrainGenerator.vue";
+import ImageImport from "./ImageImport.vue";
 import {problemText} from "../problems";
 import {batched, describeType, enums, mapRevision, mapVersion, withCurrent, withNone, worldSizes} from "../store";
 
@@ -262,6 +263,8 @@ const statRows = computed(() => {
     <template v-if="hasPlots">
       <v-divider class="my-4" />
       <TerrainGenerator @changed="refreshStats" />
+      <v-divider class="my-4" />
+      <ImageImport @changed="refreshStats" />
     </template>
 
     <v-divider class="my-4" />

@@ -180,24 +180,54 @@ func (m *WbMap) GenerateTerrain(o TerrainOptions, data *GameData) (*TerrainResul
 	// Mountains follow ridges of their own noise instead of the highest land, so they form chains
 	ridges := fractal(rng, g.w, g.h, math.Max(3, float64(min(g.w, g.h))/6), 4)
 	rough := make([]float64, n)
-	var landHeights []float64
 	for i, v := range height {
 		r := 1 - math.Abs(ridges(i%g.w, i/g.w)-0.5)*2
 		rough[i] = r*0.8 + rng.Float64()*0.2
-		if land[i] = v > seaLevel; land[i] {
-			landHeights = append(landHeights, rough[i])
+		land[i] = v > seaLevel
+	}
+	plots, err := m.plotGrid(g)
+	if err != nil {
+		return nil, err
+	}
+	return m.applyTerrain(g, plots, rng, land, height, rough, o, data), nil
+}
+
+// plotGrid returns the plots indexed by y*width+x, an error if one is missing
+func (m *WbMap) plotGrid(g terrainGrid) ([]*Plot, error) {
+	plots := make([]*Plot, g.w*g.h)
+	for _, p := range m.Plots {
+		if i, ok := g.index(int(p.X), int(p.Y)); ok {
+			plots[i] = p
+		}
+	}
+	for i, p := range plots {
+		if p == nil {
+			return nil, fmt.Errorf("there is no plot %d,%d", i%g.w, i/g.w)
+		}
+	}
+	return plots, nil
+}
+
+// applyTerrain makes the plots from a land mask: hills and peaks where rough is highest, terrain by the latitude
+// of the map and a moisture noise, ice in polar seas, forests, jungle and oases, then rivers running down height
+// and resources. It replaces everything of the plots but cities, units and start positions.
+func (m *WbMap) applyTerrain(g terrainGrid, plots []*Plot, rng *rand.Rand, land []bool, height, rough []float64,
+	o TerrainOptions, data *GameData) *TerrainResult {
+	var landRough []float64
+	for i := range land {
+		if land[i] {
+			landRough = append(landRough, rough[i])
 		}
 	}
 	peakLevel, hillLevel := math.Inf(1), math.Inf(1)
-	if len(landHeights) > 0 {
+	if len(landRough) > 0 {
 		if o.Peaks > 0 {
-			peakLevel = threshold(landHeights, float64(o.Peaks)/100)
+			peakLevel = threshold(landRough, float64(o.Peaks)/100)
 		}
 		if o.Hills+o.Peaks > 0 {
-			hillLevel = threshold(landHeights, float64(o.Hills+o.Peaks)/100)
+			hillLevel = threshold(landRough, float64(o.Hills+o.Peaks)/100)
 		}
 	}
-
 	// Moisture decides between grassland and plains, desert and forests; climate zones get ragged borders
 	moisture := fractal(rng, g.w, g.h, math.Max(3, float64(min(g.w, g.h))/6), 4)
 	jitter := fractal(rng, g.w, g.h, math.Max(3, float64(min(g.w, g.h))/8), 3)
@@ -225,22 +255,12 @@ func (m *WbMap) GenerateTerrain(o TerrainOptions, data *GameData) (*TerrainResul
 		return false
 	}
 
-	plots := make([]*Plot, n)
-	for _, p := range m.Plots {
-		if i, ok := g.index(int(p.X), int(p.Y)); ok {
-			plots[i] = p
-		}
-	}
 	result := &TerrainResult{}
-	terrains := make([]string, n)
 	for y := 0; y < g.h; y++ {
 		for x := 0; x < g.w; x++ {
 			lat := rowLatitude(y) + (jitter(x, y)-0.5)*16
 			i := y*g.w + x
 			p := plots[i]
-			if p == nil {
-				return nil, fmt.Errorf("there is no plot %d,%d", x, y)
-			}
 			p.FeatureType, p.FeatureVariety = nil, nil
 			p.BonusType, p.ImprovementType, p.RouteType = "", "", ""
 			p.IsNOfRiver, p.IsWOfRiver, p.RiverNSDirection, p.RiverWEDirection = false, false, 0, 0
@@ -254,7 +274,6 @@ func (m *WbMap) GenerateTerrain(o TerrainOptions, data *GameData) (*TerrainResul
 				if lat > 72 && wet > 0.35 {
 					p.FeatureType, p.FeatureVariety = []string{"FEATURE_ICE"}, []string{"0"}
 				}
-				terrains[i] = p.TerrainType
 				continue
 			}
 			result.Land++
@@ -278,7 +297,6 @@ func (m *WbMap) GenerateTerrain(o TerrainOptions, data *GameData) (*TerrainResul
 			default:
 				p.TerrainType = "TERRAIN_GRASS"
 			}
-			terrains[i] = p.TerrainType
 			if p.PlotType == PlotPeak {
 				continue
 			}
@@ -306,7 +324,7 @@ func (m *WbMap) GenerateTerrain(o TerrainOptions, data *GameData) (*TerrainResul
 	if o.Resources {
 		result.Resources = placeResources(g, rng, plots, land, data)
 	}
-	return result, nil
+	return result
 }
 
 // generateRivers runs rivers along plot edges from high land downhill to the sea. Edges are walked between

@@ -191,6 +191,7 @@ const en = {
         "title": "Terrain generator"
     },
     "history": {
+        "import": "import of an image",
         "fix": "fixes of {n} problems",
         "replace": "replacement of a {what}",
         "generate": "generated terrain (seed {seed})",
@@ -208,6 +209,20 @@ const en = {
         "players": "players",
         "swap": "swap of players {a} and {b}",
         "teams": "teams"
+    },
+    "imageImport": {
+        "choose": "Choose a picture",
+        "colors": "Map colors",
+        "colorsHint": "Blues become water, greens grassland, dark green forest, yellows plains and desert, browns hills, grays peaks, white snow. Coast is made next to land.",
+        "confirmTitle": "Import the picture?",
+        "done": "Imported: {land} land plots, {rivers} rivers, {resources} resources.",
+        "height": "Height map",
+        "heightHint": "Bright is high: the brightest part is land with hills and peaks, the darkest is water. Climate, forests, rivers and resources are made as by the generator.",
+        "hint": "Recreate a real or drawn world: a PNG, JPEG or GIF picture of any size is scaled to the map (the top of the picture is the north).",
+        "import": "Import",
+        "invert": "Dark is high",
+        "notImage": "This file is not a picture.",
+        "title": "Import from a picture"
     },
     "languages": {
         "Chinese": "Chinese",
