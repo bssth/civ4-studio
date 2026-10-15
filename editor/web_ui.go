@@ -6,6 +6,7 @@ import (
 	"errors"
 	"flag"
 	"io"
+	"io/fs"
 	"os"
 	"path/filepath"
 	"strings"
@@ -37,12 +38,40 @@ const (
 // the dev-only "load test map" code path is removed.
 const testFilePath = "resources/test.CivBeyondSwordWBSave"
 
+// wbSaveExts are the extensions of WorldBuilder saves of Beyond the Sword, Warlords and the original game
+var wbSaveExts = []string{wbSaveExt, ".CivWarlordsWBSave", ".Civ4WorldBuilderSave"}
+
 var wbSaveFilters = []runtime.FileFilter{
 	{
-		DisplayName: "Civilization IV WorldBuilder Save (*" + wbSaveExt + ")",
-		Pattern:     "*" + wbSaveExt,
+		DisplayName: "Civilization IV WorldBuilder saves (*" + strings.Join(wbSaveExts, ", *") + ")",
+		Pattern:     "*" + strings.Join(wbSaveExts, ";*"),
 	},
 	{DisplayName: "All files", Pattern: "*.*"},
+}
+
+// isWbSave tells if a file has the extension of a WorldBuilder save
+func isWbSave(path string) bool {
+	for _, ext := range wbSaveExts {
+		if strings.EqualFold(filepath.Ext(path), ext) {
+			return true
+		}
+	}
+	return false
+}
+
+// saveFilters offer to save a map as a WorldBuilder save of the game of the current file, Beyond the Sword
+// for a new map
+func saveFilters(current string) []runtime.FileFilter {
+	var filters []runtime.FileFilter
+	for _, ext := range wbSaveExts {
+		f := runtime.FileFilter{DisplayName: "Civilization IV WorldBuilder Save (*" + ext + ")", Pattern: "*" + ext}
+		if strings.EqualFold(filepath.Ext(current), ext) {
+			filters = append([]runtime.FileFilter{f}, filters...)
+		} else {
+			filters = append(filters, f)
+		}
+	}
+	return filters
 }
 
 // App is the root struct bound to the Wails frontend.
@@ -62,6 +91,8 @@ type App struct {
 	history History
 	// clipboard keeps the region copied on the World tab, it survives opening another map
 	clipboard *regionClip
+	// openError tells why the last map could not be opened, see TakeOpenError
+	openError *MapFileError
 }
 
 func NewApp() *App {
@@ -93,7 +124,7 @@ func (a *App) startup(ctx context.Context) {
 
 	// A map passed on the command line (e.g. opened through the file association)
 	for _, arg := range flag.Args() {
-		if strings.EqualFold(filepath.Ext(arg), wbSaveExt) {
+		if isWbSave(arg) {
 			if err := a.OpenMap(arg); err != nil {
 				ConsoleWrite("Cannot open %s: %s", arg, err.Error())
 			}
@@ -332,28 +363,59 @@ func (a *App) OpenMapDialog() (string, error) {
 
 // OpenMap parses a WorldBuilder save from disk and replaces the current map.
 func (a *App) OpenMap(path string) error {
-	f, err := os.Open(path)
+	wb, err := readMapFile(path)
 	if err != nil {
-		ConsoleWrite(err.Error())
-		return err
-	}
-	defer f.Close()
-
-	wb, err := ParseWbMap(f)
-	if err != nil {
-		ConsoleWrite(err.Error())
+		ConsoleWrite("Cannot open %s: %s", path, err.Error())
+		var fe *MapFileError
+		if !errors.As(err, &fe) {
+			// The path is shown anyway, the reason is enough
+			detail := err
+			var pe *fs.PathError
+			if errors.As(err, &pe) {
+				detail = pe.Err
+			}
+			fe = &MapFileError{Code: "read", Detail: detail.Error()}
+		}
+		fe.Path = path
+		a.mu.Lock()
+		a.openError = fe
+		a.mu.Unlock()
 		return err
 	}
 
 	a.mu.Lock()
 	a.wbMap = wb
 	a.filePath = path
+	a.openError = nil
 	a.history.reset()
 	a.mu.Unlock()
 	a.setDirty(false)
 
 	a.emit(EventMapLoaded, path)
 	return nil
+}
+
+func readMapFile(path string) (*WbMap, error) {
+	f, err := os.Open(path)
+	if err != nil {
+		return nil, err
+	}
+	defer f.Close()
+	return ParseWbMap(f)
+}
+
+// OpenError is a MapFileError for the frontend. It is not an error type: Wails would take a returned
+// error type for a failure of the call.
+type OpenError MapFileError
+
+// TakeOpenError returns why the last map could not be opened (also a map from the command line)
+// and forgets it; nil if it was opened.
+func (a *App) TakeOpenError() *OpenError {
+	a.mu.Lock()
+	defer a.mu.Unlock()
+	e := a.openError
+	a.openError = nil
+	return (*OpenError)(e)
 }
 
 // NewMap discards the current map and creates an empty one.
@@ -405,13 +467,17 @@ func (a *App) SaveMapAs() (string, error) {
 		Title:            "Save WorldBuilder save",
 		DefaultDirectory: defaultDir,
 		DefaultFilename:  defaultName,
-		Filters:          wbSaveFilters[:1],
+		Filters:          saveFilters(current),
 	})
 	if err != nil || path == "" {
 		return "", err
 	}
 	if filepath.Ext(path) == "" {
-		path += wbSaveExt
+		ext := wbSaveExt
+		if isWbSave(current) {
+			ext = filepath.Ext(current)
+		}
+		path += ext
 	}
 	return a.saveTo(path)
 }
@@ -420,8 +486,9 @@ func (a *App) saveTo(path string) (string, error) {
 	a.mu.Lock()
 	wb := a.wbMap
 	var data []byte
+	replaced := 0
 	if wb != nil && wb.Game != nil {
-		data = wb.ToWbFormat()
+		data, replaced = wb.FileBytes()
 	}
 	a.mu.Unlock()
 
@@ -444,6 +511,9 @@ func (a *App) saveTo(path string) (string, error) {
 	a.mu.Unlock()
 	a.setDirty(false)
 	ConsoleWrite("Saved %s", path)
+	if replaced > 0 {
+		ConsoleWrite("%d characters the game can not read (not Latin-1) are saved as '?'", replaced)
+	}
 	return path, nil
 }
 

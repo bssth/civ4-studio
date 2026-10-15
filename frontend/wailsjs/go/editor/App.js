@@ -234,6 +234,10 @@ export function SwapPlayers(arg1, arg2) {
   return window['go']['editor']['App']['SwapPlayers'](arg1, arg2);
 }
 
+export function TakeOpenError() {
+  return window['go']['editor']['App']['TakeOpenError']();
+}
+
 export function TranslateKey(arg1) {
   return window['go']['editor']['App']['TranslateKey'](arg1);
 }

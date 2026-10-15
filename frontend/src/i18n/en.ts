@@ -313,6 +313,18 @@ const en = {
         "unit": "Unit",
         "units": "Units ({n})"
     },
+    "openError": {
+        "badValue": "Line {line} of the {section} section has a value the editor can not read ({detail}):",
+        "badVersion": "The version number in line {line} is not a number:",
+        "empty": "The file is empty.",
+        "footer": "Keys and sections the editor does not know, e.g. of mods, are kept as they are. If a map that works in the game does not open, please report it together with the file.",
+        "noGame": "The file has no BeginGame section, so it is not a complete WorldBuilder save.",
+        "notMap": "The file does not look like a WorldBuilder save: it must start with Version=… or BeginGame, but line {line} is:",
+        "notText": "This is not a text WorldBuilder save. Saved games (*.CivBeyondSwordSave) can not be opened, only WorldBuilder saves (*.CivBeyondSwordWBSave, also of Warlords and the original game).",
+        "read": "The file can not be read: {detail}",
+        "title": "The map can not be opened",
+        "unclosed": "The {section} section that starts in line {line} is not closed: the file is cut off or damaged. Try the .bak copy or the original file."
+    },
     "players": {
         "addAttitude": "Add an attitude to a player",
         "attitudes": "Attitudes",
@@ -407,6 +419,7 @@ const en = {
         "map": {
             "latitudes": "top latitude must be greater than bottom latitude",
             "noSection": "the map has no BeginMap section",
+            "notLatin1": "characters the game can not read from a WorldBuilder save (only Latin-1) will be saved as «?»; lines with them: {n}, e.g. {example}",
             "outside": "{n} plots are outside of the map grid",
             "plotCount": "the map has {plots} plots, but {width}x{height} = {expected} are expected"
         },

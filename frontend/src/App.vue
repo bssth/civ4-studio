@@ -149,6 +149,25 @@
       </v-card>
     </v-dialog>
 
+    <v-dialog :model-value="!!openError" max-width="640" @update:model-value="(v: boolean) => { if (!v) openError = null }">
+      <v-card v-if="openError" class="open-error">
+        <v-card-title class="d-flex align-center">
+          <v-icon icon="mdi-file-alert-outline" color="error" class="mr-2"/>
+          {{ $t('openError.title') }}
+        </v-card-title>
+        <v-card-subtitle v-if="openError.path" :title="openError.path">{{ fileName(openError.path) }}</v-card-subtitle>
+        <v-card-text>
+          <div>{{ openErrorText }}</div>
+          <code v-if="openError.text" class="error-line mt-2">{{ openError.text }}</code>
+          <div class="text-body-2 text-medium-emphasis mt-4">{{ $t('openError.footer') }}</div>
+        </v-card-text>
+        <v-card-actions>
+          <v-spacer/>
+          <v-btn variant="text" @click="openError = null">{{ $t('common.close') }}</v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
+
     <v-snackbar v-model="errorOpen" color="error" timeout="6000">
       {{ errorMessage }}
     </v-snackbar>
@@ -179,6 +198,7 @@ import {
   OpenMapDialog,
   SaveMap,
   SaveMapAs,
+  TakeOpenError,
   ValidateMap,
 } from "../wailsjs/go/editor/App";
 import {editor} from "../wailsjs/go/models";
@@ -195,7 +215,7 @@ import {
   stepHistory
 } from "./store";
 
-const {t} = useI18n();
+const {t, te} = useI18n();
 
 const minimize = WindowMinimise;
 const maximize = WindowToggleMaximise;
@@ -252,6 +272,23 @@ function showError(msg: string) {
   errorOpen.value = true;
 }
 
+// Why the last map could not be opened, explained in a dialog
+const openError = ref<editor.OpenError | null>(null);
+const openErrorText = computed(() => {
+  const e = openError.value;
+  if (!e) return '';
+  const key = `openError.${e.code}`;
+  return te(key) ? t(key, {line: e.line, section: e.section, detail: e.detail}) : e.detail || e.code;
+});
+
+/** Shows why the last map could not be opened; false if there is no such error */
+async function showOpenError(): Promise<boolean> {
+  const e = await TakeOpenError();
+  if (!e) return false;
+  openError.value = e;
+  return true;
+}
+
 let bootstrapping = false;
 
 async function bootstrap() {
@@ -261,8 +298,9 @@ async function bootstrap() {
     const config = await GetConfig();
     setUILanguage(config?.ui_language);
 
-    // A map may be already opened from the command line
+    // A map may be already opened from the command line, or it could not be opened
     await refreshMap();
+    await showOpenError();
 
     const reason = await CheckGameDir();
     if (reason) {
@@ -305,9 +343,13 @@ function newMap() {
 
 function openMap() {
   return run(t('progress.loadingMap'), async () => {
-    if (await OpenMapDialog()) {
-      await refreshMap();
-      tab.value = 'game';
+    try {
+      if (await OpenMapDialog()) {
+        await refreshMap();
+        tab.value = 'game';
+      }
+    } catch (err) {
+      if (!await showOpenError()) throw err;
     }
   });
 }
@@ -438,6 +480,17 @@ onUnmounted(() => {
 </script>
 
 <style>
+.open-error .error-line {
+  display: block;
+  margin-top: 4px;
+  padding: 6px 8px;
+  border-radius: 4px;
+  background: rgba(127, 127, 127, 0.15);
+  font-size: 0.85em;
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+
 kbd {
   font-family: monospace;
   font-size: 0.85em;

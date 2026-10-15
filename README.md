@@ -4,7 +4,7 @@ Welcome to the **Civilization 4 Map Studio**! This tool is designed to help you 
 and scenarios for [Civilization 4: Beyond the Sword](https://en.wikipedia.org/wiki/Civilization_IV), turn-based
 strategy game.
 
-The editor opens WorldBuilder saves (`*.CivBeyondSwordWBSave`), shows the map and lets you paint terrain, draw rivers
+The editor opens WorldBuilder saves (`*.CivBeyondSwordWBSave`, also of Warlords and the original game), shows the map and lets you paint terrain, draw rivers
 and set up players, teams, diplomacy, cities, units and start positions with the names from the game and your mod
 instead of raw identifiers.
 
@@ -68,8 +68,12 @@ instead of raw identifiers.
 - **Languages.** The interface is in English and Russian (the system language by default). Names of
   civilizations, leaders, techs etc. are shown in any language of the game or mod texts (French, German, a Russian
   localization...), with English for texts that have no translation.
-- **Safe saving.** The original file is copied to `<map>.bak` before it is overwritten for the first time, keys the
-  editor does not know (e.g. added by mods) are kept as they are, optional autosave every 5 minutes.
+- **Safe saving.** The original file is copied to `<map>.bak` before it is overwritten for the first time, keys,
+  lines and whole sections the editor does not know (e.g. added by mods) are kept as they are,
+  optional autosave every 5 minutes. Files are read and written in the encoding of the game (Latin-1), so names like
+  Zürich stay intact, and the check warns about characters the game can not read. A file that can not be opened is
+  explained: a saved game instead of a WorldBuilder save, a file cut off in the middle of a section, a value that can
+  not be read, with the line.
 
 Game data is read from the base game, Warlords, Beyond the Sword and the selected mod, the same way the game does it:
 a mod file replaces the base file with the same path.

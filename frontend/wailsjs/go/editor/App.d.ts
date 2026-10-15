@@ -118,6 +118,8 @@ export function StartBalance():Promise<Array<editor.StartInfo>>;
 
 export function SwapPlayers(arg1:number,arg2:number):Promise<void>;
 
+export function TakeOpenError():Promise<editor.OpenError>;
+
 export function TranslateKey(arg1:string):Promise<string>;
 
 export function Undo():Promise<editor.HistoryState>;
