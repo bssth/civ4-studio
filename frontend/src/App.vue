@@ -411,6 +411,7 @@ const shortcutGroups = [
       {keys: ['Ctrl+F'], text: 'shortcuts.search'}, {keys: ['Ctrl+C'], text: 'shortcuts.copy'},
       {keys: ['Ctrl+V'], text: 'shortcuts.paste'}, {keys: ['Esc'], text: 'shortcuts.escape'},
       {keys: ['shortcuts.keyWheel'], text: 'shortcuts.zoom'}, {keys: ['shortcuts.keyDrag'], text: 'shortcuts.dragStart'},
+      {keys: ['shortcuts.keyDrag'], text: 'shortcuts.dragAssets'},
     ],
   },
 ];

@@ -72,6 +72,8 @@ export function LaunchGame():Promise<void>;
 
 export function LoadGameXML():Promise<void>;
 
+export function MoveAssets(arg1:number,arg2:number,arg3:number,arg4:number,arg5:boolean,arg6:boolean):Promise<editor.MoveResult>;
+
 export function NewMap():Promise<boolean>;
 
 export function OpenMap(arg1:string):Promise<void>;

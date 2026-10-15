@@ -15,7 +15,8 @@ instead of raw identifiers.
 - **World map.** Terrain, hills and peaks, forests and other features, rivers, resources, cities, units and start
   positions in player colors, with zoom and layers. Click a plot to change its terrain, feature, resource, improvement
   and route, or to add and edit cities, units and signs (texts on the map, for everyone or one player). Drag a start
-  flag to move a player. A map that wraps east-west can be shifted to move the seam out of the way, e.g. to see the
+  flag to move a player, and a city with its units (with Shift only the units) to put them on another plot, e.g. when
+  a city is one plot off. A map that wraps east-west can be shifted to move the seam out of the way, e.g. to see the
   Pacific in one piece; a map that wraps north-south (or both ways, a torus) can be shifted up and down. An overview of the whole map in the corner shows the visible part and goes anywhere on a
   click.
 - **Painting.** A brush of size 1–9 paints terrain, height, features, resources, improvements and routes, with presets

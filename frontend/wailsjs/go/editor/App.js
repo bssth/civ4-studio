@@ -142,6 +142,10 @@ export function LoadGameXML() {
   return window['go']['editor']['App']['LoadGameXML']();
 }
 
+export function MoveAssets(arg1, arg2, arg3, arg4, arg5, arg6) {
+  return window['go']['editor']['App']['MoveAssets'](arg1, arg2, arg3, arg4, arg5, arg6);
+}
+
 export function NewMap() {
   return window['go']['editor']['App']['NewMap']();
 }
