@@ -44,16 +44,24 @@ func (o *TerrainOptions) validate() error {
 	return nil
 }
 
-// periodicNoise is value noise that repeats every width plots along x, so a wrapping map has no seam
+// periodicNoise is value noise that repeats every width plots along x, so a wrapping map has no seam.
+// With wrapY it repeats along y too, for maps wrapping north-south.
 type periodicNoise struct {
 	cells, rows int
+	wrapY       bool
 	values      []float64
 }
 
-func newPeriodicNoise(rng *rand.Rand, width, height int, scale float64) *periodicNoise {
+func newPeriodicNoise(rng *rand.Rand, width, height int, scale float64, wrapY bool) *periodicNoise {
 	cells := max(1, int(math.Round(float64(width)/scale)))
-	rows := max(1, int(math.Round(float64(height)/scale))) + 1
-	n := &periodicNoise{cells: cells, rows: rows, values: make([]float64, cells*(rows+1))}
+	rows := max(1, int(math.Round(float64(height)/scale)))
+	size := rows
+	if !wrapY {
+		// Values of the last row are repeated beyond the poles
+		rows++
+		size = rows + 1
+	}
+	n := &periodicNoise{cells: cells, rows: rows, wrapY: wrapY, values: make([]float64, cells*size)}
 	for i := range n.values {
 		n.values[i] = rng.Float64()
 	}
@@ -65,11 +73,18 @@ func smooth(t float64) float64 { return t * t * (3 - 2*t) }
 // at returns the noise for x in 0..1 (one period) and y in 0..1
 func (n *periodicNoise) at(x, y float64) float64 {
 	fx, fy := x*float64(n.cells), y*float64(n.rows-1)
+	if n.wrapY {
+		fy = y * float64(n.rows)
+	}
 	x0, y0 := int(math.Floor(fx)), int(math.Floor(fy))
 	tx, ty := smooth(fx-float64(x0)), smooth(fy-float64(y0))
 	v := func(ix, iy int) float64 {
 		ix = ((ix % n.cells) + n.cells) % n.cells
-		iy = min(max(iy, 0), n.rows)
+		if n.wrapY {
+			iy = ((iy % n.rows) + n.rows) % n.rows
+		} else {
+			iy = min(max(iy, 0), n.rows)
+		}
 		return n.values[iy*n.cells+ix]
 	}
 	top := v(x0, y0)*(1-tx) + v(x0+1, y0)*tx
@@ -77,11 +92,13 @@ func (n *periodicNoise) at(x, y float64) float64 {
 	return top*(1-ty) + bottom*ty
 }
 
-// fractal sums octaves of noise from big shapes to small details, the result is about 0..1
-func fractal(rng *rand.Rand, width, height int, scale float64, octaves int) func(x, y int) float64 {
+// fractal sums octaves of noise from big shapes to small details, the result is about 0..1.
+// The noise has no seam where the map wraps.
+func fractal(rng *rand.Rand, g terrainGrid, scale float64, octaves int) func(x, y int) float64 {
+	width, height := g.w, g.h
 	layers := make([]*periodicNoise, octaves)
 	for i := range layers {
-		layers[i] = newPeriodicNoise(rng, width, height, scale/math.Pow(2, float64(i)))
+		layers[i] = newPeriodicNoise(rng, width, height, scale/math.Pow(2, float64(i)), g.wrapY)
 	}
 	return func(x, y int) float64 {
 		sum, weight, amp := 0.0, 0.0, 1.0
@@ -94,28 +111,69 @@ func fractal(rng *rand.Rand, width, height int, scale float64, octaves int) func
 	}
 }
 
+// terrainGrid is the size of a map and how it wraps: east-west (wrapX) and/or north-south (wrapY)
 type terrainGrid struct {
-	w, h  int
-	wrapX bool
+	w, h         int
+	wrapX, wrapY bool
 }
 
+// grid returns the size and wrapping of the map
+func (m *WbMap) grid() terrainGrid {
+	if m.Map == nil {
+		return terrainGrid{}
+	}
+	return terrainGrid{w: int(m.Map.GridWidth), h: int(m.Map.GridHeight), wrapX: m.Map.WrapX != 0, wrapY: m.Map.WrapY != 0}
+}
+
+// inside tells if the plot is on the map, without wrapping
+func (g terrainGrid) inside(x, y int) bool {
+	return x >= 0 && y >= 0 && x < g.w && y < g.h
+}
+
+// index returns y*w+x of a plot; coordinates outside of the map continue on the other side of a seam
 func (g terrainGrid) index(x, y int) (int, bool) {
-	if g.wrapX {
+	if g.wrapX && g.w > 0 {
 		x = ((x % g.w) + g.w) % g.w
 	}
-	if x < 0 || y < 0 || x >= g.w || y >= g.h {
+	if g.wrapY && g.h > 0 {
+		y = ((y % g.h) + g.h) % g.h
+	}
+	if !g.inside(x, y) {
 		return 0, false
 	}
 	return y*g.w + x, true
 }
 
-// distance between two plots, across the seam of a wrapping map
+// distance between two plots, across the seams of a wrapping map
 func (g terrainGrid) distance(x0, y0, x1, y1 int) float64 {
-	dx := math.Abs(float64(x0 - x1))
+	dx, dy := math.Abs(float64(x0-x1)), math.Abs(float64(y0-y1))
 	if g.wrapX {
 		dx = math.Min(dx, float64(g.w)-dx)
 	}
-	return math.Hypot(dx, float64(y0-y1))
+	if g.wrapY {
+		dy = math.Min(dy, float64(g.h)-dy)
+	}
+	return math.Hypot(dx, dy)
+}
+
+// latitudeAlongX tells if latitudes change from west to east instead of from south to north: the game does so
+// on maps that wrap north-south but not east-west, where the poles are the western and eastern edges
+func (g terrainGrid) latitudeAlongX() bool {
+	return g.wrapY && !g.wrapX
+}
+
+// polar is 0 at the edges of the map where the poles are and 1 from 1/8 of the map away from them, there is less
+// land near the poles. A torus has no such edges.
+func (g terrainGrid) polar(x, y int) float64 {
+	pos, size := y, g.h
+	switch {
+	case g.wrapX && g.wrapY:
+		return 1
+	case g.latitudeAlongX():
+		pos, size = x, g.w
+	}
+	edge := math.Min(float64(pos), float64(size-1-pos)) / float64(size)
+	return math.Min(1, edge*8)
 }
 
 // threshold returns the value above which share of values lie
@@ -135,7 +193,7 @@ func (m *WbMap) GenerateTerrain(o TerrainOptions, data *GameData) (*TerrainResul
 	if m.Map == nil || m.Map.GridWidth == 0 || m.Map.GridHeight == 0 {
 		return nil, errors.New("the map has no size")
 	}
-	g := terrainGrid{w: int(m.Map.GridWidth), h: int(m.Map.GridHeight), wrapX: m.Map.WrapX != 0}
+	g := m.grid()
 	if len(m.Plots) != g.w*g.h {
 		return nil, fmt.Errorf("the map has %d plots instead of %d, create the plots first", len(m.Plots), g.w*g.h)
 	}
@@ -144,14 +202,21 @@ func (m *WbMap) GenerateTerrain(o TerrainOptions, data *GameData) (*TerrainResul
 
 	// Height: fractal noise plus round continents, lowered near the poles. Continent centers are spread:
 	// each one is the farthest of a few random candidates from the centers placed before.
-	noise := fractal(rng, g.w, g.h, math.Max(4, float64(min(g.w, g.h))/4), 6)
+	noise := fractal(rng, g, math.Max(4, float64(min(g.w, g.h))/4), 6)
 	type center struct{ x, y, r float64 }
 	centers := make([]center, 0, o.Continents)
 	for len(centers) < o.Continents {
 		r := math.Sqrt(float64(n)*float64(o.Land)/100/float64(o.Continents)/math.Pi) * (0.8 + rng.Float64()*0.4)
 		best, bestDistance := center{}, -1.0
 		for k := 0; k < 12; k++ {
-			c := center{x: rng.Float64() * float64(g.w), y: float64(g.h) * (0.2 + rng.Float64()*0.6), r: r}
+			// Not too close to the poles; a torus has none
+			a, b := rng.Float64(), rng.Float64()
+			c := center{x: a * float64(g.w), y: float64(g.h) * (0.2 + b*0.6), r: r}
+			if g.latitudeAlongX() {
+				c.x, c.y = float64(g.w)*(0.2+a*0.6), b*float64(g.h)
+			} else if g.wrapY {
+				c.y = b * float64(g.h)
+			}
 			d := math.Inf(1)
 			for _, o := range centers {
 				d = math.Min(d, g.distance(int(c.x), int(c.y), int(o.x), int(o.y))-o.r)
@@ -170,15 +235,13 @@ func (m *WbMap) GenerateTerrain(o TerrainOptions, data *GameData) (*TerrainResul
 				d := g.distance(x, y, int(c.x), int(c.y)) / (c.r * 1.25)
 				shape = math.Max(shape, math.Max(0, 1-d*d))
 			}
-			edge := math.Min(float64(y), float64(g.h-1-y)) / float64(g.h)
-			polar := math.Min(1, edge*8)
-			height[y*g.w+x] = (noise(x, y)*0.6 + shape*0.5) * (0.4 + 0.6*polar)
+			height[y*g.w+x] = (noise(x, y)*0.6 + shape*0.5) * (0.4 + 0.6*g.polar(x, y))
 		}
 	}
 	seaLevel := threshold(height, float64(o.Land)/100)
 	land := make([]bool, n)
 	// Mountains follow ridges of their own noise instead of the highest land, so they form chains
-	ridges := fractal(rng, g.w, g.h, math.Max(3, float64(min(g.w, g.h))/6), 4)
+	ridges := fractal(rng, g, math.Max(3, float64(min(g.w, g.h))/6), 4)
 	rough := make([]float64, n)
 	for i, v := range height {
 		r := 1 - math.Abs(ridges(i%g.w, i/g.w)-0.5)*2
@@ -196,7 +259,7 @@ func (m *WbMap) GenerateTerrain(o TerrainOptions, data *GameData) (*TerrainResul
 func (m *WbMap) plotGrid(g terrainGrid) ([]*Plot, error) {
 	plots := make([]*Plot, g.w*g.h)
 	for _, p := range m.Plots {
-		if i, ok := g.index(int(p.X), int(p.Y)); ok {
+		if i, ok := g.index(int(p.X), int(p.Y)); ok && g.inside(int(p.X), int(p.Y)) {
 			plots[i] = p
 		}
 	}
@@ -229,10 +292,18 @@ func (m *WbMap) applyTerrain(g terrainGrid, plots []*Plot, rng *rand.Rand, land 
 		}
 	}
 	// Moisture decides between grassland and plains, desert and forests; climate zones get ragged borders
-	moisture := fractal(rng, g.w, g.h, math.Max(3, float64(min(g.w, g.h))/6), 4)
-	jitter := fractal(rng, g.w, g.h, math.Max(3, float64(min(g.w, g.h))/8), 3)
+	moisture := fractal(rng, g, math.Max(3, float64(min(g.w, g.h))/6), 4)
+	jitter := fractal(rng, g, math.Max(3, float64(min(g.w, g.h))/8), 3)
 	top, bottom := float64(m.Map.TopLatitude), float64(m.Map.BottomLatitude)
-	rowLatitude := func(y int) float64 { return math.Abs(bottom + (top-bottom)*(float64(y)+0.5)/float64(g.h)) }
+	latitude := func(x, y int) float64 {
+		pos, size := y, g.h
+		if g.latitudeAlongX() {
+			pos, size = x, g.w
+		}
+		return math.Abs(bottom + (top-bottom)*(float64(pos)+0.5)/float64(size))
+	}
+	// Like the map scripts of the game, a torus gets no polar ice: its poles are not at the edges
+	ice := !(g.wrapX && g.wrapY)
 
 	nearWater := func(x, y int) bool {
 		for dy := -1; dy <= 1; dy++ {
@@ -258,7 +329,7 @@ func (m *WbMap) applyTerrain(g terrainGrid, plots []*Plot, rng *rand.Rand, land 
 	result := &TerrainResult{}
 	for y := 0; y < g.h; y++ {
 		for x := 0; x < g.w; x++ {
-			lat := rowLatitude(y) + (jitter(x, y)-0.5)*16
+			lat := latitude(x, y) + (jitter(x, y)-0.5)*16
 			i := y*g.w + x
 			p := plots[i]
 			p.FeatureType, p.FeatureVariety = nil, nil
@@ -271,7 +342,7 @@ func (m *WbMap) applyTerrain(g terrainGrid, plots []*Plot, rng *rand.Rand, land 
 				if nearLand(x, y) {
 					p.TerrainType = "TERRAIN_COAST"
 				}
-				if lat > 72 && wet > 0.35 {
+				if ice && lat > 72 && wet > 0.35 {
 					p.FeatureType, p.FeatureVariety = []string{"FEATURE_ICE"}, []string{"0"}
 				}
 				continue
@@ -370,7 +441,7 @@ func generateRivers(g terrainGrid, rng *rand.Rand, plots []*Plot, land []bool, h
 	made := 0
 	for attempt := 0; made < count && attempt < count*20 && len(sources) > 0; attempt++ {
 		start := sources[rng.Intn(len(sources))]
-		cx, cy := start%g.w+rng.Intn(2), start/g.w+rng.Intn(2)
+		cx, cy, _ := g.corner(start%g.w+rng.Intn(2), start/g.w+rng.Intn(2))
 		if _, wet := cornerHeight(cx, cy); wet || used[[2]int{cx, cy}] {
 			continue
 		}
@@ -382,11 +453,8 @@ func generateRivers(g terrainGrid, rng *rand.Rand, plots []*Plot, land []bool, h
 			best, bestHeight := -1, math.Inf(1)
 			moves := [4][2]int{{1, 0}, {-1, 0}, {0, 1}, {0, -1}}
 			for k, d := range moves {
-				nx, ny := cx+d[0], cy+d[1]
-				if g.wrapX {
-					nx = ((nx % g.w) + g.w) % g.w
-				}
-				if nx < 0 || ny < 0 || nx > g.w || ny > g.h || visited[[2]int{nx, ny}] || used[[2]int{nx, ny}] {
+				nx, ny, ok := g.corner(cx+d[0], cy+d[1])
+				if !ok || visited[[2]int{nx, ny}] || used[[2]int{nx, ny}] {
 					continue
 				}
 				// Both plots along the edge must be land, or the river would run along the coast
@@ -404,10 +472,7 @@ func generateRivers(g terrainGrid, rng *rand.Rand, plots []*Plot, land []bool, h
 			}
 			d := moves[best]
 			path = append(path, step{cx, cy, d[0], d[1]})
-			cx, cy = cx+d[0], cy+d[1]
-			if g.wrapX {
-				cx = ((cx % g.w) + g.w) % g.w
-			}
+			cx, cy, _ = g.corner(cx+d[0], cy+d[1])
 			visited[[2]int{cx, cy}] = true
 			if _, wet := cornerHeight(cx, cy); wet {
 				reached = true
@@ -424,6 +489,18 @@ func generateRivers(g terrainGrid, rng *rand.Rand, plots []*Plot, land []bool, h
 		made++
 	}
 	return made
+}
+
+// corner returns a plot corner (the south-western corner of plot cx, cy) as it is on the map: on a wrapping map
+// corners past a seam continue on the other side, else they go up to w, h (the eastern and northern edges)
+func (g terrainGrid) corner(cx, cy int) (int, int, bool) {
+	if g.wrapX {
+		cx = ((cx % g.w) + g.w) % g.w
+	}
+	if g.wrapY {
+		cy = ((cy % g.h) + g.h) % g.h
+	}
+	return cx, cy, cx >= 0 && cy >= 0 && cx <= g.w && cy <= g.h
 }
 
 // edgeOnLand tells if both plots along the edge from corner cx, cy in direction dx, dy are land
@@ -609,12 +686,12 @@ func (m *WbMap) PlaceStarts(seed int64) ([]int, error) {
 	if m.Map == nil || m.Map.GridWidth == 0 {
 		return nil, errors.New("the map has no size")
 	}
-	g := terrainGrid{w: int(m.Map.GridWidth), h: int(m.Map.GridHeight), wrapX: m.Map.WrapX != 0}
+	g := m.grid()
 	land := make([]bool, g.w*g.h)
 	type candidate struct{ x, y int }
 	var good []candidate
 	for _, p := range m.Plots {
-		if i, ok := g.index(int(p.X), int(p.Y)); ok {
+		if i, ok := g.index(int(p.X), int(p.Y)); ok && g.inside(int(p.X), int(p.Y)) {
 			land[i] = p.PlotType != PlotOcean
 		}
 	}

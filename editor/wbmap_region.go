@@ -12,7 +12,8 @@ import (
 )
 
 // Region is a rectangle of plots. X is the western column, Y the southern row; on a map wrapping
-// east-west the rectangle may cross the seam (X+Width goes past the last column).
+// east-west the rectangle may cross the seam (X+Width goes past the last column), on a map wrapping
+// north-south Y+Height may go past the last row.
 type Region struct {
 	X      int `json:"x"`
 	Y      int `json:"y"`
@@ -35,7 +36,8 @@ type ClipboardInfo struct {
 }
 
 // regionCells returns m.Plots indexes of a region (-1 for positions without a plot), column by column.
-// Columns wrap on a map wrapping east-west, rows and columns outside of the map are -1.
+// Columns wrap on a map wrapping east-west and rows on a map wrapping north-south, other rows and columns
+// outside of the map are -1.
 func (m *WbMap) regionCells(r Region) ([]int, error) {
 	if m.Map == nil {
 		return nil, errors.New("the map has no BeginMap section")
@@ -51,14 +53,18 @@ func (m *WbMap) regionCells(r Region) ([]int, error) {
 	for i, p := range m.Plots {
 		index[PlotXY{int(p.X), int(p.Y)}] = i
 	}
+	g := m.grid()
 	cells := make([]int, 0, r.Width*r.Height)
 	for dx := 0; dx < r.Width; dx++ {
-		x := r.X + dx
-		if m.Map.WrapX != 0 {
-			x = ((x % w) + w) % w
-		}
 		for dy := 0; dy < r.Height; dy++ {
-			i, ok := index[PlotXY{x, r.Y + dy}]
+			x, y := r.X+dx, r.Y+dy
+			if g.wrapX {
+				x = ((x % w) + w) % w
+			}
+			if g.wrapY {
+				y = ((y % h) + h) % h
+			}
+			i, ok := index[PlotXY{x, y}]
 			if !ok {
 				i = -1
 			}

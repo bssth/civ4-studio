@@ -16,13 +16,13 @@ instead of raw identifiers.
   positions in player colors, with zoom and layers. Click a plot to change its terrain, feature, resource, improvement
   and route, or to add and edit cities, units and signs (texts on the map, for everyone or one player). Drag a start
   flag to move a player. A map that wraps east-west can be shifted to move the seam out of the way, e.g. to see the
-  Pacific in one piece. An overview of the whole map in the corner shows the visible part and goes anywhere on a
+  Pacific in one piece; a map that wraps north-south (or both ways, a torus) can be shifted up and down. An overview of the whole map in the corner shows the visible part and goes anywhere on a
   click.
 - **Painting.** A brush of size 1–9 paints terrain, height, features, resources, improvements and routes, with presets
   like Ocean, Grassland, Hills or Forest; painting water or land terrain fixes the height. On a wrapping map the brush
-  continues across the seam. The fill brush paints a whole connected area of the same terrain and height at once,
+  continues across the seam, east-west and north-south. The fill brush paints a whole connected area of the same terrain and height at once,
   like a lake or a desert. Rivers are added and removed by clicking the edge between two plots.
-- **Areas.** Select a rectangle of plots (also across the seam), copy it with `Ctrl+C` and paste it with `Ctrl+V`
+- **Areas.** Select a rectangle of plots (also across the seams), copy it with `Ctrl+C` and paste it with `Ctrl+V`
   elsewhere or into another map: terrain, height, features, resources, improvements, routes and rivers, optionally
   with cities and units, and mirrored west–east or north–south (rivers follow), e.g. for symmetric multiplayer maps.
   A selection can be filled with the brush or cleared of units or cities.
@@ -50,7 +50,8 @@ instead of raw identifiers.
   and can be filled with ocean plots of the chosen size, ready for the game's WorldBuilder.
 - **Terrain generator.** Fills a map with continents, mountain chains, climate zones by latitude (snow and tundra
   near the poles, deserts in the subtropics, jungle at the equator), forests, rivers running to the sea and
-  resources of the game or mod, by a seed and a few sliders; the same seed gives the same map. Start positions of
+  resources of the game or mod, by a seed and a few sliders; the same seed gives the same map. On a torus land
+  continues across all seams and there is no polar ice, like in the map scripts of the game. Start positions of
   all players can be placed on good land as far from each other as possible.
 - **Import from a picture.** A height map (bright is high) becomes land, hills and peaks with climate, forests,
   rivers and resources like in the generator; an ordinary map picture is read by its colors (blue water, green

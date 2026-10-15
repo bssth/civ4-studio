@@ -50,6 +50,7 @@ import {
   lineCells,
   mapColumn,
   MapRegion,
+  mapRow,
   mod,
   nearestEdge,
   PLOT_LAND,
@@ -57,6 +58,7 @@ import {
   regionCells,
   RiverEdge,
   screenColumn,
+  screenRow,
   StartMarker
 } from "../mapRender";
 import PlotEditor from "./PlotEditor.vue";
@@ -75,10 +77,13 @@ const view = shallowRef<editor.MapView | null>(null);
 const players = ref<editor.Player[]>([]);
 const signs = ref<editor.Sign[]>([]);
 const cell = ref(8);
-// The map wraps east-west (as almost all maps do): it can be shifted to move the seam out of the way
+// The map wraps east-west (as almost all maps do): it can be shifted to move the seam out of the way.
+// A torus wraps north-south too.
 const wrapX = ref(false);
-// Map column shown at the left edge
+const wrapY = ref(false);
+// Map column shown at the left edge and map row shown at the bottom edge
 const offset = ref(0);
+const offsetY = ref(0);
 const mode = ref<Mode>('select');
 const layers = reactive<Layers>({rivers: true, resources: true, cities: true, units: true, starts: true, signs: true, fog: false, grid: false});
 const layerNames: { key: keyof Layers, title: string, icon: string }[] = [
@@ -150,8 +155,11 @@ async function load(fit = false) {
   players.value = p ?? [];
   signs.value = s ?? [];
   wrapX.value = !!props && props.WrapX !== 0;
+  wrapY.value = !!props && props.WrapY !== 0;
   if (!wrapX.value || !view.value) offset.value = 0;
   else offset.value = mod(offset.value, view.value.width);
+  if (!wrapY.value || !view.value) offsetY.value = 0;
+  else offsetY.value = mod(offsetY.value, view.value.height);
   await refreshHistory();
   if (fit) {
     await nextTick();
@@ -193,7 +201,7 @@ async function consumeFocus() {
   const el = scroller.value;
   if (el) {
     el.scrollLeft = (column(target.x) + 0.5) * cell.value - el.clientWidth / 2;
-    el.scrollTop = (view.value.height - target.y - 0.5) * cell.value - el.clientHeight / 2;
+    el.scrollTop = (row(target.y) + 0.5) * cell.value - el.clientHeight / 2;
   }
 }
 
@@ -202,6 +210,7 @@ watch(mapVersion, () => {
   selected.value = null;
   selectedPlot.value = null;
   offset.value = 0;
+  offsetY.value = 0;
   area.value = null;
   pasting.value = false;
   load(true);
@@ -274,12 +283,16 @@ function draw() {
     area: mode.value === 'area' ? area.value : null,
     paste: mode.value === 'area' ? pasteRegion.value : null,
     revealed: revealed.value,
-    offset: offset.value,
-    wrapX: wrapX.value,
+    ...wrapping(),
   });
 }
 
-watch([view, cell, selected, hover, hoverEdge, mode, offset, area, pasting, revealed, () => brush.size], scheduleDraw);
+/** Seams and wrapping for drawMap */
+function wrapping() {
+  return {offset: offset.value, offsetY: offsetY.value, wrapX: wrapX.value, wrapY: wrapY.value};
+}
+
+watch([view, cell, selected, hover, hoverEdge, mode, offset, offsetY, area, pasting, revealed, () => brush.size], scheduleDraw);
 
 // --- Minimap ----------------------------------------------------------------
 
@@ -312,8 +325,7 @@ function drawMinimap() {
       ownerColor: owner => playerColor(players.value, owner),
       starts: [],
       selected: null,
-      offset: offset.value,
-      wrapX: wrapX.value,
+      ...wrapping(),
     });
     updateViewport();
   });
@@ -341,7 +353,7 @@ function onMinimap(e: MouseEvent) {
   updateViewport();
 }
 
-watch([view, offset, players], drawMinimap);
+watch([view, offset, offsetY, players], drawMinimap);
 watch(cell, () => nextTick(updateViewport));
 watch([layers, starts, () => enums.colors], scheduleDraw, {deep: true});
 
@@ -350,28 +362,41 @@ function column(x: number): number {
   return view.value ? screenColumn(x, view.value.width, offset.value) : x;
 }
 
+/** Canvas row of a map row, see offsetY */
+function row(y: number): number {
+  return view.value ? screenRow(y, view.value.height, offsetY.value) : y;
+}
+
 function cellAt(e: MouseEvent): { x: number, y: number } | null {
   const v = view.value;
   if (!v) return null;
   const col = Math.floor(e.offsetX / cell.value);
-  const row = Math.floor(e.offsetY / cell.value);
-  if (col < 0 || col >= v.width || row < 0 || row >= v.height) return null;
-  return {x: mapColumn(col, v.width, offset.value), y: v.height - 1 - row};
+  const r = Math.floor(e.offsetY / cell.value);
+  if (col < 0 || col >= v.width || r < 0 || r >= v.height) return null;
+  return {x: mapColumn(col, v.width, offset.value), y: mapRow(r, v.height, offsetY.value)};
 }
 
-/** Moves the seam of a wrapping map by the given number of columns */
-function shift(columns: number) {
-  if (!view.value) return;
-  offset.value = mod(offset.value + columns, view.value.width);
+/** Moves the seams of a wrapping map by the given number of columns (to the left) and rows (upwards) */
+function shift(columns: number, rows = 0) {
+  const v = view.value;
+  if (!v) return;
+  if (wrapX.value) offset.value = mod(offset.value + columns, v.width);
+  if (wrapY.value) offsetY.value = mod(offsetY.value - rows, v.height);
 }
 
-/** Shifts the map so that the selected plot (or the seam, if nothing is selected) is in the middle of the screen */
+/** Shifts the map so that the selected plot (or the seams, if nothing is selected) is in the middle of the screen */
 function centerSelected() {
   const v = view.value;
   if (!v) return;
-  const x = selected.value?.x ?? 0;
-  offset.value = mod(x - Math.floor(v.width / 2), v.width);
+  if (wrapX.value) offset.value = mod((selected.value?.x ?? 0) - Math.floor(v.width / 2), v.width);
+  if (wrapY.value) offsetY.value = mod((selected.value?.y ?? 0) - Math.floor(v.height / 2), v.height);
 }
+
+// One step of the seam buttons
+const shiftStep = computed(() => ({
+  columns: Math.max(1, Math.round((view.value?.width ?? 8) / 8)),
+  rows: Math.max(1, Math.round((view.value?.height ?? 8) / 8)),
+}));
 
 // --- Painting -------------------------------------------------------------
 
@@ -423,9 +448,10 @@ function paintAt(from: { x: number, y: number }, to: { x: number, y: number }) {
   const v = view.value;
   if (!v || !stroke) return;
   const added = [];
-  // The line is drawn in screen columns: on a shifted map neighbour columns may be the two ends of the map
-  for (const point of lineCells(column(from.x), from.y, column(to.x), to.y)) {
-    for (const c of brushCells(v, mapColumn(point.x, v.width, offset.value), point.y, brush.size, wrapX.value)) {
+  // The line is drawn on the screen: on a shifted map neighbour columns or rows may be the two ends of the map
+  for (const point of lineCells(column(from.x), row(from.y), column(to.x), row(to.y))) {
+    const x = mapColumn(point.x, v.width, offset.value), y = mapRow(point.y, v.height, offsetY.value);
+    for (const c of brushCells(v, x, y, brush.size, wrapX.value, wrapY.value)) {
       const key = `${c.x},${c.y}`;
       if (!stroke.cells.has(key)) {
         stroke.cells.set(key, c);
@@ -458,8 +484,8 @@ function edgeAt(e: MouseEvent): RiverEdge | null {
   const v = view.value, at = cellAt(e);
   if (!v || !at) return null;
   const fx = e.offsetX / cell.value - column(at.x);
-  const fy = e.offsetY / cell.value - (v.height - 1 - at.y);
-  return nearestEdge(v, at.x, at.y, fx, fy, wrapX.value);
+  const fy = e.offsetY / cell.value - row(at.y);
+  return nearestEdge(v, at.x, at.y, fx, fy, wrapX.value, wrapY.value);
 }
 
 // Flow directions of the game: 0 north, 1 east, 2 south, 3 west. Without a river the direction is not
@@ -502,13 +528,16 @@ function screenCell(e: MouseEvent): { col: number, row: number } | null {
   return {col, row};
 }
 
-/** Rectangle between two screen cells; it is made in screen columns, so it may cross the seam */
+/** Rectangle between two screen cells; it is made on the screen, so it may cross the seams */
 function areaBetween(a: { col: number, row: number }, b: { col: number, row: number }): MapRegion | null {
   const v = view.value;
   if (!v) return null;
   const left = Math.min(a.col, b.col), right = Math.max(a.col, b.col);
   const top = Math.min(a.row, b.row), bottom = Math.max(a.row, b.row);
-  return {x: mapColumn(left, v.width, offset.value), y: v.height - 1 - bottom, width: right - left + 1, height: bottom - top + 1};
+  return {
+    x: mapColumn(left, v.width, offset.value), y: mapRow(bottom, v.height, offsetY.value),
+    width: right - left + 1, height: bottom - top + 1,
+  };
 }
 
 // The copied area placed with its north-western corner under the cursor
@@ -569,7 +598,7 @@ function fillArea() {
     return;
   }
   return areaAction(async () => {
-    const n = await PaintPlots(editor.PaintOp.createFrom({...brushOperation(), cells: regionCells(v, r, wrapX.value)}));
+    const n = await PaintPlots(editor.PaintOp.createFrom({...brushOperation(), cells: regionCells(v, r, wrapX.value, wrapY.value)}));
     await reloadAfterEdit();
     return t('area.filled', {n});
   });
@@ -671,8 +700,7 @@ async function exportImage() {
       ownerColor: owner => playerColor(players.value, owner),
       starts: starts.value,
       selected: null,
-      offset: offset.value,
-      wrapX: wrapX.value,
+      ...wrapping(),
     });
     const path = await ExportImage(c.toDataURL('image/png'));
     if (path) areaMessage.value = t('world.exported', {path});
@@ -705,7 +733,7 @@ function onMouseDown(e: MouseEvent) {
     }
     if (brush.size === BRUSH_FILL && view.value) {
       // One click fills the whole connected area as one step
-      const cells = floodCells(view.value, at.x, at.y, wrapX.value);
+      const cells = floodCells(view.value, at.x, at.y, wrapX.value, wrapY.value);
       stroke = {cells: new Map(cells.map(c => [`${c.x},${c.y}`, c])), last: at};
       preview(cells);
       finishStroke();
@@ -891,16 +919,34 @@ const canvasCursor = computed(() => {
             <div v-else class="text-caption text-medium-emphasis pa-2">{{ $t('search.hint') }}</div>
           </v-card>
         </v-menu>
-        <template v-if="wrapX && view">
-          <v-btn icon="mdi-arrow-left-bold" size="small" variant="text" :title="$t('world.seamLeft')"
-                 @click="shift(Math.max(1, Math.round(view.width / 8)))"/>
-          <v-btn icon="mdi-image-filter-center-focus" size="small" variant="text" :title="$t('world.seamCenter')"
-                 @click="centerSelected"/>
-          <v-btn icon="mdi-arrow-right-bold" size="small" variant="text" :title="$t('world.seamRight')"
-                 @click="shift(-Math.max(1, Math.round(view.width / 8)))"/>
-          <v-btn v-if="offset !== 0" icon="mdi-restore" size="small" variant="text" :title="$t('world.seamReset')"
-                 @click="offset = 0"/>
-        </template>
+        <v-menu v-if="(wrapX || wrapY) && view" :close-on-content-click="false" location="bottom">
+          <template v-slot:activator="{ props: menu }">
+            <v-btn v-bind="menu" icon="mdi-arrow-all" size="small" variant="text" :title="$t('world.seam')"
+                   :color="offset || offsetY ? 'primary' : undefined"/>
+          </template>
+          <v-card class="pa-2">
+            <div class="text-caption text-medium-emphasis mb-1 seam-help">
+              {{ $t(wrapX && wrapY ? 'world.seamTorus' : wrapX ? 'world.seamEastWest' : 'world.seamNorthSouth') }}
+            </div>
+            <div class="seam-pad">
+              <span/>
+              <v-btn icon="mdi-arrow-up-bold" size="small" variant="text" :disabled="!wrapY" :title="$t('world.seamUp')"
+                     @click="shift(0, shiftStep.rows)"/>
+              <span/>
+              <v-btn icon="mdi-arrow-left-bold" size="small" variant="text" :disabled="!wrapX" :title="$t('world.seamLeft')"
+                     @click="shift(shiftStep.columns)"/>
+              <v-btn icon="mdi-image-filter-center-focus" size="small" variant="text" :title="$t('world.seamCenter')"
+                     @click="centerSelected"/>
+              <v-btn icon="mdi-arrow-right-bold" size="small" variant="text" :disabled="!wrapX" :title="$t('world.seamRight')"
+                     @click="shift(-shiftStep.columns)"/>
+              <span/>
+              <v-btn icon="mdi-arrow-down-bold" size="small" variant="text" :disabled="!wrapY" :title="$t('world.seamDown')"
+                     @click="shift(0, -shiftStep.rows)"/>
+              <v-btn icon="mdi-restore" size="small" variant="text" :disabled="!offset && !offsetY" :title="$t('world.seamReset')"
+                     @click="offset = 0; offsetY = 0"/>
+            </div>
+          </v-card>
+        </v-menu>
         <v-spacer/>
         <v-slider v-model="cell" :min="2" :max="maxCell" :step="1" hide-details density="compact"
                   prepend-icon="mdi-magnify-minus-outline" :title="$t('world.zoom')"
@@ -1058,6 +1104,17 @@ const canvasCursor = computed(() => {
 
 .hover-line {
   min-height: 22px;
+}
+
+.seam-help {
+  max-width: 220px;
+}
+
+.seam-pad {
+  display: grid;
+  grid-template-columns: repeat(3, 40px);
+  justify-content: center;
+  justify-items: center;
 }
 
 .editor-panel {
