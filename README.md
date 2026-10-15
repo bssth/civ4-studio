@@ -94,6 +94,8 @@ searches on the World tab, `Esc` cancels pasting or the selection, `Ctrl+wheel` 
 ## Getting Started
 
 1. Download the archive for your system from [Releases](https://github.com/bssth/civ4-studio/releases) and unpack it.
+   On Windows there is also an installer (`…-windows-amd64-setup.exe`): it adds the editor to the Start menu and the
+   desktop, opens WorldBuilder saves with a double click and can be removed in *Apps & features*.
 2. Start the editor. On the first start open **Settings**, choose the *Beyond the Sword* folder (the one with
    `Civ4BeyondSword.exe`) and, if the map is made for a mod, the mod. The editor loads the game data in a few seconds.
    The languages of the interface and of the names from the game are chosen there too.
@@ -105,8 +107,9 @@ never hurts.
 
 ### Notes for your system
 
-- **Windows.** The editor is not signed, so SmartScreen may warn about it: choose *More info → Run anyway*. It uses
-  WebView2, which is part of Windows 10 and 11. Launching the game from the editor triggers a UAC prompt.
+- **Windows.** The editor and its installer are not signed, so SmartScreen may warn about them: choose
+  *More info → Run anyway*. It uses WebView2, which is part of Windows 10 and 11 (the installer sets it up if it is
+  missing). Launching the game from the editor triggers a UAC prompt.
 - **macOS.** The app is not notarized. If macOS says it can not be opened, right-click it and choose *Open*, or run
   `xattr -dr com.apple.quarantine civ4studio.app`.
 - **Linux.** WebKitGTK 4.1 is needed (`libwebkit2gtk-4.1-0` and `libgtk-3-0` on Ubuntu 24.04). The game itself runs

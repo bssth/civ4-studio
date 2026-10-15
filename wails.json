@@ -23,6 +23,20 @@
         "description": "Civilization IV Worldbuilder Save",
         "iconName": "appicon",
         "role": "Editor"
+      },
+      {
+        "ext": "CivWarlordsWBSave",
+        "name": "Civilization IV Warlords Worldbuilder Save",
+        "description": "Civilization IV Warlords Worldbuilder Save",
+        "iconName": "appicon",
+        "role": "Editor"
+      },
+      {
+        "ext": "Civ4WorldBuilderSave",
+        "name": "Civilization IV Worldbuilder Save (original game)",
+        "description": "Civilization IV Worldbuilder Save (original game)",
+        "iconName": "appicon",
+        "role": "Editor"
       }
     ]
   }

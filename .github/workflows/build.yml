@@ -60,6 +60,17 @@ jobs:
       - name: Install Wails
         run: go install github.com/wailsapp/wails/v2/cmd/wails@v2.12.0
 
+      # The Windows installer is made by NSIS (wails build -nsis)
+      - name: Install NSIS
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          if (-not (Get-Command makensis -ErrorAction SilentlyContinue)) {
+            choco install nsis -y --no-progress
+          }
+          $dir = Join-Path ${env:ProgramFiles(x86)} 'NSIS'
+          if (Test-Path $dir) { $dir | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append }
+
       - name: Set product version
         run: node .github/scripts/set-version.mjs "${{ inputs.version }}"
 
@@ -73,6 +84,9 @@ jobs:
           if [ -n "$TAGS" ]; then
             args+=(-tags "$TAGS")
           fi
+          if [ "$RUNNER_OS" = Windows ]; then
+            args+=(-nsis)
+          fi
           wails build "${args[@]}"
 
       - name: Package
@@ -83,7 +97,9 @@ jobs:
           mkdir -p dist
           case "$RUNNER_OS" in
             Linux)   tar -czf "dist/$ARCHIVE.tar.gz" -C build/bin civ4studio ;;
-            Windows) 7z a "dist/$ARCHIVE.zip" ./build/bin/civ4studio.exe ;;
+            Windows)
+              7z a "dist/$ARCHIVE.zip" ./build/bin/civ4studio.exe
+              cp build/bin/civ4studio-amd64-installer.exe "dist/$ARCHIVE-setup.exe" ;;
             macOS)   ditto -c -k --keepParent build/bin/civ4studio.app "dist/$ARCHIVE.zip" ;;
           esac
           ls -l dist
