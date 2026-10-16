@@ -47,6 +47,12 @@ type WbMap struct {
 	Players []*Player
 	Plots   []*Plot
 	Signs   []*Sign
+
+	// encoding and the byte order mark of the file, it is saved the same way (see FileBytes)
+	encoding string
+	bom      bool
+	// raw are parts of the file unknown to the editor outside of the sections, e.g. sections of a mod
+	raw []rawBlock
 }
 
 // Unpack from WbMap is not used, parser unpacks it manually.
@@ -70,26 +76,43 @@ func (m *WbMap) Unpack(packed map[string]string) error {
 
 func (m *WbMap) ToWbFormat() []byte {
 	buf := bytes.NewBuffer(nil)
+	// Unknown parts of the file go after the sections they followed
+	writeRaw := func(after string) {
+		for _, r := range m.raw {
+			if r.after == after {
+				for _, line := range r.lines {
+					buf.WriteString(line + "\n")
+				}
+			}
+		}
+	}
 	buf.Write([]byte(fmt.Sprintf("Version=%d\n", m.Version)))
+	writeRaw("")
 	buf.Write(m.Game.ToWbFormat())
+	writeRaw("game")
 	for _, team := range m.Teams {
 		buf.Write(team.ToWbFormat())
 	}
+	writeRaw("team")
 	for _, player := range m.Players {
 		buf.Write(player.ToWbFormat())
 	}
+	writeRaw("player")
 	if m.Map != nil {
 		props := *m.Map
 		props.NumPlotsWritten = uint64(len(m.Plots))
 		props.NumSignsWritten = uint64(len(m.Signs))
 		buf.Write(props.ToWbFormat())
 	}
+	writeRaw("map")
 	for _, plot := range m.Plots {
 		buf.Write(plot.ToWbFormat())
 	}
+	writeRaw("plot")
 	for _, sign := range m.Signs {
 		buf.Write(sign.ToWbFormat())
 	}
+	writeRaw("sign")
 	return buf.Bytes()
 }
 

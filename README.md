@@ -4,7 +4,7 @@ Welcome to the **Civilization 4 Map Studio**! This tool is designed to help you 
 and scenarios for [Civilization 4: Beyond the Sword](https://en.wikipedia.org/wiki/Civilization_IV), turn-based
 strategy game.
 
-The editor opens WorldBuilder saves (`*.CivBeyondSwordWBSave`), shows the map and lets you paint terrain, draw rivers
+The editor opens WorldBuilder saves (`*.CivBeyondSwordWBSave`, also of Warlords and the original game), shows the map and lets you paint terrain, draw rivers
 and set up players, teams, diplomacy, cities, units and start positions with the names from the game and your mod
 instead of raw identifiers.
 
@@ -15,7 +15,8 @@ instead of raw identifiers.
 - **World map.** Terrain, hills and peaks, forests and other features, rivers, resources, cities, units and start
   positions in player colors, with zoom and layers. Click a plot to change its terrain, feature, resource, improvement
   and route, or to add and edit cities, units and signs (texts on the map, for everyone or one player). Drag a start
-  flag to move a player. A map that wraps east-west can be shifted to move the seam out of the way, e.g. to see the
+  flag to move a player, and a city with its units (with Shift only the units) to put them on another plot, e.g. when
+  a city is one plot off. A map that wraps east-west can be shifted to move the seam out of the way, e.g. to see the
   Pacific in one piece; a map that wraps north-south (or both ways, a torus) can be shifted up and down. An overview of the whole map in the corner shows the visible part and goes anywhere on a
   click.
 - **Painting.** A brush of size 1–9 paints terrain, height, features, resources, improvements and routes, with presets
@@ -68,8 +69,12 @@ instead of raw identifiers.
 - **Languages.** The interface is in English and Russian (the system language by default). Names of
   civilizations, leaders, techs etc. are shown in any language of the game or mod texts (French, German, a Russian
   localization...), with English for texts that have no translation.
-- **Safe saving.** The original file is copied to `<map>.bak` before it is overwritten for the first time, keys the
-  editor does not know (e.g. added by mods) are kept as they are, optional autosave every 5 minutes.
+- **Safe saving.** The original file is copied to `<map>.bak` before it is overwritten for the first time, keys,
+  lines and whole sections the editor does not know (e.g. added by mods) are kept as they are,
+  optional autosave every 5 minutes. Files are read and written in the encoding of the game (Latin-1), so names like
+  Zürich stay intact, and the check warns about characters the game can not read. A file that can not be opened is
+  explained: a saved game instead of a WorldBuilder save, a file cut off in the middle of a section, a value that can
+  not be read, with the line.
 
 Game data is read from the base game, Warlords, Beyond the Sword and the selected mod, the same way the game does it:
 a mod file replaces the base file with the same path.
@@ -89,6 +94,8 @@ searches on the World tab, `Esc` cancels pasting or the selection, `Ctrl+wheel` 
 ## Getting Started
 
 1. Download the archive for your system from [Releases](https://github.com/bssth/civ4-studio/releases) and unpack it.
+   On Windows there is also an installer (`…-windows-amd64-setup.exe`): it adds the editor to the Start menu and the
+   desktop, opens WorldBuilder saves with a double click and can be removed in *Apps & features*.
 2. Start the editor. On the first start open **Settings**, choose the *Beyond the Sword* folder (the one with
    `Civ4BeyondSword.exe`) and, if the map is made for a mod, the mod. The editor loads the game data in a few seconds.
    The languages of the interface and of the names from the game are chosen there too.
@@ -100,8 +107,9 @@ never hurts.
 
 ### Notes for your system
 
-- **Windows.** The editor is not signed, so SmartScreen may warn about it: choose *More info → Run anyway*. It uses
-  WebView2, which is part of Windows 10 and 11. Launching the game from the editor triggers a UAC prompt.
+- **Windows.** The editor and its installer are not signed, so SmartScreen may warn about them: choose
+  *More info → Run anyway*. It uses WebView2, which is part of Windows 10 and 11 (the installer sets it up if it is
+  missing). Launching the game from the editor triggers a UAC prompt.
 - **macOS.** The app is not notarized. If macOS says it can not be opened, right-click it and choose *Open*, or run
   `xattr -dr com.apple.quarantine civ4studio.app`.
 - **Linux.** WebKitGTK 4.1 is needed (`libwebkit2gtk-4.1-0` and `libgtk-3-0` on Ubuntu 24.04). The game itself runs

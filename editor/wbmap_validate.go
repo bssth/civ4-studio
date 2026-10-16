@@ -163,6 +163,11 @@ func (v *validator) game() {
 
 func (v *validator) mapSection() {
 	v.problems = append(v.problems, v.m.Stats().Problems...)
+	if n, example := v.m.notLatin1(); n > 0 {
+		v.add(SeverityWarning, "map", "map.notLatin1", args("n", n, "example", example),
+			fmt.Sprintf("characters the game can not read from a WorldBuilder save (only Latin-1) are saved as '?'; lines with them: %d, e.g. %s", n, example),
+			-1, -1, -1, -1)
+	}
 	if v.m.Map != nil {
 		v.checkType("map", InfoWorldSizes, "worldSize", v.m.Map.WorldSize, -1, -1, -1, -1)
 		v.checkType("map", InfoClimates, "climate", v.m.Map.Climate, -1, -1, -1, -1)

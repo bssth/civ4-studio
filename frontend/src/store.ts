@@ -111,6 +111,8 @@ export function historyLabel(label: string): string {
             return t(`history.${kind}`, {n: value});
         case 'plot':
             return t('history.plot', {x: first, y: second});
+        case 'move':
+            return t('history.move', {x: first, y: second});
         case 'swap':
             return t('history.swap', {a: first, b: second});
         case 'signs':

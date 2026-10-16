@@ -72,6 +72,8 @@ export function LaunchGame():Promise<void>;
 
 export function LoadGameXML():Promise<void>;
 
+export function MoveAssets(arg1:number,arg2:number,arg3:number,arg4:number,arg5:boolean,arg6:boolean):Promise<editor.MoveResult>;
+
 export function NewMap():Promise<boolean>;
 
 export function OpenMap(arg1:string):Promise<void>;
@@ -117,6 +119,8 @@ export function SetTeams(arg1:Array<editor.Team>):Promise<void>;
 export function StartBalance():Promise<Array<editor.StartInfo>>;
 
 export function SwapPlayers(arg1:number,arg2:number):Promise<void>;
+
+export function TakeOpenError():Promise<editor.OpenError>;
 
 export function TranslateKey(arg1:string):Promise<string>;
 

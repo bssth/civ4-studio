@@ -440,6 +440,42 @@ export namespace editor {
 	        this.unit_count = source["unit_count"];
 	    }
 	}
+	export class MoveResult {
+	    cities: number;
+	    units: number;
+	
+	    static createFrom(source: any = {}) {
+	        return new MoveResult(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.cities = source["cities"];
+	        this.units = source["units"];
+	    }
+	}
+	export class OpenError {
+	    code: string;
+	    line: number;
+	    text: string;
+	    section: string;
+	    detail: string;
+	    path: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new OpenError(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.code = source["code"];
+	        this.line = source["line"];
+	        this.text = source["text"];
+	        this.section = source["section"];
+	        this.detail = source["detail"];
+	        this.path = source["path"];
+	    }
+	}
 	export class OptionList {
 	    key: string;
 	    options: EnumOption[];

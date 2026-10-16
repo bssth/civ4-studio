@@ -142,6 +142,10 @@ export function LoadGameXML() {
   return window['go']['editor']['App']['LoadGameXML']();
 }
 
+export function MoveAssets(arg1, arg2, arg3, arg4, arg5, arg6) {
+  return window['go']['editor']['App']['MoveAssets'](arg1, arg2, arg3, arg4, arg5, arg6);
+}
+
 export function NewMap() {
   return window['go']['editor']['App']['NewMap']();
 }
@@ -232,6 +236,10 @@ export function StartBalance() {
 
 export function SwapPlayers(arg1, arg2) {
   return window['go']['editor']['App']['SwapPlayers'](arg1, arg2);
+}
+
+export function TakeOpenError() {
+  return window['go']['editor']['App']['TakeOpenError']();
 }
 
 export function TranslateKey(arg1) {

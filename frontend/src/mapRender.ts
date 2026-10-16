@@ -103,6 +103,8 @@ export interface RenderOptions {
     // Selected area and the place where the copied area would be pasted
     area?: MapRegion | null;
     paste?: MapRegion | null;
+    // A city or units being dragged from one plot to another
+    move?: { from: { x: number, y: number }, to: { x: number, y: number } } | null;
 }
 
 /** Rectangle of plots: x is the western column, y the southern row; it may cross the seams of a wrapping map */
@@ -541,6 +543,17 @@ export function drawMap(ctx: CanvasRenderingContext2D, view: editor.MapView, o: 
             ctx.lineTo(px + cell, py + cell);
         }
         ctx.stroke();
+    }
+
+    if (o.move) {
+        ctx.lineWidth = 2;
+        ctx.strokeStyle = '#ffffff';
+        ctx.setLineDash([4, 3]);
+        ctx.strokeRect(left(o.move.from.x) + 1, top(o.move.from.y) + 1, cell - 2, cell - 2);
+        ctx.setLineDash([]);
+        ctx.strokeStyle = '#ffeb3b';
+        ctx.lineWidth = Math.max(2, cell / 6);
+        ctx.strokeRect(left(o.move.to.x), top(o.move.to.y), cell, cell);
     }
 
     if (o.selected) {

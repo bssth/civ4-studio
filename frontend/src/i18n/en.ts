@@ -192,6 +192,7 @@ const en = {
     },
     "history": {
         "import": "import of an image",
+        "move": "moving from plot {x}, {y}",
         "fix": "fixes of {n} problems",
         "replace": "replacement of a {what}",
         "generate": "generated terrain (seed {seed})",
@@ -313,6 +314,18 @@ const en = {
         "unit": "Unit",
         "units": "Units ({n})"
     },
+    "openError": {
+        "badValue": "Line {line} of the {section} section has a value the editor can not read ({detail}):",
+        "badVersion": "The version number in line {line} is not a number:",
+        "empty": "The file is empty.",
+        "footer": "Keys and sections the editor does not know, e.g. of mods, are kept as they are. If a map that works in the game does not open, please report it together with the file.",
+        "noGame": "The file has no BeginGame section, so it is not a complete WorldBuilder save.",
+        "notMap": "The file does not look like a WorldBuilder save: it must start with Version=… or BeginGame, but line {line} is:",
+        "notText": "This is not a text WorldBuilder save. Saved games (*.CivBeyondSwordSave) can not be opened, only WorldBuilder saves (*.CivBeyondSwordWBSave, also of Warlords and the original game).",
+        "read": "The file can not be read: {detail}",
+        "title": "The map can not be opened",
+        "unclosed": "The {section} section that starts in line {line} is not closed: the file is cut off or damaged. Try the .bak copy or the original file."
+    },
     "players": {
         "addAttitude": "Add an attitude to a player",
         "attitudes": "Attitudes",
@@ -407,6 +420,7 @@ const en = {
         "map": {
             "latitudes": "top latitude must be greater than bottom latitude",
             "noSection": "the map has no BeginMap section",
+            "notLatin1": "characters the game can not read from a WorldBuilder save (only Latin-1) will be saved as «?»; lines with them: {n}, e.g. {example}",
             "outside": "{n} plots are outside of the map grid",
             "plotCount": "the map has {plots} plots, but {width}x{height} = {expected} are expected"
         },
@@ -546,6 +560,7 @@ const en = {
         "keyWheel": "Ctrl+wheel",
         "copy": "Copy the selected area (Area mode)",
         "dragStart": "Move a start position (Select mode)",
+        "dragAssets": "Move a city with its units to another plot, with Shift only the units (Select mode)",
         "escape": "Cancel pasting or deselect the area",
         "general": "Everywhere",
         "help": "This list",
@@ -628,7 +643,13 @@ const en = {
         "fit": "Fit the map to the screen",
         "hintPaint": "Drag over the map to paint with the brush. Ctrl+Z undoes a stroke.",
         "hintRiver": "Click near the edge of a plot to add or remove a river there.",
-        "hintSelect": "Click a plot to edit it. Drag a flag to move a start position. Ctrl+wheel zooms.",
+        "moveCityPeak": "A city can not stand on a peak.",
+        "moveCityTaken": "There is already a city on plot {x}, {y}.",
+        "moveCityWater": "A city can not stand in water.",
+        "movingCity": "Release to move the city to {x}, {y}",
+        "movingCityUnits": "Release to move the city and its units ({n}) to {x}, {y}",
+        "movingUnits": "Release to move the units ({n}) to {x}, {y}",
+        "hintSelect": "Click a plot to edit it. Drag a flag to move a start position, a city or units to move them (Shift: only units). Ctrl+wheel zooms.",
         "modePaint": "Paint terrain, height, features and resources",
         "modeRiver": "Add and remove rivers",
         "modeSelect": "Select and edit plots, move start positions",

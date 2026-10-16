@@ -11,6 +11,7 @@ import {
   GetPlot,
   GetRevealed,
   GetSigns,
+  MoveAssets,
   PaintPlots,
   PasteRegion,
   SearchMap,
@@ -55,6 +56,7 @@ import {
   nearestEdge,
   PLOT_LAND,
   PLOT_OCEAN,
+  PLOT_PEAK,
   regionCells,
   RiverEdge,
   screenColumn,
@@ -237,6 +239,8 @@ function fitToScreen() {
 
 // Start position being dragged
 const drag = ref<{ player: number, x: number, y: number, moved: boolean } | null>(null);
+// City and/or units being dragged to another plot (Shift: only the units)
+const moving = ref<{ from: { x: number, y: number }, x: number, y: number, city: boolean, units: number, moved: boolean } | null>(null);
 
 const starts = computed<StartMarker[]>(() => players.value
     .map((p, i) => ({p, i}))
@@ -282,6 +286,7 @@ function draw() {
     edge: mode.value === 'river' ? hoverEdge.value : null,
     area: mode.value === 'area' ? area.value : null,
     paste: mode.value === 'area' ? pasteRegion.value : null,
+    move: moving.value?.moved ? {from: moving.value.from, to: moving.value} : null,
     revealed: revealed.value,
     ...wrapping(),
   });
@@ -292,7 +297,7 @@ function wrapping() {
   return {offset: offset.value, offsetY: offsetY.value, wrapX: wrapX.value, wrapY: wrapY.value};
 }
 
-watch([view, cell, selected, hover, hoverEdge, mode, offset, offsetY, area, pasting, revealed, () => brush.size], scheduleDraw);
+watch([view, cell, selected, hover, hoverEdge, mode, offset, offsetY, area, pasting, revealed, moving, () => brush.size], scheduleDraw);
 
 // --- Minimap ----------------------------------------------------------------
 
@@ -750,6 +755,15 @@ function onMouseDown(e: MouseEvent) {
   }
   const marker = layers.starts ? starts.value.find(s => s.x === at.x && s.y === at.y) : undefined;
   drag.value = marker ? {player: marker.player, x: at.x, y: at.y, moved: false} : null;
+  moving.value = null;
+  const v = view.value;
+  if (!marker && v) {
+    // A city is moved with its units; with Shift only the units
+    const i = at.y * v.width + at.x;
+    const city = layers.cities && v.city_owner[i] >= 0 && !e.shiftKey;
+    const units = layers.units ? v.unit_count[i] : 0;
+    if (city || units > 0) moving.value = {from: at, x: at.x, y: at.y, city, units, moved: false};
+  }
 }
 
 function onMouseMove(e: MouseEvent) {
@@ -771,6 +785,9 @@ function onMouseMove(e: MouseEvent) {
   if (drag.value && at && (drag.value.x !== at.x || drag.value.y !== at.y)) {
     drag.value = {...drag.value, x: at.x, y: at.y, moved: true};
   }
+  if (moving.value && at && (moving.value.x !== at.x || moving.value.y !== at.y)) {
+    moving.value = {...moving.value, x: at.x, y: at.y, moved: true};
+  }
 }
 
 async function onMouseUp(e: MouseEvent) {
@@ -786,6 +803,12 @@ async function onMouseUp(e: MouseEvent) {
   const at = cellAt(e);
   const d = drag.value;
   drag.value = null;
+  const m = moving.value;
+  moving.value = null;
+  if (m && m.moved && at && (at.x !== m.from.x || at.y !== m.from.y)) {
+    await moveAssets(m.from, at, m.city, m.units > 0);
+    return;
+  }
   if (d && d.moved && at) {
     try {
       await SetPlayerStart(d.player, at.x, at.y);
@@ -803,11 +826,37 @@ async function onMouseUp(e: MouseEvent) {
   if (at) await select(at.x, at.y);
 }
 
+/** Moves the city and/or the units of a plot to another one, the target plot gets selected */
+async function moveAssets(from: { x: number, y: number }, to: { x: number, y: number }, city: boolean, units: boolean) {
+  const v = view.value;
+  if (!v) return;
+  const i = to.y * v.width + to.x;
+  // The backend refuses these too, but here the reason is in the interface language
+  if (city && v.city_owner[i] >= 0) error.value = t('world.moveCityTaken', to);
+  else if (city && v.plot_type[i] === PLOT_OCEAN) error.value = t('world.moveCityWater');
+  else if (city && v.plot_type[i] === PLOT_PEAK) error.value = t('world.moveCityPeak');
+  else {
+    try {
+      await MoveAssets(from.x, from.y, to.x, to.y, city, units);
+      error.value = '';
+      setView(await GetMapView());
+      await refreshHistory();
+      await select(to.x, to.y);
+      return;
+    } catch (err: any) {
+      error.value = String(err);
+    }
+  }
+  // Nothing moved: the source stays selected
+  await select(from.x, from.y);
+}
+
 function onMouseLeave() {
   areaStart = null;
   hover.value = null;
   hoverEdge.value = null;
   drag.value = null;
+  moving.value = null;
   if (stroke) finishStroke();
 }
 
@@ -837,6 +886,11 @@ const hoverText = computed(() => {
   const v = view.value, h = hover.value;
   if (!v || !h) return '';
   if (mode.value === 'area' && pasting.value) return t('area.pasteHint');
+  const m = moving.value;
+  if (m?.moved) {
+    const key = m.city && m.units ? 'world.movingCityUnits' : m.city ? 'world.movingCity' : 'world.movingUnits';
+    return t(key, {n: m.units, x: h.x, y: h.y});
+  }
   const i = h.y * v.width + h.x;
   const parts = [`${h.x}, ${h.y}`];
   const terrain = v.terrain[i];
@@ -865,9 +919,12 @@ const hints: Record<Mode, string> = {
 
 const canvasCursor = computed(() => {
   if (mode.value !== 'select') return 'crosshair';
-  if (drag.value) return 'grabbing';
-  const h = hover.value;
+  if (drag.value || moving.value?.moved) return 'grabbing';
+  const h = hover.value, v = view.value;
   if (h && layers.starts && starts.value.some(s => s.x === h.x && s.y === h.y)) return 'grab';
+  if (h && v && ((layers.cities && v.city_owner[h.y * v.width + h.x] >= 0) || (layers.units && v.unit_count[h.y * v.width + h.x] > 0))) {
+    return 'grab';
+  }
   return 'crosshair';
 });
 </script>
