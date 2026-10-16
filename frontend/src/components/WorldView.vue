@@ -937,7 +937,7 @@ const canvasCursor = computed(() => {
   <div v-else class="world d-flex fill-height">
     <div class="d-flex flex-column flex-grow-1" style="min-width: 0">
       <div class="d-flex align-center flex-wrap px-2 pt-2" style="gap: 8px">
-        <v-btn-toggle v-model="mode" mandatory density="compact" divided variant="outlined" color="primary">
+        <v-btn-toggle v-model="mode" mandatory density="compact" divided variant="outlined" color="primary" class="tool-toggle">
           <v-btn value="select" size="small" :title="$t('world.modeSelect')">
             <v-icon icon="mdi-cursor-default"/>
           </v-btn>
@@ -955,7 +955,7 @@ const canvasCursor = computed(() => {
                :title="history.undo ? $t('world.undo', {what: historyLabel(history.undo)}) : $t('world.nothingToUndo')" @click="step(true)"/>
         <v-btn icon="mdi-redo" size="small" variant="text" :disabled="!history.redo"
                :title="history.redo ? $t('world.redo', {what: historyLabel(history.redo)}) : $t('world.nothingToRedo')" @click="step(false)"/>
-        <v-btn-toggle v-model="activeLayers" multiple density="compact" divided variant="outlined">
+        <v-btn-toggle v-model="activeLayers" multiple density="compact" divided variant="outlined" class="tool-toggle">
           <v-btn v-for="l in layerNames" :key="l.key" :value="l.key" size="small" :title="$t(l.title)">
             <v-icon :icon="l.icon"/>
           </v-btn>
@@ -1161,6 +1161,12 @@ const canvasCursor = computed(() => {
 
 .hover-line {
   min-height: 22px;
+}
+
+/* Narrow icon buttons, so the toolbar fits in one line on a laptop screen */
+.tool-toggle :deep(.v-btn) {
+  min-width: 40px;
+  padding-inline: 8px;
 }
 
 .seam-help {
