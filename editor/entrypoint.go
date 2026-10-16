@@ -39,6 +39,8 @@ func RunApplication() {
 		Title:  AppTitle(),
 		Width:  1024,
 		Height: 768,
+		// A map editor needs the whole screen; the size above is used when the window is restored
+		WindowStartState: options.Maximised,
 		AssetServer: &assetserver.Options{
 			Assets: assets,
 		},
