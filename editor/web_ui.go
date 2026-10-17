@@ -336,6 +336,18 @@ func (a *App) XmlReady() bool {
 	return a.xmlReady
 }
 
+// mapDialogDir returns the folder the open and save dialogs start in: the folder of the open map,
+// otherwise the maps folder of the mod or the game. The dialog fails on a folder that does not exist.
+func mapDialogDir(current string) string {
+	if current != "" && IsDir(filepath.Dir(current)) {
+		return filepath.Dir(current)
+	}
+	if GlobalConfig != nil && GlobalConfig.GameDir != "" {
+		return GetMapsDir()
+	}
+	return ""
+}
+
 // OpenMapDialog shows a file open dialog and loads the selected map.
 // Returns the chosen file path on success, "" if the user cancelled.
 func (a *App) OpenMapDialog() (string, error) {
@@ -343,13 +355,9 @@ func (a *App) OpenMapDialog() (string, error) {
 		return "", nil
 	}
 
-	defaultDir := ""
-	if GlobalConfig != nil && GlobalConfig.GameDir != "" {
-		defaultDir = GetPublicMapsDir()
-	}
 	path, err := runtime.OpenFileDialog(a.ctx, runtime.OpenDialogOptions{
 		Title:            "Open WorldBuilder save",
-		DefaultDirectory: defaultDir,
+		DefaultDirectory: mapDialogDir(a.CurrentMapPath()),
 		Filters:          wbSaveFilters,
 	})
 	if err != nil || path == "" {
@@ -456,16 +464,14 @@ func (a *App) SaveMapAs() (string, error) {
 	current := a.filePath
 	a.mu.Unlock()
 
-	defaultDir, defaultName := "", "map"+wbSaveExt
+	defaultName := "map" + wbSaveExt
 	if current != "" {
-		defaultDir, defaultName = filepath.Dir(current), filepath.Base(current)
-	} else if GlobalConfig != nil && GlobalConfig.GameDir != "" {
-		defaultDir = GetPublicMapsDir()
+		defaultName = filepath.Base(current)
 	}
 
 	path, err := runtime.SaveFileDialog(a.ctx, runtime.SaveDialogOptions{
 		Title:            "Save WorldBuilder save",
-		DefaultDirectory: defaultDir,
+		DefaultDirectory: mapDialogDir(current),
 		DefaultFilename:  defaultName,
 		Filters:          saveFilters(current),
 	})

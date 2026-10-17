@@ -19,7 +19,9 @@ const options = reactive({
 const busy = ref(false);
 const error = ref('');
 const message = ref('');
-const confirmOpen = ref(false);
+// Both actions replace a lot of work on the map, so they are confirmed first
+const confirmGenerate = ref(false);
+const confirmStarts = ref(false);
 const canvas = ref<HTMLCanvasElement | null>(null);
 
 const sliders: { key: 'land' | 'continents' | 'hills' | 'peaks' | 'forests' | 'rivers', min: number, max: number, unit: string }[] = [
@@ -60,7 +62,7 @@ onMounted(drawPreview);
 watch([mapVersion, mapRevision], drawPreview);
 
 async function generate() {
-  confirmOpen.value = false;
+  confirmGenerate.value = false;
   busy.value = true;
   try {
     const r = await GenerateTerrain(editor.TerrainOptions.createFrom({...options}));
@@ -76,6 +78,7 @@ async function generate() {
 }
 
 async function placeStarts() {
+  confirmStarts.value = false;
   busy.value = true;
   try {
     const n = await PlaceStarts(options.seed);
@@ -117,10 +120,10 @@ async function placeStarts() {
           <span class="text-body-2 text-end" style="width: 48px">{{ options[s.key] }}{{ s.unit }}</span>
         </div>
         <div class="d-flex flex-wrap mt-3" style="gap: 8px">
-          <v-btn color="primary" prepend-icon="mdi-earth" :loading="busy" @click="confirmOpen = true">
+          <v-btn color="primary" prepend-icon="mdi-earth" :loading="busy" @click="confirmGenerate = true">
             {{ $t('generator.generate') }}
           </v-btn>
-          <v-btn variant="tonal" prepend-icon="mdi-flag-variant" :loading="busy" @click="placeStarts">
+          <v-btn variant="tonal" prepend-icon="mdi-flag-variant" :loading="busy" @click="confirmStarts = true">
             {{ $t('generator.placeStarts') }}
           </v-btn>
         </div>
@@ -130,13 +133,24 @@ async function placeStarts() {
       </v-col>
     </v-row>
 
-    <v-dialog v-model="confirmOpen" max-width="480">
+    <v-dialog v-model="confirmGenerate" max-width="480">
       <v-card :title="$t('generator.confirmTitle')">
         <v-card-text>{{ $t('generator.confirmText') }}</v-card-text>
         <v-card-actions>
           <v-spacer/>
-          <v-btn variant="text" @click="confirmOpen = false">{{ $t('common.cancel') }}</v-btn>
+          <v-btn variant="text" @click="confirmGenerate = false">{{ $t('common.cancel') }}</v-btn>
           <v-btn color="primary" variant="tonal" @click="generate">{{ $t('generator.generate') }}</v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
+
+    <v-dialog v-model="confirmStarts" max-width="480">
+      <v-card :title="$t('generator.startsConfirmTitle')">
+        <v-card-text>{{ $t('generator.startsConfirmText') }}</v-card-text>
+        <v-card-actions>
+          <v-spacer/>
+          <v-btn variant="text" @click="confirmStarts = false">{{ $t('common.cancel') }}</v-btn>
+          <v-btn color="primary" variant="tonal" @click="placeStarts">{{ $t('generator.placeStarts') }}</v-btn>
         </v-card-actions>
       </v-card>
     </v-dialog>

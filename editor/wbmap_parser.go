@@ -229,6 +229,9 @@ type wbParser struct {
 	rawBegin, rawEnd   string
 	rawDepth, rawStart int
 	rawTarget          *[]string
+
+	// how the file writes the flags the game reads as words, see WbMap.numericRandomize
+	numericRandomize, numericStarts bool
 }
 
 func ParseWbMap(reader io.Reader) (*WbMap, error) {
@@ -349,6 +352,12 @@ func (p *wbParser) parseInSection(content string) error {
 		*extra = append(*extra, content)
 		return nil
 	}
+	if v, ok := parsed["Randomize Resources"]; ok && p.state == stateInsideMap {
+		p.numericRandomize = isWbNumber(v)
+	}
+	if v, ok := parsed["RandomStartLocation"]; ok && p.state == stateInsidePlayer && isWbNumber(v) {
+		p.numericStarts = true
+	}
 	before := len(*extra)
 	if err := p.target().Unpack(parsed); err != nil {
 		return &MapFileError{Code: "badValue", Line: p.line, Text: shorten(content), Section: sections[p.state][0], Detail: err.Error()}
@@ -467,6 +476,9 @@ func (p *wbParser) closeRaw() {
 
 func (p *wbParser) finish() (*WbMap, error) {
 	wbMap := p.wb
+	// Caveman2Cosmos writes Randomize Resources as a number and no RandomStartLocation. Both as numbers come
+	// from Civ4 Studio 0.1.0, which wrote them so for every map: such a file gets the game's words back.
+	wbMap.numericRandomize = p.numericRandomize && !p.numericStarts
 	realPlayers, emptyPlayers := 0, 0
 	for _, player := range wbMap.Players {
 		if player.CivType == NonePlayer && player.LeaderType == NonePlayer {
@@ -540,4 +552,14 @@ func parseKeyValue(line string) (string, string, error) {
 	}
 
 	return parts[0], parts[1], nil
+}
+
+// parseWbBool reads a bool the game writes as a word ("false", "true") or a number ("0", "1")
+func parseWbBool(v string) bool {
+	return v == "1" || strings.EqualFold(v, "true")
+}
+
+func isWbNumber(v string) bool {
+	_, err := strconv.Atoi(v)
+	return err == nil
 }

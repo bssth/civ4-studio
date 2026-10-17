@@ -51,6 +51,9 @@ type WbMap struct {
 	// encoding and the byte order mark of the file, it is saved the same way (see FileBytes)
 	encoding string
 	bom      bool
+	// numericRandomize keeps "Randomize Resources" as 0 or 1: Caveman2Cosmos reads it as a number
+	// and writes it so. The game and other mods write "false" and take "0" for true.
+	numericRandomize bool
 	// raw are parts of the file unknown to the editor outside of the sections, e.g. sections of a mod
 	raw []rawBlock
 }
@@ -102,7 +105,7 @@ func (m *WbMap) ToWbFormat() []byte {
 		props := *m.Map
 		props.NumPlotsWritten = uint64(len(m.Plots))
 		props.NumSignsWritten = uint64(len(m.Signs))
-		buf.Write(props.ToWbFormat())
+		buf.Write(props.wbFormat(m.numericRandomize))
 	}
 	writeRaw("map")
 	for _, plot := range m.Plots {
@@ -473,7 +476,8 @@ func (p *Player) ToWbFormat() []byte {
 	generator.AddKeyValueBool("PlayableCiv", p.PlayableCiv)
 	generator.AddKeyValueBool("MinorNationStatus", p.MinorNationStatus)
 	generator.AddKeyValueInt("StartingGold", p.StartingGold)
-	generator.AddKeyValueBool("RandomStartLocation", p.RandomStartLocation)
+	// Words, like the game writes it: its loader takes "0" for true and gives a random start
+	generator.AddKeyValueWord("RandomStartLocation", p.RandomStartLocation)
 	generator.AddCommaSeparatedValues(
 		fmt.Sprintf("StartingX=%d", p.StartingX),
 		fmt.Sprintf("StartingY=%d", p.StartingY),
@@ -538,7 +542,7 @@ func (p *Player) Unpack(packed map[string]string) error {
 			}
 			p.StartingGold = i
 		case "RandomStartLocation":
-			p.RandomStartLocation = v == "1"
+			p.RandomStartLocation = parseWbBool(v)
 		case "StartingX":
 			i, err := strconv.Atoi(v)
 			if err != nil {
@@ -878,7 +882,7 @@ func (m *MapProps) Unpack(packed map[string]string) error {
 			}
 			m.NumSignsWritten = uint64(i)
 		case "Randomize Resources":
-			m.RandomizeResources = v == "1"
+			m.RandomizeResources = parseWbBool(v)
 		default:
 			m.Extra = append(m.Extra, k+"="+v)
 		}
@@ -888,6 +892,11 @@ func (m *MapProps) Unpack(packed map[string]string) error {
 }
 
 func (m *MapProps) ToWbFormat() []byte {
+	return m.wbFormat(false)
+}
+
+// wbFormat writes the section, Randomize Resources as a number if numericRandomize (see WbMap.numericRandomize)
+func (m *MapProps) wbFormat(numericRandomize bool) []byte {
 	generator := &SimpleGenerator{}
 	generator.StartSection(BeginMap, EndMap)
 	generator.AddKeyValueUint("grid width", m.GridWidth)
@@ -901,7 +910,11 @@ func (m *MapProps) ToWbFormat() []byte {
 	generator.AddKeyValueString("sealevel", m.SeaLevel)
 	generator.AddKeyValueUint("num plots written", m.NumPlotsWritten)
 	generator.AddKeyValueUint("num signs written", m.NumSignsWritten)
-	generator.AddKeyValueBool("Randomize Resources", m.RandomizeResources)
+	if numericRandomize {
+		generator.AddKeyValueBool("Randomize Resources", m.RandomizeResources)
+	} else {
+		generator.AddKeyValueWord("Randomize Resources", m.RandomizeResources)
+	}
 	generator.AddLines(m.Extra)
 	generator.EndSection()
 	return generator.Bytes()

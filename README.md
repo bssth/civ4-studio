@@ -1,3 +1,5 @@
+<p align="center"><img src="docs/logo.png" alt="Civ4 Studio" width="256"></p>
+
 # Civilization 4 Map Studio
 
 Welcome to the **Civilization 4 Map Studio**! This tool is designed to help you in editing and creating custom maps
@@ -99,7 +101,7 @@ searches on the World tab, `Esc` cancels pasting or the selection, `Ctrl+wheel` 
 2. Start the editor. On the first start open **Settings**, choose the *Beyond the Sword* folder (the one with
    `Civ4BeyondSword.exe`) and, if the map is made for a mod, the mod. The editor loads the game data in a few seconds.
    The languages of the interface and of the names from the game are chosen there too.
-3. Open a map with `Ctrl+O` (the dialog starts in `PublicMaps`) or create a new one with `Ctrl+N`.
+3. Open a map with `Ctrl+O` (the dialog starts in `PublicMaps` or `PrivateMaps` of the mod, or of the game if the mod has none) or create a new one with `Ctrl+N`.
 4. Check the **Check** tab before saving, then launch the game with the rocket button.
 
 **Please remember to back up your maps before editing them** — the editor keeps a `.bak` copy, but one more backup
