@@ -5,9 +5,11 @@ import (
 	"flag"
 	"log"
 
+	"github.com/bssth/civ4-studio/resources"
 	"github.com/wailsapp/wails/v2"
 	"github.com/wailsapp/wails/v2/pkg/options"
 	"github.com/wailsapp/wails/v2/pkg/options/assetserver"
+	"github.com/wailsapp/wails/v2/pkg/options/linux"
 )
 
 var assets embed.FS
@@ -51,6 +53,8 @@ func RunApplication() {
 		Bind: []interface{}{
 			app,
 		},
+		// Windows and macOS take the icon from the build folder, Linux needs it for the window
+		Linux: &linux.Options{Icon: resources.IconBytes},
 	})
 
 	if err != nil {

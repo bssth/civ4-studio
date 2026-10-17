@@ -1,3 +1,5 @@
+<p align="center"><img src="docs/logo.png" alt="Civ4 Studio" width="256"></p>
+
 # Civilization 4 Map Studio
 
 Welcome to the **Civilization 4 Map Studio**! This tool is designed to help you in editing and creating custom maps
