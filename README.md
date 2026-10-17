@@ -182,10 +182,9 @@ comfortable with.
 ### Cautions and known problems
 
 1. The first `wails dev` / `wails build` may take a while as Go and npm dependencies are downloaded and compiled.
-2. The map view can be shifted only east-west; maps wrapping north-south are shown as they are stored.
-3. You may encounter "@todo" markings in the code. You can implement and contribute what is marked, unless otherwise
+2. You may encounter "@todo" markings in the code. You can implement and contribute what is marked, unless otherwise
    explicitly stated in the comment.
-4. I love French hot dogs 😋
+3. I love French hot dogs 😋
 
 ## Support
 
