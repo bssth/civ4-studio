@@ -1,7 +1,9 @@
 package editor
 
 import (
+	"fmt"
 	"os"
+	"slices"
 	"strings"
 	"testing"
 )
@@ -78,7 +80,7 @@ BeginPlayer
 	PlayableCiv=1
 	MinorNationStatus=0
 	StartingGold=0
-	RandomStartLocation=0
+	RandomStartLocation=false
 	StartingX=180,StartingY=68
 	StartingEra=ERA_ANCIENT
 	CivicOption=CIVICOPTION_GOVERNMENT,Civic=CIVIC_DESPOTISM
@@ -255,5 +257,62 @@ func TestNewWbMapRoundTrip(t *testing.T) {
 	}
 	if problems := parsed.Stats().Problems; len(problems) != 0 {
 		t.Errorf("a new map must have no problems: %v", problems)
+	}
+}
+
+// flagsMap is a map with the flags the game reads as words; the values are filled in by the tests
+const flagsMap = `Version=11
+BeginGame
+	Era=ERA_ANCIENT
+EndGame
+BeginPlayer
+	LeaderType=LEADER_ALEXANDER
+	CivType=CIVILIZATION_GREECE
+%s
+	StartingX=1,StartingY=2
+EndPlayer
+BeginMap
+	grid width=2
+	grid height=2
+	Randomize Resources=%s
+EndMap
+`
+
+func TestRandomFlagsAreWrittenAsTheGameReadsThem(t *testing.T) {
+	cases := []struct {
+		name, start, randomize   string
+		wantStart, wantRandomize string
+		random, randomized       bool
+	}{
+		// The game writes words; its loader takes anything but "false" for true
+		{"game", "RandomStartLocation=false", "false", "RandomStartLocation=false", "Randomize Resources=false", false, false},
+		{"game, true", "RandomStartLocation=true", "TRUE", "RandomStartLocation=true", "Randomize Resources=true", true, true},
+		// Civ4 Studio 0.1.0 wrote numbers, they must become words again
+		{"0.1.0", "RandomStartLocation=0", "0", "RandomStartLocation=false", "Randomize Resources=false", false, false},
+		// Caveman2Cosmos reads Randomize Resources as a number and writes no RandomStartLocation
+		{"Caveman2Cosmos", "", "0", "RandomStartLocation=false", "Randomize Resources=0", false, false},
+		{"Caveman2Cosmos, true", "", "1", "RandomStartLocation=false", "Randomize Resources=1", false, true},
+	}
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			wb, err := ParseWbMap(strings.NewReader(fmt.Sprintf(flagsMap, c.start, c.randomize)))
+			if err != nil {
+				t.Fatal(err)
+			}
+			if wb.Players[0].RandomStartLocation != c.random || wb.Map.RandomizeResources != c.randomized {
+				t.Errorf("read random start %v, randomize %v", wb.Players[0].RandomStartLocation, wb.Map.RandomizeResources)
+			}
+			out := normalizeWb(string(wb.ToWbFormat()))
+			if !slices.Contains(out, c.wantStart) || !slices.Contains(out, c.wantRandomize) {
+				t.Errorf("expected %q and %q in:\n%s", c.wantStart, c.wantRandomize, strings.Join(out, "\n"))
+			}
+		})
+	}
+}
+
+func TestNewMapWritesRandomFlagsAsWords(t *testing.T) {
+	out := normalizeWb(string(NewWbMap().ToWbFormat()))
+	if !slices.Contains(out, "Randomize Resources=false") || !slices.Contains(out, "RandomStartLocation=false") {
+		t.Errorf("a new map must use the words of the game:\n%s", strings.Join(out, "\n"))
 	}
 }

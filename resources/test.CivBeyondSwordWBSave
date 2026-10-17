@@ -341,7 +341,7 @@ BeginPlayer
 	PlayableCiv=1
 	MinorNationStatus=0
 	StartingGold=0
-	RandomStartLocation=0
+	RandomStartLocation=false
 	StartingX=180,StartingY=68
 	StartingEra=ERA_ANCIENT
 EndPlayer
@@ -361,7 +361,7 @@ BeginPlayer
 	PlayableCiv=1
 	MinorNationStatus=0
 	StartingGold=0
-	RandomStartLocation=0
+	RandomStartLocation=false
 	StartingX=90,StartingY=49
 	StartingEra=ERA_ANCIENT
 EndPlayer
@@ -381,7 +381,7 @@ BeginPlayer
 	PlayableCiv=1
 	MinorNationStatus=0
 	StartingGold=0
-	RandomStartLocation=0
+	RandomStartLocation=false
 	StartingX=101,StartingY=52
 	StartingEra=ERA_ANCIENT
 EndPlayer
@@ -401,7 +401,7 @@ BeginPlayer
 	PlayableCiv=1
 	MinorNationStatus=0
 	StartingGold=0
-	RandomStartLocation=0
+	RandomStartLocation=false
 	StartingX=193,StartingY=71
 	StartingEra=ERA_ANCIENT
 EndPlayer
@@ -421,7 +421,7 @@ BeginPlayer
 	PlayableCiv=1
 	MinorNationStatus=0
 	StartingGold=0
-	RandomStartLocation=0
+	RandomStartLocation=false
 	StartingX=17,StartingY=67
 	StartingEra=ERA_ANCIENT
 EndPlayer
@@ -441,7 +441,7 @@ BeginPlayer
 	PlayableCiv=1
 	MinorNationStatus=0
 	StartingGold=0
-	RandomStartLocation=0
+	RandomStartLocation=false
 	StartingX=182,StartingY=7
 	StartingEra=ERA_ANCIENT
 EndPlayer
@@ -461,7 +461,7 @@ BeginPlayer
 	PlayableCiv=1
 	MinorNationStatus=0
 	StartingGold=0
-	RandomStartLocation=0
+	RandomStartLocation=false
 	StartingX=38,StartingY=14
 	StartingEra=ERA_ANCIENT
 EndPlayer
@@ -481,7 +481,7 @@ BeginPlayer
 	PlayableCiv=1
 	MinorNationStatus=0
 	StartingGold=0
-	RandomStartLocation=0
+	RandomStartLocation=false
 	StartingX=54,StartingY=69
 	StartingEra=ERA_ANCIENT
 EndPlayer
@@ -501,7 +501,7 @@ BeginPlayer
 	PlayableCiv=1
 	MinorNationStatus=0
 	StartingGold=0
-	RandomStartLocation=0
+	RandomStartLocation=false
 	StartingX=8,StartingY=34
 	StartingEra=ERA_ANCIENT
 EndPlayer
@@ -521,7 +521,7 @@ BeginPlayer
 	PlayableCiv=1
 	MinorNationStatus=0
 	StartingGold=0
-	RandomStartLocation=0
+	RandomStartLocation=false
 	StartingX=71,StartingY=34
 	StartingEra=ERA_ANCIENT
 EndPlayer
@@ -541,7 +541,7 @@ BeginPlayer
 	PlayableCiv=1
 	MinorNationStatus=0
 	StartingGold=0
-	RandomStartLocation=0
+	RandomStartLocation=false
 	StartingX=87,StartingY=76
 	StartingEra=ERA_ANCIENT
 EndPlayer
@@ -561,7 +561,7 @@ BeginPlayer
 	PlayableCiv=1
 	MinorNationStatus=0
 	StartingGold=0
-	RandomStartLocation=0
+	RandomStartLocation=false
 	StartingX=37,StartingY=54
 	StartingEra=ERA_ANCIENT
 EndPlayer
@@ -581,7 +581,7 @@ BeginPlayer
 	PlayableCiv=1
 	MinorNationStatus=0
 	StartingGold=0
-	RandomStartLocation=0
+	RandomStartLocation=false
 	StartingX=133,StartingY=78
 	StartingEra=ERA_ANCIENT
 EndPlayer
@@ -601,7 +601,7 @@ BeginPlayer
 	PlayableCiv=1
 	MinorNationStatus=0
 	StartingGold=0
-	RandomStartLocation=0
+	RandomStartLocation=false
 	StartingX=33,StartingY=82
 	StartingEra=ERA_ANCIENT
 EndPlayer
@@ -621,7 +621,7 @@ BeginPlayer
 	PlayableCiv=1
 	MinorNationStatus=0
 	StartingGold=0
-	RandomStartLocation=0
+	RandomStartLocation=false
 	StartingX=89,StartingY=32
 	StartingEra=ERA_ANCIENT
 EndPlayer
@@ -641,7 +641,7 @@ BeginPlayer
 	PlayableCiv=1
 	MinorNationStatus=0
 	StartingGold=0
-	RandomStartLocation=0
+	RandomStartLocation=false
 	StartingX=38,StartingY=33
 	StartingEra=ERA_ANCIENT
 EndPlayer
@@ -661,7 +661,7 @@ BeginPlayer
 	PlayableCiv=1
 	MinorNationStatus=0
 	StartingGold=0
-	RandomStartLocation=0
+	RandomStartLocation=false
 	StartingX=178,StartingY=32
 	StartingEra=ERA_ANCIENT
 EndPlayer
@@ -681,7 +681,7 @@ BeginPlayer
 	PlayableCiv=1
 	MinorNationStatus=0
 	StartingGold=0
-	RandomStartLocation=0
+	RandomStartLocation=false
 	StartingX=112,StartingY=84
 	StartingEra=ERA_ANCIENT
 EndPlayer
@@ -701,7 +701,7 @@ BeginPlayer
 	PlayableCiv=1
 	MinorNationStatus=0
 	StartingGold=0
-	RandomStartLocation=0
+	RandomStartLocation=false
 	StartingX=72,StartingY=49
 	StartingEra=ERA_ANCIENT
 EndPlayer
@@ -721,7 +721,7 @@ BeginPlayer
 	PlayableCiv=1
 	MinorNationStatus=0
 	StartingGold=0
-	RandomStartLocation=0
+	RandomStartLocation=false
 	StartingX=157,StartingY=75
 	StartingEra=ERA_ANCIENT
 EndPlayer
@@ -741,7 +741,7 @@ BeginPlayer
 	PlayableCiv=1
 	MinorNationStatus=0
 	StartingGold=0
-	RandomStartLocation=0
+	RandomStartLocation=false
 	StartingX=70,StartingY=75
 	StartingEra=ERA_ANCIENT
 EndPlayer
@@ -761,7 +761,7 @@ BeginPlayer
 	PlayableCiv=1
 	MinorNationStatus=0
 	StartingGold=0
-	RandomStartLocation=0
+	RandomStartLocation=false
 	StartingX=114,StartingY=25
 	StartingEra=ERA_ANCIENT
 EndPlayer
@@ -781,7 +781,7 @@ BeginPlayer
 	PlayableCiv=1
 	MinorNationStatus=0
 	StartingGold=0
-	RandomStartLocation=0
+	RandomStartLocation=false
 	StartingX=23,StartingY=32
 	StartingEra=ERA_ANCIENT
 EndPlayer
@@ -801,7 +801,7 @@ BeginPlayer
 	PlayableCiv=1
 	MinorNationStatus=0
 	StartingGold=0
-	RandomStartLocation=0
+	RandomStartLocation=false
 	StartingX=165,StartingY=59
 	StartingEra=ERA_ANCIENT
 EndPlayer
@@ -821,7 +821,7 @@ BeginPlayer
 	PlayableCiv=1
 	MinorNationStatus=0
 	StartingGold=0
-	RandomStartLocation=0
+	RandomStartLocation=false
 	StartingX=33,StartingY=68
 	StartingEra=ERA_ANCIENT
 EndPlayer
@@ -841,7 +841,7 @@ BeginPlayer
 	PlayableCiv=1
 	MinorNationStatus=0
 	StartingGold=0
-	RandomStartLocation=0
+	RandomStartLocation=false
 	StartingX=102,StartingY=69
 	StartingEra=ERA_ANCIENT
 EndPlayer
@@ -861,7 +861,7 @@ BeginPlayer
 	PlayableCiv=1
 	MinorNationStatus=0
 	StartingGold=0
-	RandomStartLocation=0
+	RandomStartLocation=false
 	StartingX=22,StartingY=52
 	StartingEra=ERA_ANCIENT
 EndPlayer
@@ -876,7 +876,7 @@ BeginPlayer
 	PlayableCiv=0
 	MinorNationStatus=0
 	StartingGold=0
-	RandomStartLocation=0
+	RandomStartLocation=false
 	StartingX=0,StartingY=0
 EndPlayer
 BeginPlayer
@@ -890,7 +890,7 @@ BeginPlayer
 	PlayableCiv=0
 	MinorNationStatus=0
 	StartingGold=0
-	RandomStartLocation=0
+	RandomStartLocation=false
 	StartingX=0,StartingY=0
 EndPlayer
 BeginPlayer
@@ -904,7 +904,7 @@ BeginPlayer
 	PlayableCiv=0
 	MinorNationStatus=0
 	StartingGold=0
-	RandomStartLocation=0
+	RandomStartLocation=false
 	StartingX=0,StartingY=0
 EndPlayer
 BeginPlayer
@@ -918,7 +918,7 @@ BeginPlayer
 	PlayableCiv=0
 	MinorNationStatus=0
 	StartingGold=0
-	RandomStartLocation=0
+	RandomStartLocation=false
 	StartingX=0,StartingY=0
 EndPlayer
 BeginPlayer
@@ -932,7 +932,7 @@ BeginPlayer
 	PlayableCiv=0
 	MinorNationStatus=0
 	StartingGold=0
-	RandomStartLocation=0
+	RandomStartLocation=false
 	StartingX=0,StartingY=0
 EndPlayer
 BeginPlayer
@@ -946,7 +946,7 @@ BeginPlayer
 	PlayableCiv=0
 	MinorNationStatus=0
 	StartingGold=0
-	RandomStartLocation=0
+	RandomStartLocation=false
 	StartingX=0,StartingY=0
 EndPlayer
 BeginPlayer
@@ -960,7 +960,7 @@ BeginPlayer
 	PlayableCiv=0
 	MinorNationStatus=0
 	StartingGold=0
-	RandomStartLocation=0
+	RandomStartLocation=false
 	StartingX=0,StartingY=0
 EndPlayer
 BeginPlayer
@@ -974,7 +974,7 @@ BeginPlayer
 	PlayableCiv=0
 	MinorNationStatus=0
 	StartingGold=0
-	RandomStartLocation=0
+	RandomStartLocation=false
 	StartingX=0,StartingY=0
 EndPlayer
 BeginPlayer
@@ -988,7 +988,7 @@ BeginPlayer
 	PlayableCiv=0
 	MinorNationStatus=0
 	StartingGold=0
-	RandomStartLocation=0
+	RandomStartLocation=false
 	StartingX=0,StartingY=0
 EndPlayer
 BeginPlayer
@@ -1002,7 +1002,7 @@ BeginPlayer
 	PlayableCiv=0
 	MinorNationStatus=0
 	StartingGold=0
-	RandomStartLocation=0
+	RandomStartLocation=false
 	StartingX=0,StartingY=0
 EndPlayer
 BeginPlayer
@@ -1016,7 +1016,7 @@ BeginPlayer
 	PlayableCiv=0
 	MinorNationStatus=0
 	StartingGold=0
-	RandomStartLocation=0
+	RandomStartLocation=false
 	StartingX=0,StartingY=0
 EndPlayer
 BeginPlayer
@@ -1030,7 +1030,7 @@ BeginPlayer
 	PlayableCiv=0
 	MinorNationStatus=0
 	StartingGold=0
-	RandomStartLocation=0
+	RandomStartLocation=false
 	StartingX=0,StartingY=0
 EndPlayer
 BeginPlayer
@@ -1044,7 +1044,7 @@ BeginPlayer
 	PlayableCiv=0
 	MinorNationStatus=0
 	StartingGold=0
-	RandomStartLocation=0
+	RandomStartLocation=false
 	StartingX=0,StartingY=0
 EndPlayer
 BeginPlayer
@@ -1058,7 +1058,7 @@ BeginPlayer
 	PlayableCiv=0
 	MinorNationStatus=0
 	StartingGold=0
-	RandomStartLocation=0
+	RandomStartLocation=false
 	StartingX=0,StartingY=0
 EndPlayer
 BeginPlayer
@@ -1072,7 +1072,7 @@ BeginPlayer
 	PlayableCiv=0
 	MinorNationStatus=0
 	StartingGold=0
-	RandomStartLocation=0
+	RandomStartLocation=false
 	StartingX=0,StartingY=0
 EndPlayer
 BeginPlayer
@@ -1086,7 +1086,7 @@ BeginPlayer
 	PlayableCiv=0
 	MinorNationStatus=0
 	StartingGold=0
-	RandomStartLocation=0
+	RandomStartLocation=false
 	StartingX=0,StartingY=0
 EndPlayer
 BeginPlayer
@@ -1100,7 +1100,7 @@ BeginPlayer
 	PlayableCiv=0
 	MinorNationStatus=0
 	StartingGold=0
-	RandomStartLocation=0
+	RandomStartLocation=false
 	StartingX=0,StartingY=0
 EndPlayer
 BeginPlayer
@@ -1114,7 +1114,7 @@ BeginPlayer
 	PlayableCiv=0
 	MinorNationStatus=0
 	StartingGold=0
-	RandomStartLocation=0
+	RandomStartLocation=false
 	StartingX=0,StartingY=0
 EndPlayer
 BeginPlayer
@@ -1128,7 +1128,7 @@ BeginPlayer
 	PlayableCiv=0
 	MinorNationStatus=0
 	StartingGold=0
-	RandomStartLocation=0
+	RandomStartLocation=false
 	StartingX=0,StartingY=0
 EndPlayer
 BeginPlayer
@@ -1142,7 +1142,7 @@ BeginPlayer
 	PlayableCiv=0
 	MinorNationStatus=0
 	StartingGold=0
-	RandomStartLocation=0
+	RandomStartLocation=false
 	StartingX=0,StartingY=0
 EndPlayer
 BeginPlayer
@@ -1156,7 +1156,7 @@ BeginPlayer
 	PlayableCiv=0
 	MinorNationStatus=0
 	StartingGold=0
-	RandomStartLocation=0
+	RandomStartLocation=false
 	StartingX=0,StartingY=0
 EndPlayer
 BeginPlayer
@@ -1170,7 +1170,7 @@ BeginPlayer
 	PlayableCiv=0
 	MinorNationStatus=0
 	StartingGold=0
-	RandomStartLocation=0
+	RandomStartLocation=false
 	StartingX=0,StartingY=0
 EndPlayer
 BeginPlayer
@@ -1184,7 +1184,7 @@ BeginPlayer
 	PlayableCiv=0
 	MinorNationStatus=0
 	StartingGold=0
-	RandomStartLocation=0
+	RandomStartLocation=false
 	StartingX=0,StartingY=0
 EndPlayer
 BeginMap
@@ -1199,7 +1199,7 @@ BeginMap
 	sealevel=SEALEVEL_MEDIUM
 	num plots written=18900
 	num signs written=0
-	Randomize Resources=0
+	Randomize Resources=false
 EndMap
 BeginPlot
 	x=0,y=0

@@ -95,6 +95,12 @@ func (g *SimpleGenerator) AddKeyValueBool(key string, value bool) {
 	g.AddKeyValue(key, BoolToInt(value))
 }
 
+// AddKeyValueWord writes a bool as "true" or "false". The game writes RandomStartLocation and
+// Randomize Resources this way and its loader takes anything but "false" (also "0") for true.
+func (g *SimpleGenerator) AddKeyValueWord(key string, value bool) {
+	g.AddKeyValue(key, strconv.FormatBool(value))
+}
+
 func (g *SimpleGenerator) AddKeyValueString(key string, value string) {
 	g.AddKeyValue(key, value)
 }
