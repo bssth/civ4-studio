@@ -187,6 +187,8 @@ const en = {
         "resources": "Resources",
         "rivers": "Rivers",
         "seed": "Seed",
+        "startsConfirmText": "Start positions of all players with a civilization will be moved to new places, as far from each other as possible. The current positions, also those set by hand, are lost. Ctrl+Z undoes it.",
+        "startsConfirmTitle": "Move all start positions?",
         "startsPlaced": "Start positions of {n} players are placed as far from each other as possible.",
         "title": "Terrain generator"
     },
