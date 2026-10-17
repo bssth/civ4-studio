@@ -211,9 +211,9 @@ func addInfoEntries(table *InfoTable, entries []civ4InfoEntry) {
 }
 
 func newXMLDecoder(r io.Reader) *xml.Decoder {
-	decoder := xml.NewDecoder(r)
-	decoder.CharsetReader = charset.NewReaderLabel // needed for non-UTF-8 files, sometimes it's something like "iso-8859-1"
-	decoder.Strict = false                         // some mod files are not strictly valid XML
+	decoder := xml.NewDecoder(newXMLCommentFixer(r)) // mods have "--" inside comments
+	decoder.CharsetReader = charset.NewReaderLabel   // needed for non-UTF-8 files, sometimes it's something like "iso-8859-1"
+	decoder.Strict = false                           // some mod files are not strictly valid XML
 	return decoder
 }
 

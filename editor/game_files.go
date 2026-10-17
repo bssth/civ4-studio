@@ -48,9 +48,23 @@ func GetRelativeModDir() string {
 	return ModsDir + string(os.PathSeparator) + GlobalConfig.Mod
 }
 
-// GetPublicMapsDir returns a path to public maps directory
-func GetPublicMapsDir() string {
-	return GetModDir() + string(os.PathSeparator) + PublicMapsDir
+// GetMapsDir returns a folder for open and save dialogs: PublicMaps or PrivateMaps of the mod, then of the game.
+// Many mods have only one of them, or none. Returns "" if none exists, the dialog then starts in its usual place.
+func GetMapsDir() string {
+	var roots []string
+	if IsMod() {
+		roots = append(roots, GetModDir())
+	}
+	roots = append(roots, GlobalConfig.GameDir)
+
+	for _, root := range roots {
+		for _, dir := range []string{PublicMapsDir, PrivateMapsDir} {
+			if path := filepath.Join(root, dir); IsDir(path) {
+				return path
+			}
+		}
+	}
+	return ""
 }
 
 // GetRootDirs returns list of directories where to search for game files (game directory + mod directory)
